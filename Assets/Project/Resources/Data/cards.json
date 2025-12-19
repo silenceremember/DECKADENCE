@@ -1,0 +1,22 @@
+﻿{
+  "cards": [
+    {
+      "id": "card_001",
+      "characterName": "Глашатай",
+      "dialogueText": "Ваше Величество, казна пуста. Мы можем продать королевских собак?",
+      "leftChoice": "Продать собак",
+      "rightChoice": "Голодать",
+      "leftStats": [10, -5, -5, 0],
+      "rightStats": [-10, 5, 5, 0]
+    },
+    {
+      "id": "card_002",
+      "characterName": "Чумной Доктор",
+      "dialogueText": "Нужно сжечь квартал бедняков. Это остановит заразу.",
+      "leftChoice": "Жги!",
+      "rightChoice": "Мы найдем лекарство",
+      "leftStats": [0, 5, -20, -20],
+      "rightStats": [0, -5, 10, 10]
+    }
+  ]
+}
