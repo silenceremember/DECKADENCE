@@ -9,9 +9,6 @@ public class ShadowLightSource : MonoBehaviour
     public static ShadowLightSource Instance { get; private set; }
 
     [Header("Settings")]
-    [Tooltip("Global offset multiplier for all shadows. Higher values = longer shadows away from center.")]
-    public float globalIntensity = 15f; 
-
     [Tooltip("Shift the center of the light source from the exact screen center.")]
     public Vector2 centerOffset = Vector2.zero;
 
@@ -26,10 +23,10 @@ public class ShadowLightSource : MonoBehaviour
     }
 
     /// <summary>
-    /// Calculates the shadow offset for a given object position in Screen Space.
-    /// Uses a pseudo-3D perspective from the center of the screen.
+    /// Calculates the shadow direction factor for a given object position.
+    /// Returns the normalized direction scaled by the distance factor (perspective).
     /// </summary>
-    public Vector2 GetShadowOffset(Vector2 objectScreenPosition)
+    public Vector2 GetShadowDirection(Vector2 objectScreenPosition)
     {
         // Light is virtually at Screen Center (0,0) + Offset
         // Shadow Direction = ObjectPos - LightPos
@@ -44,7 +41,6 @@ public class ShadowLightSource : MonoBehaviour
         // Balatro logic: Shadows grow massive at edges
         float distanceFactor = Mathf.Clamp(distance / 500f, 0f, 2.5f);
         
-        Vector2 offset = direction.normalized * (globalIntensity * distanceFactor);
-        return offset;
+        return direction.normalized * distanceFactor;
     }
 }

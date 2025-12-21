@@ -62,8 +62,8 @@ Material:
     - _ShadowDilate: 0.1
     - _ShadowPixelShiftX: 3
     - _ShadowPixelShiftY: 1
-    - _ShadowShiftX: 4
-    - _ShadowShiftY: -4
+    - _ShadowShiftX: 0
+    - _ShadowShiftY: 0
     - _ShadowSoftness: 0.5
     - _Softness: 0.01
     - _Speed: 1
