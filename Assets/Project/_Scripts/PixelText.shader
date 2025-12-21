@@ -1,4 +1,4 @@
-Shader "UI/VoidText_Clean"
+Shader "UI/VoidText"
 {
     Properties
     {

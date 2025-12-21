@@ -1,3 +1,5 @@
+// CardData.cs
+
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "NewCard", menuName = "Game/Card Data")]

@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿// CardLoader.cs
+
+using UnityEngine;
 using System.Collections.Generic;
 
 [System.Serializable]
