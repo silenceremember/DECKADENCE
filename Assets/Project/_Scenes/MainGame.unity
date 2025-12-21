@@ -1211,11 +1211,16 @@ MonoBehaviour:
   actionText: {fileID: 1036642015}
   canvasGroup: {fileID: 853034492}
   movementLimit: 400
+  lockedLimit: 80
+  unlockDistance: 50
   choiceThreshold: 300
   sensitivity: 1
+  lockedDampening: 0.6
   hiddenY: 2500
   fallDuration: 0.6
   interactionDelay: 0.5
+  typingSpeed: 0.02
+  lockedInputScale: 0.15
   minScale: 0.5
   maxScale: 1.4
   shakeSpeed: 30

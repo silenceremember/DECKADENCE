@@ -21,6 +21,7 @@ public class CardDisplay : MonoBehaviour
     public float unlockDistance = 50f;   
     public float choiceThreshold = 300f;
     public float sensitivity = 1.0f;
+    public float lockedDampening = 0.6f;
     
     [Header("Настройки Анимации")]
     public float hiddenY = 2500f; 
@@ -29,6 +30,10 @@ public class CardDisplay : MonoBehaviour
 
     [Header("Typewriter Effect")]
     public float typingSpeed = 0.02f; // Скорость появления одной буквы (сек)
+
+    // Насколько сильно карта реагирует при локе (настройка)
+    [Header("Настройки Лока")]
+    public float lockedInputScale = 0.15f;
 
     [Header("Сочность Текста")]
     public float minScale = 0.6f;
@@ -53,6 +58,11 @@ public class CardDisplay : MonoBehaviour
 
     private float _currentVerticalOffset = 0f; 
     private float _currentAngularOffset = 0f;
+
+    private float _shakeOffset = 0f;
+
+    // Коэффициент передачи движения (0.15 = вяло, 1.0 = 1 к 1)
+    private float _inputScale = 1.0f;
 
     // Твин для текста, чтобы можно было остановить
     private Tween _typewriterTween;
@@ -81,6 +91,7 @@ public class CardDisplay : MonoBehaviour
         _isInteractable = false;
         _safetyLock = false;
         _isUnlockAnimating = false; // Важно сбросить анимацию
+        _inputScale = 1.0f; // По умолчанию полный контроль
         
         if (isFront)
         {
@@ -107,6 +118,10 @@ public class CardDisplay : MonoBehaviour
         _isInteractable = false;
 
         _safetyLock = true;
+        
+        // ВКЛЮЧАЕМ "ВЯЛОСТЬ"
+        // Карта будет двигаться, но с маленькой амплитудой
+        _inputScale = lockedInputScale;
         
         DOTween.Kill(this); 
         // Убиваем старый твин текста, если он вдруг еще идет
@@ -156,6 +171,7 @@ public class CardDisplay : MonoBehaviour
 
     void HandleMotion()
     {
+        // 1. СЫРОЙ ВВОД
         float rawDiff = 0f;
         if (Mouse.current != null)
         {
@@ -163,91 +179,88 @@ public class CardDisplay : MonoBehaviour
             rawDiff = (Mouse.current.position.ReadValue().x - screenCenter) * sensitivity;
         }
 
-        // --- 1. ПРОВЕРКА НА FORCE UNLOCK (Клик во время блока) ---
-        if (_safetyLock && _isInteractable && !_isUnlockAnimating)
+        bool isClickFrame = Mouse.current.leftButton.wasPressedThisFrame;
+
+        // 2. ОБРАБОТКА ЛОКА (Клик по карте)
+        if (_safetyLock && _isInteractable)
         {
-            // Если мышь далеко (за пределами лока) И нажат клик
-            if (Mathf.Abs(rawDiff) > lockedLimit && Mouse.current.leftButton.wasPressedThisFrame)
+            if (isClickFrame)
             {
-                TriggerForceUnlock(rawDiff);
-                return; // Прерываем кадр, дальше работает анимация
+                TriggerWobbleUnlock();
+                isClickFrame = false; 
             }
         }
 
-        // --- 2. ЕСЛИ ИДЕТ АНИМАЦИЯ РАЗБЛОКИРОВКИ ---
-        if (_isUnlockAnimating)
-        {
-            // Мы не управляем позицией X (это делает Tween), но мы должны обновлять:
-            // 1. Позицию Y (если карта еще падает)
-            // 2. Вращение (зависит от текущего X)
-            // 3. Визуал текста
-            
-            float currentX = _rectTransform.anchoredPosition.x;
-            _rectTransform.anchoredPosition = new Vector2(currentX, _currentVerticalOffset);
-            
-            float rot = -currentX * 0.05f;
-            _rectTransform.rotation = Quaternion.Euler(0, 0, rot + _currentAngularOffset);
-            
-            UpdateVisuals(currentX); // Обновляем текст, чтобы он появился в конце замаха
-            return;
-        }
+        // 3. МАТЕМАТИКА (Масштабирование)
+        // Умножаем ввод на наш коэффициент.
+        // Если лок: rawDiff (500) * 0.15 = 75. Карта сместится только на 75.
+        // Если анлок: rawDiff (500) * 1.0 = 500. Карта там же где и мышь.
+        float scaledDiff = rawDiff * _inputScale;
 
-        // --- 3. ОБЫЧНОЕ ДВИЖЕНИЕ ---
+        // Ограничиваем только ГЛОБАЛЬНЫМ лимитом экрана, никаких "стенок" посередине
+        float targetX = Mathf.Clamp(scaledDiff, -movementLimit, movementLimit);
+
+        // 4. ФИЗИКА
+        float smoothX = Mathf.Lerp(_rectTransform.anchoredPosition.x, targetX, Time.deltaTime * 20f);
         
-        // Автоматическое снятие лока при возврате в центр
-        if (_safetyLock && Mathf.Abs(rawDiff) < unlockDistance)
-        {
-            _safetyLock = false;
-        }
+        _rectTransform.anchoredPosition = new Vector2(smoothX + _shakeOffset, _currentVerticalOffset);
 
-        // Ограничение движения
-        float currentLimit = _safetyLock ? lockedLimit : movementLimit;
-        float appliedDiff = Mathf.Clamp(rawDiff, -currentLimit, currentLimit);
-
-        // Физика
-        float smoothX = Mathf.Lerp(_rectTransform.anchoredPosition.x, appliedDiff, Time.deltaTime * 20f);
-        _rectTransform.anchoredPosition = new Vector2(smoothX, _currentVerticalOffset);
-
-        float mouseRotation = -smoothX * 0.05f;
+        float mouseRotation = -_rectTransform.anchoredPosition.x * 0.05f;
         _rectTransform.rotation = Quaternion.Euler(0, 0, mouseRotation + _currentAngularOffset);
 
-        UpdateVisuals(appliedDiff);
+        // 5. ТЕКСТ И ВЫБОР
+        UpdateVisuals(targetX);
         
-        // Клик для выбора (Только если разблокировано)
-        if (_isInteractable && !_safetyLock)
+        if (_isInteractable && !_safetyLock && isClickFrame)
         {
-            HandleInput(appliedDiff);
+            HandleInput(targetX);
         }
     }
 
-        // Тот самый "Маятник"
-    void TriggerForceUnlock(float targetMouseX)
+void TriggerWobbleUnlock()
     {
-        _isUnlockAnimating = true; // Отбираем контроль у Update
-        _safetyLock = false;       // Снимаем логический замок
+        _safetyLock = false; 
 
-        // Определяем направление отката (противоположное мыши)
-        // Если мышь справа (>0), откат влево. И наоборот.
-        // Откат небольшой, например 20 пикселей в противоположную сторону.
-        float recoilX = (targetMouseX > 0) ? -20f : 20f;
-        
-        // Финальная точка - это позиция мыши (но в пределах лимита)
-        float finalX = Mathf.Clamp(targetMouseX, -movementLimit, movementLimit);
-
-        // Создаем последовательность
-        Sequence seq = DOTween.Sequence();
-        
-        // 1. Откат к центру/назад (быстро) -> "1-2"
-        seq.Append(_rectTransform.DOAnchorPosX(recoilX, 0.1f).SetEase(Ease.OutQuad));
-        
-        // 2. Рывок к мыши (сочно) -> "5-6"
-        seq.Append(_rectTransform.DOAnchorPosX(finalX, 0.25f).SetEase(Ease.OutBack));
-
-        seq.OnComplete(() => 
+        // 1. ОПРЕДЕЛЯЕМ НАПРАВЛЕНИЕ
+        float mouseX = 0f;
+        if (Mouse.current != null)
         {
-            _isUnlockAnimating = false; // Возвращаем контроль игроку
-            // Теперь карта там, где курсор, и игрок может кликнуть еще раз для выбора
-        });
+            mouseX = Mouse.current.position.ReadValue().x - Screen.width / 2f;
+        }
+
+        // Если мышь справа (> 0), то первый рывок влево (-1).
+        // Если мышь слева или в центре, то первый рывок вправо (+1).
+        // Это делает анимацию логичной физически.
+        float dir = (mouseX > 0) ? -1f : 1f;
+        
+        float power = 10f; // Амплитуда, как ты просил
+
+        DOTween.Kill(this, "shake"); 
+        DOTween.Kill(this, "inputScale");
+
+        Sequence seq = DOTween.Sequence();
+        seq.SetId("shake");
+        
+        // --- АНИМАЦИЯ ПРОБУЖДЕНИЯ ---
+        
+        // 1. Рывок "ПРОТИВ" (Замах) -> 30px
+        seq.Append(DOTween.To(() => _shakeOffset, x => _shakeOffset = x, dir * power, 0.08f)
+            .SetEase(Ease.OutSine));
+        
+        // 2. Рывок "ЗА" (Перехлест) -> -30px (в другую сторону)
+        seq.Append(DOTween.To(() => _shakeOffset, x => _shakeOffset = x, -dir * power, 0.1f)
+            .SetEase(Ease.InOutSine));
+        
+        // 3. Возврат в ноль (Успокоение)
+        seq.Append(DOTween.To(() => _shakeOffset, x => _shakeOffset = x, 0f, 0.3f)
+            .SetEase(Ease.OutBack)); // Легкая пружинка в конце
+
+        // --- ФИЗИКА (РАЗГОН) ---
+        // Включаем следование за мышью параллельно с тряской
+        DOTween.To(() => _inputScale, x => _inputScale = x, 1.0f, 0.3f)
+            .SetEase(Ease.OutCubic) 
+            .SetId("inputScale")
+            .SetTarget(this);
     }
 
     void UpdateVisuals(float diff)
