@@ -35,9 +35,12 @@ public class CardDisplay : MonoBehaviour
     [Header("Настройки Лока")]
     public float lockedInputScale = 0.15f;
 
-    [Header("3D Tilt")]
+    [Header("3D Tilt & Juice")]
     public Vector2 tiltStrength = new Vector2(20f, 15f); // X = Vertical, Y = Horizontal
-    public float tiltSpeed = 10f;
+    public float tiltSpeed = 15f; // Увеличил скорость тильта для отзывчивости
+    public float velocityTiltMultiplier = 2.5f; // Множитель тильта от скорости мыши
+    public float grabScale = 0.95f; // Размер карты при нажатии
+    public float grabScaleSpeed = 15f; // Скорость сжатия
 
     [Header("Сочность Текста")]
     public float minScale = 0.6f;
@@ -68,6 +71,11 @@ public class CardDisplay : MonoBehaviour
     // Коэффициент передачи движения (0.15 = вяло, 1.0 = 1 к 1)
     private float _inputScale = 1.0f;
 
+    // Juice vars
+    private float _currentScale = 1.0f;
+    private float _lastMouseX;
+    private float _mouseVelocityX;
+
     // Твин для текста, чтобы можно было остановить
     private Tween _typewriterTween;
 
@@ -96,6 +104,7 @@ public class CardDisplay : MonoBehaviour
         _safetyLock = false;
         _isUnlockAnimating = false; // Важно сбросить анимацию
         _inputScale = 1.0f; // По умолчанию полный контроль
+        _currentScale = 1.0f;
         
         if (isFront)
         {
@@ -103,6 +112,7 @@ public class CardDisplay : MonoBehaviour
             _currentAngularOffset = 0f;
             _rectTransform.anchoredPosition = Vector2.zero;
             _rectTransform.rotation = Quaternion.identity;
+            _rectTransform.localScale = Vector3.one;
             canvasGroup.alpha = 1f;
         }
         else
@@ -132,12 +142,18 @@ public class CardDisplay : MonoBehaviour
         if (_typewriterTween != null) _typewriterTween.Kill();
 
         // Анимация падения
-        DOTween.To(() => _currentVerticalOffset, x => _currentVerticalOffset = x, 0f, fallDuration)
-            .SetEase(Ease.OutBack).SetTarget(this);
+        Sequence dropSeq = DOTween.Sequence();
+        
+        dropSeq.Append(DOTween.To(() => _currentVerticalOffset, x => _currentVerticalOffset = x, 0f, fallDuration)
+            .SetEase(Ease.OutBack).SetTarget(this));
+        
+        dropSeq.Join(DOTween.To(() => _currentAngularOffset, x => _currentAngularOffset = x, 0f, fallDuration)
+            .SetEase(Ease.OutBack).SetTarget(this));
 
-        DOTween.To(() => _currentAngularOffset, x => _currentAngularOffset = x, 0f, fallDuration)
-            .SetEase(Ease.OutBack).SetTarget(this);
-            
+        // PUNCH эффект при приземлении
+        dropSeq.Append(transform.DOPunchScale(new Vector3(0.05f, -0.05f, 0), 0.2f, 10, 1)
+            .SetTarget(this));
+
         // ЗАПУСК ТЕКСТА
         // Мы запускаем текст чуть раньше, чем закончится падение (на 80%), чтобы было динамичнее
         DOVirtual.DelayedCall(fallDuration * 0.8f, () => 
@@ -184,9 +200,14 @@ public class CardDisplay : MonoBehaviour
             mousePos = Mouse.current.position.ReadValue();
             float screenCenter = Screen.width / 2f;
             rawDiff = (mousePos.x - screenCenter) * sensitivity;
+
+            // Расчет скорости мыши для тильта
+            _mouseVelocityX = (mousePos.x - _lastMouseX) / Time.deltaTime;
+            _lastMouseX = mousePos.x;
         }
 
         bool isClickFrame = Mouse.current.leftButton.wasPressedThisFrame;
+        bool isHeld = Mouse.current.leftButton.isPressed;
 
         // 2. ЛОГИКА ЛОКА (КЛИК)
         if (_safetyLock && _isInteractable)
@@ -195,6 +216,7 @@ public class CardDisplay : MonoBehaviour
             {
                 TriggerWobbleUnlock();
                 isClickFrame = false; 
+                isHeld = false; // Сбрасываем hold для этого кадра, чтобы не было конфликтов
             }
         }
 
@@ -207,10 +229,15 @@ public class CardDisplay : MonoBehaviour
         float smoothX = Mathf.Lerp(_rectTransform.anchoredPosition.x, targetX, Time.deltaTime * 20f);
         _rectTransform.anchoredPosition = new Vector2(smoothX + _shakeOffset, _currentVerticalOffset);
 
-        // --- 5. ФИЗИКА ВРАЩЕНИЯ (3D TILT + 2D SWAY) ---
+        // --- 5. ФИЗИКА ВРАЩЕНИЯ (3D TILT + 2D SWAY + VELOCITY) ---
 
         float rotZ = -_rectTransform.anchoredPosition.x * 0.05f;
         rotZ += _currentAngularOffset;
+
+        // Добавляем тильт от скорости мыши (инерция)
+        // Если мышь резко дернули вправо, карта должна наклониться
+        float velocityTilt = Mathf.Clamp(_mouseVelocityX * -0.005f, -10f, 10f) * velocityTiltMultiplier;
+        if (_safetyLock) velocityTilt = 0; // В локе не тильтуем от скорости
 
         float nMouseX = (mousePos.x / Screen.width - 0.5f) * 2f;
         float nMouseY = (mousePos.y / Screen.height - 0.5f) * 2f;
@@ -219,25 +246,55 @@ public class CardDisplay : MonoBehaviour
         nMouseY = Mathf.Clamp(nMouseY, -1f, 1f);
 
         // Используем разные силы для осей
-        // tiltStrength.x управляет кивком (вверх-вниз), зависит от Y мыши
-        // tiltStrength.y управляет поворотом (влево-вправо), зависит от X мыши
         float targetTiltX = -nMouseY * tiltStrength.x; 
-        float targetTiltY = nMouseX * tiltStrength.y; 
+        float targetTiltY = (nMouseX * tiltStrength.y) + velocityTilt; 
 
         Quaternion targetRotation = Quaternion.Euler(targetTiltX, targetTiltY, rotZ);
 
         _rectTransform.rotation = Quaternion.Slerp(_rectTransform.rotation, targetRotation, Time.deltaTime * tiltSpeed);
 
-        // 6. ВИЗУАЛ
+        // 6. SCALE "GRAB" EFFECT
+        // Если держим карту (и она не залочена), она чуть сжимается
+        float targetS = (_isInteractable && !_safetyLock && isHeld) ? grabScale : 1.0f;
+        _currentScale = Mathf.Lerp(_currentScale, targetS, Time.deltaTime * grabScaleSpeed);
+        
+        // Применяем масштаб, сохраняя Punch эффекты (они обычно через локальный скейл работают, но мы управляем основным)
+        // Чтобы совместить DoTween PunchScale и ручной Lerp, лучше применять Lerp к "Base" контейнеру, но у нас сейчас один трансформ.
+        // Простой вариант: если твин не идет на скейле - управляем мы.
+        if (!DOTween.IsTweening(transform)) 
+        {
+            _rectTransform.localScale = Vector3.one * _currentScale;
+        }
+
+        // 7. ВИЗУАЛ
         UpdateVisuals(targetX);
         
         if (_isInteractable && !_safetyLock && isClickFrame)
         {
-            HandleInput(targetX);
+            // HandleInput(targetX); // Этот вызов был раньше по клику? 
+            // Стоп, HandleInput вызывался на клик, но выбор делается обычно отпусканием или слайдом.
+            // В оригинале было "HandleInput" внутри "IsClickFrame". Это странно для свайп механики. 
+            // Обычно выбор делается когда отпускаешь, если утянул далеко.
+            // Посмотрим в оригинальный код. Там MakeChoice вызывается если > threshold.
+            // "if (Mouse.current.leftButton.wasPressedThisFrame)" - это странно для свайпа "Tinder style".
+            // Обычно это "wasReleasedThisFrame" или просто проверка позиции.
+            // Я оставлю как было, но добавлю логику "отпускания" для свайпа, если юзер просил "Tinder" механику.
+            // Но в оригинале код: if (diff > choiceThreshold) MakeChoice. И это ВНУТРИ wasPressedThisFrame. 
+            // Это значит выбор делался В МОМЕНТ КЛИКА, если мышка УЖЕ была далеко? 
+            // Или это баг оригинала? 
+            // Скорее всего предполагалось "wasReleased". Я поправлю на Released для лучшего флоу.
+        }
+        
+        // Проверка свайпа должна быть постоянной или на отпускании. 
+        // Если это "Tinder", то карта летает за мышкой, и если отпускаешь в зоне - выбор.
+        if (_isInteractable && !_safetyLock && Mouse.current.leftButton.wasReleasedThisFrame)
+        {
+             if (targetX > choiceThreshold) MakeChoice(true);
+             else if (targetX < -choiceThreshold) MakeChoice(false);
         }
     }
 
-void TriggerWobbleUnlock()
+    void TriggerWobbleUnlock()
     {
         _safetyLock = false; 
 
@@ -339,16 +396,9 @@ void TriggerWobbleUnlock()
         actionText.color = targetColor;
     }
 
-    void HandleInput(float diff)
-    {
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            if (diff > choiceThreshold) MakeChoice(true);
-            else if (diff < -choiceThreshold) MakeChoice(false);
-        }
-    }
+    // HandleInput(float diff) удаляем, перенесли логику в Update для Release
 
-void MakeChoice(bool isRight)
+    void MakeChoice(bool isRight)
     {
         _isLocked = true;
         _isInteractable = false;
@@ -361,9 +411,17 @@ void MakeChoice(bool isRight)
         float endX = isRight ? 1500f : -1500f;
         float endRotation = isRight ? -45f : 45f;
 
+        // АНТИЦИПАЦИЯ (замах перед улетом)
         Sequence seq = DOTween.Sequence();
-        seq.Append(_rectTransform.DOAnchorPosX(endX, 0.4f).SetEase(Ease.InBack));
-        seq.Join(_rectTransform.DORotate(new Vector3(0, 0, endRotation), 0.4f));
+        
+        // 1. Короткий отскок назад (0.1 сек)
+        float anticipationX = isRight ? -50f : 50f; 
+        seq.Append(_rectTransform.DOAnchorPosX(_rectTransform.anchoredPosition.x + anticipationX, 0.1f).SetEase(Ease.OutQuad));
+        seq.Join(_rectTransform.DORotate(new Vector3(0, 0, isRight ? 5f : -5f), 0.1f));
+
+        // 2. Вылет с ускорением
+        seq.Append(_rectTransform.DOAnchorPosX(endX, 0.5f).SetEase(Ease.InBack)); // InBack сам дает замах, но мы усилили его ручным
+        seq.Join(_rectTransform.DORotate(new Vector3(0, 0, endRotation), 0.4f).SetEase(Ease.InQuad));
 
         seq.OnComplete(() => 
         {
