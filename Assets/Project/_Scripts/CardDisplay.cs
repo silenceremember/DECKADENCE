@@ -35,6 +35,10 @@ public class CardDisplay : MonoBehaviour
     [Header("Настройки Лока")]
     public float lockedInputScale = 0.15f;
 
+    [Header("3D Tilt")]
+    public Vector2 tiltStrength = new Vector2(20f, 15f); // X = Vertical, Y = Horizontal
+    public float tiltSpeed = 10f;
+
     [Header("Сочность Текста")]
     public float minScale = 0.6f;
     public float maxScale = 1.3f;
@@ -172,16 +176,19 @@ public class CardDisplay : MonoBehaviour
     void HandleMotion()
     {
         // 1. СЫРОЙ ВВОД
+        Vector2 mousePos = Vector2.zero;
         float rawDiff = 0f;
+        
         if (Mouse.current != null)
         {
+            mousePos = Mouse.current.position.ReadValue();
             float screenCenter = Screen.width / 2f;
-            rawDiff = (Mouse.current.position.ReadValue().x - screenCenter) * sensitivity;
+            rawDiff = (mousePos.x - screenCenter) * sensitivity;
         }
 
         bool isClickFrame = Mouse.current.leftButton.wasPressedThisFrame;
 
-        // 2. ОБРАБОТКА ЛОКА (Клик по карте)
+        // 2. ЛОГИКА ЛОКА (КЛИК)
         if (_safetyLock && _isInteractable)
         {
             if (isClickFrame)
@@ -191,24 +198,37 @@ public class CardDisplay : MonoBehaviour
             }
         }
 
-        // 3. МАТЕМАТИКА (Масштабирование)
-        // Умножаем ввод на наш коэффициент.
-        // Если лок: rawDiff (500) * 0.15 = 75. Карта сместится только на 75.
-        // Если анлок: rawDiff (500) * 1.0 = 500. Карта там же где и мышь.
+        // 3. МАТЕМАТИКА ПОЗИЦИИ (X)
+        float currentLimit = _safetyLock ? lockedLimit : movementLimit;
         float scaledDiff = rawDiff * _inputScale;
-
-        // Ограничиваем только ГЛОБАЛЬНЫМ лимитом экрана, никаких "стенок" посередине
         float targetX = Mathf.Clamp(scaledDiff, -movementLimit, movementLimit);
 
-        // 4. ФИЗИКА
+        // 4. ФИЗИКА ПОЗИЦИИ
         float smoothX = Mathf.Lerp(_rectTransform.anchoredPosition.x, targetX, Time.deltaTime * 20f);
-        
         _rectTransform.anchoredPosition = new Vector2(smoothX + _shakeOffset, _currentVerticalOffset);
 
-        float mouseRotation = -_rectTransform.anchoredPosition.x * 0.05f;
-        _rectTransform.rotation = Quaternion.Euler(0, 0, mouseRotation + _currentAngularOffset);
+        // --- 5. ФИЗИКА ВРАЩЕНИЯ (3D TILT + 2D SWAY) ---
 
-        // 5. ТЕКСТ И ВЫБОР
+        float rotZ = -_rectTransform.anchoredPosition.x * 0.05f;
+        rotZ += _currentAngularOffset;
+
+        float nMouseX = (mousePos.x / Screen.width - 0.5f) * 2f;
+        float nMouseY = (mousePos.y / Screen.height - 0.5f) * 2f;
+
+        nMouseX = Mathf.Clamp(nMouseX, -1f, 1f);
+        nMouseY = Mathf.Clamp(nMouseY, -1f, 1f);
+
+        // Используем разные силы для осей
+        // tiltStrength.x управляет кивком (вверх-вниз), зависит от Y мыши
+        // tiltStrength.y управляет поворотом (влево-вправо), зависит от X мыши
+        float targetTiltX = -nMouseY * tiltStrength.x; 
+        float targetTiltY = nMouseX * tiltStrength.y; 
+
+        Quaternion targetRotation = Quaternion.Euler(targetTiltX, targetTiltY, rotZ);
+
+        _rectTransform.rotation = Quaternion.Slerp(_rectTransform.rotation, targetRotation, Time.deltaTime * tiltSpeed);
+
+        // 6. ВИЗУАЛ
         UpdateVisuals(targetX);
         
         if (_isInteractable && !_safetyLock && isClickFrame)
