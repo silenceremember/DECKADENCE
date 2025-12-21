@@ -46,6 +46,8 @@ public class CardDisplay : MonoBehaviour
     
     // ПРЕДОХРАНИТЕЛЬ
     private bool _safetyLock = false; 
+    private bool _isUnlockAnimating = false; // Блокирует Update во время "встряски"
+
 
     private float _currentVerticalOffset = 0f; 
     private float _currentAngularOffset = 0f;
@@ -152,32 +154,54 @@ public class CardDisplay : MonoBehaviour
     void HandleMotion()
     {
         float rawDiff = 0f;
-        
         if (Mouse.current != null)
         {
-            Vector2 mousePos = Mouse.current.position.ReadValue();
             float screenCenter = Screen.width / 2f;
-            rawDiff = (mousePos.x - screenCenter) * sensitivity;
+            rawDiff = (Mouse.current.position.ReadValue().x - screenCenter) * sensitivity;
         }
 
-        // --- CLAMP LOGIC ---
-        float currentLimit = movementLimit; 
-
-        if (_safetyLock)
+        // --- 1. ПРОВЕРКА НА FORCE UNLOCK (Клик во время блока) ---
+        if (_safetyLock && _isInteractable && !_isUnlockAnimating)
         {
-            if (Mathf.Abs(rawDiff) < unlockDistance)
+            // Если мышь далеко (за пределами лока) И нажат клик
+            if (Mathf.Abs(rawDiff) > lockedLimit && Mouse.current.leftButton.wasPressedThisFrame)
             {
-                _safetyLock = false;
-            }
-            else
-            {
-                currentLimit = lockedLimit;
+                TriggerForceUnlock(rawDiff);
+                return; // Прерываем кадр, дальше работает анимация
             }
         }
 
+        // --- 2. ЕСЛИ ИДЕТ АНИМАЦИЯ РАЗБЛОКИРОВКИ ---
+        if (_isUnlockAnimating)
+        {
+            // Мы не управляем позицией X (это делает Tween), но мы должны обновлять:
+            // 1. Позицию Y (если карта еще падает)
+            // 2. Вращение (зависит от текущего X)
+            // 3. Визуал текста
+            
+            float currentX = _rectTransform.anchoredPosition.x;
+            _rectTransform.anchoredPosition = new Vector2(currentX, _currentVerticalOffset);
+            
+            float rot = -currentX * 0.05f;
+            _rectTransform.rotation = Quaternion.Euler(0, 0, rot + _currentAngularOffset);
+            
+            UpdateVisuals(currentX); // Обновляем текст, чтобы он появился в конце замаха
+            return;
+        }
+
+        // --- 3. ОБЫЧНОЕ ДВИЖЕНИЕ ---
+        
+        // Автоматическое снятие лока при возврате в центр
+        if (_safetyLock && Mathf.Abs(rawDiff) < unlockDistance)
+        {
+            _safetyLock = false;
+        }
+
+        // Ограничение движения
+        float currentLimit = _safetyLock ? lockedLimit : movementLimit;
         float appliedDiff = Mathf.Clamp(rawDiff, -currentLimit, currentLimit);
 
-        // Physics
+        // Физика
         float smoothX = Mathf.Lerp(_rectTransform.anchoredPosition.x, appliedDiff, Time.deltaTime * 20f);
         _rectTransform.anchoredPosition = new Vector2(smoothX, _currentVerticalOffset);
 
@@ -186,15 +210,47 @@ public class CardDisplay : MonoBehaviour
 
         UpdateVisuals(appliedDiff);
         
+        // Клик для выбора (Только если разблокировано)
         if (_isInteractable && !_safetyLock)
         {
             HandleInput(appliedDiff);
         }
     }
 
+        // Тот самый "Маятник"
+    void TriggerForceUnlock(float targetMouseX)
+    {
+        _isUnlockAnimating = true; // Отбираем контроль у Update
+        _safetyLock = false;       // Снимаем логический замок
+
+        // Определяем направление отката (противоположное мыши)
+        // Если мышь справа (>0), откат влево. И наоборот.
+        // Откат небольшой, например 20 пикселей в противоположную сторону.
+        float recoilX = (targetMouseX > 0) ? -20f : 20f;
+        
+        // Финальная точка - это позиция мыши (но в пределах лимита)
+        float finalX = Mathf.Clamp(targetMouseX, -movementLimit, movementLimit);
+
+        // Создаем последовательность
+        Sequence seq = DOTween.Sequence();
+        
+        // 1. Откат к центру/назад (быстро) -> "1-2"
+        seq.Append(_rectTransform.DOAnchorPosX(recoilX, 0.1f).SetEase(Ease.OutQuad));
+        
+        // 2. Рывок к мыши (сочно) -> "5-6"
+        seq.Append(_rectTransform.DOAnchorPosX(finalX, 0.25f).SetEase(Ease.OutBack));
+
+        seq.OnComplete(() => 
+        {
+            _isUnlockAnimating = false; // Возвращаем контроль игроку
+            // Теперь карта там, где курсор, и игрок может кликнуть еще раз для выбора
+        });
+    }
+
     void UpdateVisuals(float diff)
     {
-        if (_currentVerticalOffset > 150f || _safetyLock) 
+        // Скрываем если падает ИЛИ если ЗАБЛОКИРОВАНО (но не во время анимации разблокировки!)
+        if (_currentVerticalOffset > 150f || (_safetyLock && !_isUnlockAnimating)) 
         {
             if (actionText && actionText.gameObject.activeSelf) actionText.gameObject.SetActive(false);
             GameManager.Instance.ResetHighlights();
