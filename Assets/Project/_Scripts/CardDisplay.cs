@@ -256,14 +256,10 @@ public class CardDisplay : MonoBehaviour
         }
     }
 
-    void MakeChoice(bool isRight)
+void MakeChoice(bool isRight)
     {
         _isLocked = true;
         _isInteractable = false;
-        
-        // ВАЖНО: Если игрок выбрал быстро, сразу показываем весь текст (или останавливаем)
-        if (_typewriterTween != null) _typewriterTween.Kill();
-        questionText.maxVisibleCharacters = 9999; 
         
         if (actionText) actionText.gameObject.SetActive(false);
 
