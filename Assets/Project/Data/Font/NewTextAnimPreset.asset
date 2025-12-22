@@ -12,4 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f796f37cf48d194baec26951c1f9dca, type: 3}
   m_Name: NewTextAnimPreset
   m_EditorClassIdentifier: Assembly-CSharp::TextAnimPreset
-  effects: []
+  effects:
+  - type: 11
+    speed: 4
+    amplitude: 0.3
+    frequency: 0.2
+    noiseScale: 1
+    useUnscaledTime: 0
+  previewFont: {fileID: 11400000, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
+  previewFontSize: 30
+  previewText: ActionText
