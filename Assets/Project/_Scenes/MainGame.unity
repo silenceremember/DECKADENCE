@@ -1463,7 +1463,6 @@ GameObject:
   - component: {fileID: 1036642016}
   - component: {fileID: 1036642015}
   - component: {fileID: 1036642017}
-  - component: {fileID: 1036642018}
   m_Layer: 5
   m_Name: ActionText
   m_TagString: Untagged
@@ -1607,18 +1606,6 @@ MonoBehaviour:
   targetGraphic: {fileID: 0}
   targetSpriteRenderer: {fileID: 0}
   targetText: {fileID: 0}
---- !u!114 &1036642018
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1036642013}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6af0bab5ef8bc4a4a86b6d886799dd3c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::JuicyText
 --- !u!1 &1161021124
 GameObject:
   m_ObjectHideFlags: 0
