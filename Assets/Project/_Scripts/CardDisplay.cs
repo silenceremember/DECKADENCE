@@ -51,6 +51,12 @@ public class CardDisplay : MonoBehaviour
     public Color normalColor = Color.white;
     public Color snapColor = Color.yellow;
 
+    [Header("Idle Effect")]
+    public bool enableIdleRotation = true;
+    public float idleRotationAmount = 3f; // Угол качания в градусах
+    public float idleRotationSpeed = 1.5f; // Скорость качания
+    public Vector2 idleTiltAmount = new Vector2(2f, 1.5f); // X/Y тильт при idle
+
     public CardData CurrentData { get; private set; }
     
     private RectTransform _rectTransform;
@@ -76,6 +82,9 @@ public class CardDisplay : MonoBehaviour
     private float _currentScale = 1.0f;
     private float _lastMouseX;
     private float _mouseVelocityX;
+
+    // Idle effect vars
+    private float _idleTime = 0f;
 
     void Awake()
     {
@@ -116,6 +125,7 @@ public class CardDisplay : MonoBehaviour
         _isUnlockAnimating = false; // Важно сбросить анимацию
         _inputScale = 1.0f; // По умолчанию полный контроль
         _currentScale = 1.0f;
+        _idleTime = Random.Range(0f, 100f); // Случайное начальное смещение для разнообразия
         
         if (isFront)
         {
@@ -190,8 +200,30 @@ public class CardDisplay : MonoBehaviour
 
     void Update()
     {
+        // Обновляем idle время для всех карт на фронте (даже если заблокированы)
+        if (_isFront && enableIdleRotation)
+        {
+            _idleTime += Time.deltaTime;
+        }
+        
+        // Если карта заблокирована но на фронте, применяем только idle эффект
+        if (_isFront && _isLocked && _safetyLock)
+        {
+            ApplyIdleEffect();
+            return;
+        }
+        
         if (!_isFront || _isLocked) return;
+        
         HandleMotion();
+    }
+
+    void ApplyIdleEffect()
+    {
+        // Применяем только idle rotation для заблокированной карты
+        Vector3 idleRotation = GetIdleRotation();
+        Quaternion targetRotation = Quaternion.Euler(idleRotation.x, idleRotation.y, idleRotation.z);
+        _rectTransform.rotation = Quaternion.Slerp(_rectTransform.rotation, targetRotation, Time.deltaTime * tiltSpeed);
     }
 
     void HandleMotion()
@@ -254,7 +286,14 @@ public class CardDisplay : MonoBehaviour
         float targetTiltX = -nMouseY * tiltStrength.x; 
         float targetTiltY = (nMouseX * tiltStrength.y) + velocityTilt; 
 
-        Quaternion targetRotation = Quaternion.Euler(targetTiltX, targetTiltY, rotZ);
+        // Добавляем idle эффект (только когда не держим карту)
+        Vector3 idleRotation = Vector3.zero;
+        if (!isHeld)
+        {
+            idleRotation = GetIdleRotation();
+        }
+
+        Quaternion targetRotation = Quaternion.Euler(targetTiltX + idleRotation.x, targetTiltY + idleRotation.y, rotZ + idleRotation.z);
 
         _rectTransform.rotation = Quaternion.Slerp(_rectTransform.rotation, targetRotation, Time.deltaTime * tiltSpeed);
 
@@ -297,6 +336,19 @@ public class CardDisplay : MonoBehaviour
              if (targetX > choiceThreshold) MakeChoice(true);
              else if (targetX < -choiceThreshold) MakeChoice(false);
         }
+    }
+
+    Vector3 GetIdleRotation()
+    {
+        if (!enableIdleRotation)
+            return Vector3.zero;
+
+        // Используем синусоиды с разными частотами для более органичного движения
+        float rotZ = Mathf.Sin(_idleTime * idleRotationSpeed) * idleRotationAmount;
+        float rotX = Mathf.Sin(_idleTime * idleRotationSpeed * 0.7f) * idleTiltAmount.x;
+        float rotY = Mathf.Cos(_idleTime * idleRotationSpeed * 0.5f) * idleTiltAmount.y;
+
+        return new Vector3(rotX, rotY, rotZ);
     }
 
     void TriggerWobbleUnlock()

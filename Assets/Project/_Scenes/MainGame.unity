@@ -1442,6 +1442,10 @@ MonoBehaviour:
   shakeAngle: 3
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   snapColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  enableIdleRotation: 1
+  idleRotationAmount: 1
+  idleRotationSpeed: 1.5
+  idleTiltAmount: {x: 2, y: 1.5}
 --- !u!225 &853034492
 CanvasGroup:
   m_ObjectHideFlags: 0
