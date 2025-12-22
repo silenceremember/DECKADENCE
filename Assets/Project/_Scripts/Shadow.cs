@@ -14,8 +14,23 @@ public class Shadow : MonoBehaviour
     [Header("Shadow Settings")]
     public Color shadowColor = new Color(0, 0, 0, 0.5f);
     
-    [Tooltip("How far the shadow is cast. Replaces global intensity.")]
+    [Tooltip("Base shadow offset distance at scale 1.0")]
     public float intensity = 15f;
+    
+    [Header("Scale Influence")]
+    [Tooltip("Enable dynamic shadow distance based on scale (physically correct light simulation)")]
+    public bool useScaleInfluence = false;
+    
+    [Tooltip("How much scale affects shadow distance. 1.0 = linear, 2.0 = doubled effect, etc.")]
+    public float scaleInfluence = 1f;
+    
+    [Header("Transform Reference")]
+    [Tooltip("Transform to track for scale (optional). If null, uses own transform.")]
+    public Transform scaleReference;
+    
+    [Header("Runtime Info (Read-only)")]
+    [Tooltip("Current effective intensity based on scale")]
+    public float currentEffectiveIntensity;
     
     [Header("Quality Settings")]
     [Tooltip("Enable per-character shadow for text (higher quality, each letter casts its own shadow)")]
@@ -41,6 +56,25 @@ public class Shadow : MonoBehaviour
     void Start()
     {
         if (!_hasInitialized) Initialize();
+    }
+
+    void OnValidate()
+    {
+        // Update effective intensity in Inspector even in Edit mode
+        if (useScaleInfluence)
+        {
+            Transform refTransform = scaleReference != null ? scaleReference : transform;
+            if (refTransform != null)
+            {
+                float scaleAverage = (refTransform.localScale.x + refTransform.localScale.y) * 0.5f;
+                float scaleDelta = scaleAverage - 1f;
+                currentEffectiveIntensity = intensity * (1f + scaleDelta * scaleInfluence);
+            }
+        }
+        else
+        {
+            currentEffectiveIntensity = intensity;
+        }
     }
 
     void OnEnable()
@@ -177,6 +211,19 @@ public class Shadow : MonoBehaviour
             return;
         }
 
+        // Calculate and update current effective intensity for Inspector display
+        if (useScaleInfluence)
+        {
+            Transform refTransform = scaleReference != null ? scaleReference : transform;
+            float scaleAverage = (refTransform.localScale.x + refTransform.localScale.y) * 0.5f;
+            float scaleDelta = scaleAverage - 1f;
+            currentEffectiveIntensity = intensity * (1f + scaleDelta * scaleInfluence);
+        }
+        else
+        {
+            currentEffectiveIntensity = intensity;
+        }
+
         // 1. Hierarchy Maintain
         if (transform.parent != null && _shadowObject.transform.parent == transform.parent)
         {
@@ -246,10 +293,13 @@ public class Shadow : MonoBehaviour
     
     void ApplySimpleShadowOffset()
     {
+        // Use pre-calculated effective intensity from LateUpdate
+        float effectiveIntensity = currentEffectiveIntensity;
+        
         // For non-text objects or simple shadow mode
         Vector2 screenPos = GetScreenPosition();
         Vector2 directionFactor = ShadowLightSource.Instance.GetShadowDirection(screenPos);
-        Vector2 offset = directionFactor * intensity;
+        Vector2 offset = directionFactor * effectiveIntensity;
         _shadowObject.transform.position = transform.position + (Vector3)offset;
         
         // Z Flat
@@ -264,6 +314,9 @@ public class Shadow : MonoBehaviour
     void ApplyPerCharacterShadow()
     {
         if (_shadowText == null || targetText == null) return;
+        
+        // Use pre-calculated effective intensity from LateUpdate
+        float effectiveIntensity = currentEffectiveIntensity;
         
         // Force mesh update
         targetText.ForceMeshUpdate();
@@ -309,7 +362,7 @@ public class Shadow : MonoBehaviour
             
             // Get shadow direction for this specific character
             Vector2 directionFactor = ShadowLightSource.Instance.GetShadowDirection(charScreenPos);
-            Vector2 offsetScreen = directionFactor * intensity;
+            Vector2 offsetScreen = directionFactor * effectiveIntensity;
             
             // Convert screen space offset to local space of the shadow text
             Vector3 offsetLocal;

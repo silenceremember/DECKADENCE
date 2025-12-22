@@ -271,6 +271,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Shadow
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   intensity: 5
+  useScaleInfluence: 0
+  scaleInfluence: 1
+  scaleReference: {fileID: 853034488}
+  currentEffectiveIntensity: 5
   perCharacterShadow: 1
   targetGraphic: {fileID: 0}
   targetSpriteRenderer: {fileID: 0}
@@ -878,7 +882,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BalatroShadow
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  intensity: 3
+  intensity: 5
+  useScaleInfluence: 1
+  scaleInfluence: 10
+  scaleReference: {fileID: 853034488}
+  currentEffectiveIntensity: 5
   perCharacterShadow: 1
   targetGraphic: {fileID: 0}
   targetSpriteRenderer: {fileID: 0}
@@ -1036,6 +1044,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Shadow
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   intensity: 5
+  useScaleInfluence: 0
+  scaleInfluence: 1
+  scaleReference: {fileID: 853034488}
+  currentEffectiveIntensity: 5
   perCharacterShadow: 1
   targetGraphic: {fileID: 0}
   targetSpriteRenderer: {fileID: 0}
@@ -1610,6 +1622,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Shadow
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   intensity: 5
+  useScaleInfluence: 0
+  scaleInfluence: 1
+  scaleReference: {fileID: 0}
+  currentEffectiveIntensity: 5
   perCharacterShadow: 1
   targetGraphic: {fileID: 0}
   targetSpriteRenderer: {fileID: 0}
@@ -1979,7 +1995,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Shadow
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  intensity: 3
+  intensity: 5
+  useScaleInfluence: 0
+  scaleInfluence: 1
+  scaleReference: {fileID: 0}
+  currentEffectiveIntensity: 5
   perCharacterShadow: 1
   targetGraphic: {fileID: 0}
   targetSpriteRenderer: {fileID: 0}
