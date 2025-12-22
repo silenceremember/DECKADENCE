@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 [RequireComponent(typeof(TMP_Text))]
 public class TextAnimator : MonoBehaviour
 {
+    
     [System.Serializable]
     public struct PresetReference
     {
@@ -221,21 +222,12 @@ public class TextAnimator : MonoBehaviour
                 }
                 else if (tagToType.ContainsKey(tagName))
                 {
-                    // Built-in effect
-                    // Create default settings or parse params?
-                    // User said "available through tags", "configure own presets".
-                    // We'll use default settings for raw tags for now.
+                    // Built-in effect с оптимальными параметрами
                     var type = tagToType[tagName];
                     effectStack.Push(new ActiveEffectData { 
                         isPreset = false, 
                         type = type,
-                        // Basic default 
-                        manualSettings = new TextAnimPreset.EffectSettings { 
-                            type = type, 
-                            speed = 5, 
-                            amplitude = 5, 
-                            frequency = 1 
-                        } 
+                        manualSettings = TextAnimPreset.GetRecommendedSettings(type)
                     });
                 }
             }

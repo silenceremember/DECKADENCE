@@ -4,7 +4,6 @@ using UnityEditor;
 [CustomEditor(typeof(TextAnimPreset))]
 public class TextAnimPresetEditor : Editor
 {
-    private string _previewText = "Sample Text";
     private float _time = 0f;
     private double _lastTime;
 
@@ -36,37 +35,117 @@ public class TextAnimPresetEditor : Editor
         
         DrawDefaultInspector();
 
+        TextAnimPreset preset = (TextAnimPreset)target;
+
         EditorGUILayout.Space(20);
         EditorGUILayout.LabelField("Preview", EditorStyles.boldLabel);
         
+        // Информация о шрифте
+        if (preset.previewFont != null)
+        {
+            Font sourceFont = null;
+            
+            // Проверяем оба способа получения шрифта
+            if (preset.previewFont.sourceFontFile != null)
+            {
+                sourceFont = preset.previewFont.sourceFontFile;
+            }
+            else
+            {
+                var fontAssetProperty = preset.previewFont.GetType().GetField("m_SourceFontFile", 
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (fontAssetProperty != null)
+                {
+                    sourceFont = fontAssetProperty.GetValue(preset.previewFont) as Font;
+                }
+            }
+            
+            if (sourceFont != null)
+            {
+                EditorGUILayout.HelpBox($"✓ Используется шрифт: {preset.previewFont.name}\nИсходный файл: {sourceFont.name}", MessageType.Info);
+            }
+            else
+            {
+                EditorGUILayout.HelpBox($"⚠ TMP шрифт '{preset.previewFont.name}' загружен, но Source Font File недоступен.\n\nДля исправления:\n1. Откройте TMP Font Asset\n2. Проверьте поле 'Source Font File'\n3. Убедитесь что 'Atlas Population Mode' = Dynamic (не Static)", MessageType.Warning);
+                
+                if (GUILayout.Button("Открыть TMP Font Asset для проверки", GUILayout.Height(35)))
+                {
+                    Selection.activeObject = preset.previewFont;
+                    EditorGUIUtility.PingObject(preset.previewFont);
+                }
+            }
+        }
+        
+        // Динамическая высота превью в зависимости от размера шрифта
+        float previewHeight = Mathf.Max(150f, preset.previewFontSize * 4f);
+        
         // Preview Box
-        Rect rect = EditorGUILayout.GetControlRect(false, 150);
+        Rect rect = EditorGUILayout.GetControlRect(false, previewHeight);
         EditorGUI.DrawRect(rect, new Color(0.1f, 0.1f, 0.1f));
         
         // Draw Text
         // Center of the box
         Vector2 center = rect.center;
         
-        TextAnimPreset preset = (TextAnimPreset)target;
+        // Используем текст из настроек пресета
+        string textToDisplay = string.IsNullOrEmpty(preset.previewText) ? "Sample Text" : preset.previewText;
         
         if (preset.effects.Count > 0)
         {
-            float spacing = 15f;
-            float totalWidth = _previewText.Length * spacing;
+            // Создаем базовый стиль для измерения ширины символов
+            GUIStyle measureStyle = new GUIStyle(EditorStyles.boldLabel);
+            measureStyle.fontSize = Mathf.RoundToInt(preset.previewFontSize);
+            
+            // Применяем кастомный шрифт для измерений тоже
+            if (preset.previewFont != null)
+            {
+                Font sourceFont = preset.previewFont.sourceFontFile;
+                if (sourceFont == null)
+                {
+                    var fontAssetProperty = preset.previewFont.GetType().GetField("m_SourceFontFile", 
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    if (fontAssetProperty != null)
+                    {
+                        sourceFont = fontAssetProperty.GetValue(preset.previewFont) as Font;
+                    }
+                }
+                if (sourceFont != null)
+                {
+                    measureStyle.font = sourceFont;
+                }
+            }
+            
+            // Вычисляем позиции символов с учетом реальной ширины
+            float[] charPositions = new float[textToDisplay.Length];
+            float currentX = 0f;
+            
+            for (int i = 0; i < textToDisplay.Length; i++)
+            {
+                charPositions[i] = currentX;
+                Vector2 charSize = measureStyle.CalcSize(new GUIContent(textToDisplay[i].ToString()));
+                currentX += charSize.x;
+            }
+            
+            // Центрируем весь текст
+            float totalWidth = currentX;
             float startX = center.x - totalWidth / 2f;
             
-            for (int i = 0; i < _previewText.Length; i++)
+            for (int i = 0; i < textToDisplay.Length; i++)
             {
                 // Logic mimics TextAnimator.cs slightly simplified for GUI drawing
                 
-                // Base pos
-                Vector2 charPos = new Vector2(startX + i * spacing, center.y);
+                // Измеряем реальную ширину текущего символа
+                Vector2 charSize = measureStyle.CalcSize(new GUIContent(textToDisplay[i].ToString()));
+                
+                // Base pos - используем вычисленную позицию + половина ширины для центрирования
+                Vector2 charPos = new Vector2(startX + charPositions[i] + charSize.x / 2f, center.y);
                 Vector3 worldPos = new Vector3(charPos.x, charPos.y, 0);
                 
                 // Construct fake char center/top for effects
-                // 15x20 approx size
+                // Масштабируем размер символа в зависимости от fontSize
+                float charHeight = preset.previewFontSize * 0.5f;
                 Vector3 charCenter = worldPos; 
-                Vector3 charTop = worldPos + Vector3.up * 10f;
+                Vector3 charTop = worldPos + Vector3.up * charHeight;
                 
                 // We assume default scale 1, rot 0
                 Vector3 checkPos = charCenter; 
@@ -136,6 +215,9 @@ public class TextAnimPresetEditor : Editor
                 }
                 
                 // Drawing
+                // Сохраняем текущую матрицу перед трансформациями
+                Matrix4x4 oldMatrix = GUI.matrix;
+                
                 GUIUtility.RotateAroundPivot(accumulatedRot.eulerAngles.z, charPos + (Vector2)accumulatedPosOffset); 
                 GUIUtility.ScaleAroundPivot(Vector2.one * accumulatedScale, charPos + (Vector2)accumulatedPosOffset);
                 
@@ -144,9 +226,48 @@ public class TextAnimPresetEditor : Editor
                 GUIStyle style = new GUIStyle(EditorStyles.boldLabel);
                 style.alignment = TextAnchor.MiddleCenter;
                 style.normal.textColor = color;
+                style.fontSize = Mathf.RoundToInt(preset.previewFontSize);
+                
+                // Применяем кастомный шрифт, если он задан
+                if (preset.previewFont != null)
+                {
+                    // Пробуем получить исходный шрифт разными способами
+                    Font sourceFont = null;
+                    
+                    // Способ 1: через sourceFontFile (TMP 3.0+)
+                    if (preset.previewFont.sourceFontFile != null)
+                    {
+                        sourceFont = preset.previewFont.sourceFontFile;
+                    }
+                    // Способ 2: через faceInfo (старые версии TMP)
+                    else
+                    {
+                        // Пытаемся найти шрифт через Reflection или альтернативный путь
+                        var fontAssetProperty = preset.previewFont.GetType().GetField("m_SourceFontFile", 
+                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        if (fontAssetProperty != null)
+                        {
+                            sourceFont = fontAssetProperty.GetValue(preset.previewFont) as Font;
+                        }
+                    }
+                    
+                    if (sourceFont != null)
+                    {
+                        style.font = sourceFont;
+                    }
+                }
+                
+                // Используем реальный размер символа с небольшим отступом
+                float charRectWidth = charSize.x * 1.1f;
+                float charRectHeight = charSize.y * 1.1f;
                 
                 // Pos needs to include offset
-                Rect charRect = new Rect(charPos.x + accumulatedPosOffset.x - 10, charPos.y + accumulatedPosOffset.y - 10, 20, 20);
+                Rect charRect = new Rect(
+                    charPos.x + accumulatedPosOffset.x - charRectWidth / 2f, 
+                    charPos.y + accumulatedPosOffset.y - charRectHeight / 2f, 
+                    charRectWidth, 
+                    charRectHeight
+                );
                 
                 // Invert Y for UI? No, Editor UI is Top-Left origin. 
                 // Our logic assumes Y up? 
@@ -158,10 +279,10 @@ public class TextAnimPresetEditor : Editor
                 // Quick fix for visually correct preview:
                 // Just use it as is, might be inverted vertically but movement logic holds.
                 
-                GUI.Label(charRect, _previewText[i].ToString(), style);
+                GUI.Label(charRect, textToDisplay[i].ToString(), style);
                 
-                // Reset matrix
-                GUI.matrix = Matrix4x4.identity;
+                // ВАЖНО: Восстанавливаем исходную матрицу, а не сбрасываем в identity
+                GUI.matrix = oldMatrix;
             }
         }
         else

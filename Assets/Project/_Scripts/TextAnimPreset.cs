@@ -42,6 +42,35 @@ public class TextAnimPreset : ScriptableObject
     }
 
     public List<EffectSettings> effects = new List<EffectSettings>();
+    
+    [Header("Preview Settings")]
+    [Tooltip("Кастомный шрифт для превью (опционально)")]
+    public TMP_FontAsset previewFont;
+    
+    [Tooltip("Размер шрифта для превью")]
+    public float previewFontSize = 20f;
+    
+    [Tooltip("Текст для превью")]
+    public string previewText = "Sample Text";
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        // Применяем рекомендуемые настройки для эффектов с нулевыми параметрами
+        foreach (var effect in effects)
+        {
+            // Если все параметры нулевые - применяем рекомендуемые
+            if (effect.speed == 0 && effect.amplitude == 0 && effect.frequency == 0)
+            {
+                var recommended = GetRecommendedSettings(effect.type);
+                effect.speed = recommended.speed;
+                effect.amplitude = recommended.amplitude;
+                effect.frequency = recommended.frequency;
+                effect.noiseScale = recommended.noiseScale;
+            }
+        }
+    }
+#endif
 
     public struct AnimationResult
     {
@@ -69,17 +98,9 @@ public class TextAnimPreset : ScriptableObject
         {
             case EffectType.Fade:
                 // Simple alpha fade 0..1
-                float alpha = (Mathf.Sin(animVal) + 1f) * 0.5f; 
-                // We'll return a color with alpha. Assume white? 
-                // Caller should blend.
-                // This returns a "modifier".
-                // Let's just return a generic alpha val? 
-                // For simplicity in this helper, let's return a Color with Alpha modified if possible
-                // But we don't know original color.
-                // We'll skip Fade in this simple helper or just pass alpha via color A?
-                // Let's use colorOverride for Rainbow. Fade is tricky without context.
-                // But user wants Fade.
-                // Let's assume Fade modifies Alpha.
+                float alpha = (Mathf.Sin(animVal) + 1f) * 0.5f;
+                // Возвращаем белый цвет с переменной прозрачностью
+                res.colorOverride = new Color(1f, 1f, 1f, alpha);
                 break;
             case EffectType.Bounce:
                 res.posOffset.y += Mathf.Abs(Mathf.Sin(animVal)) * settings.amplitude;
@@ -126,5 +147,96 @@ public class TextAnimPreset : ScriptableObject
         }
 
         return res;
+    }
+
+    // Рекомендуемые параметры для каждого типа эффекта
+    public static EffectSettings GetRecommendedSettings(EffectType type)
+    {
+        var settings = new EffectSettings { type = type };
+        
+        switch (type)
+        {
+            case EffectType.Fade:
+                settings.speed = 3f;
+                settings.amplitude = 1f;
+                settings.frequency = 0.5f;
+                break;
+                
+            case EffectType.Bounce:
+                settings.speed = 4f;
+                settings.amplitude = 10f;
+                settings.frequency = 0.3f;
+                break;
+                
+            case EffectType.Wave:
+                settings.speed = 3f;
+                settings.amplitude = 8f;
+                settings.frequency = 0.5f;
+                break;
+                
+            case EffectType.Shake:
+                settings.speed = 20f;
+                settings.amplitude = 3f;
+                settings.frequency = 1f;
+                settings.noiseScale = 1f;
+                break;
+                
+            case EffectType.Wiggle:
+                settings.speed = 5f;
+                settings.amplitude = 15f;
+                settings.frequency = 0.3f;
+                break;
+                
+            case EffectType.Pendulum:
+                settings.speed = 2f;
+                settings.amplitude = 25f;
+                settings.frequency = 0.4f;
+                break;
+                
+            case EffectType.Dangle:
+                settings.speed = 3f;
+                settings.amplitude = 20f;
+                settings.frequency = 0.3f;
+                break;
+                
+            case EffectType.Rainbow:
+                settings.speed = 2f;
+                settings.amplitude = 1f;
+                settings.frequency = 0.2f;
+                break;
+                
+            case EffectType.Rotate:
+                settings.speed = 3f;
+                settings.amplitude = 1f;
+                settings.frequency = 0f;
+                break;
+                
+            case EffectType.Slide:
+                settings.speed = 3f;
+                settings.amplitude = 10f;
+                settings.frequency = 0.4f;
+                break;
+                
+            case EffectType.Swing:
+                settings.speed = 4f;
+                settings.amplitude = 20f;
+                settings.frequency = 0.3f;
+                break;
+                
+            case EffectType.IncreaseSize:
+                settings.speed = 4f;
+                settings.amplitude = 0.3f;
+                settings.frequency = 0.2f;
+                break;
+                
+            default:
+                settings.speed = 5f;
+                settings.amplitude = 5f;
+                settings.frequency = 1f;
+                break;
+        }
+        
+        settings.useUnscaledTime = false;
+        return settings;
     }
 }
