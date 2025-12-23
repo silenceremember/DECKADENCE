@@ -5,7 +5,7 @@ using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
 using UnityEngine.InputSystem;
-using TMPEffects.Components;
+// TMPEffects заменен на RLTextAnimator
 
 public class CardDisplay : MonoBehaviour
 {
@@ -29,8 +29,9 @@ public class CardDisplay : MonoBehaviour
     public float fallDuration = 0.6f;     // Чуть ускорил падение для динамики
     public float interactionDelay = 0.5f; 
 
-    [Header("TMPEffects Components")]
-    private TMPWriter tmpWriter; // Будет автоматически найден в Awake
+    [Header("Text Animation")]
+    private TextAnimator questionAnimator; // Time-based typewriter
+    private TextAnimator actionAnimator;   // Distance-based animation
 
     // Насколько сильно карта реагирует при локе (настройка)
     [Header("Настройки Лока")]
@@ -94,11 +95,6 @@ public class CardDisplay : MonoBehaviour
 
     // Idle effect vars
     private float _idleTime = 0f;
-    
-    // Typewriter vars
-    private string _currentChoiceText = "";
-    private float _currentVisibleCharsFloat = 0f;
-    private bool _wasMovingBack = false;
 
     void Awake()
     {
@@ -106,11 +102,20 @@ public class CardDisplay : MonoBehaviour
         if (actionText != null) _textRectTransform = actionText.GetComponent<RectTransform>();
         if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
         
-        // Получаем TMPWriter компонент
-        tmpWriter = questionText.GetComponent<TMPWriter>();
-        if (tmpWriter == null)
+        // Получаем TextAnimator компоненты
+        questionAnimator = questionText.GetComponent<TextAnimator>();
+        if (questionAnimator == null)
         {
-            Debug.LogWarning("TMPWriter component not found on questionText! Please add it.");
+            Debug.LogWarning("TextAnimator component not found on questionText! Please add it.");
+        }
+        
+        if (actionText != null)
+        {
+            actionAnimator = actionText.GetComponent<TextAnimator>();
+            if (actionAnimator == null)
+            {
+                Debug.LogWarning("TextAnimator component not found on actionText! Please add it.");
+            }
         }
     }
 
@@ -120,24 +125,29 @@ public class CardDisplay : MonoBehaviour
         characterImage.sprite = data.characterSprite;
         nameText.text = data.characterName;
         
-        // 1. Устанавливаем текст через TMPWriter
-        if (tmpWriter != null)
+        // 1. Устанавливаем текст через TextAnimator
+        if (questionAnimator != null)
         {
-            tmpWriter.SetText(data.dialogueText);
+            questionAnimator.SetText(data.dialogueText);
         }
         else
         {
             questionText.text = data.dialogueText;
         } 
 
-        if (actionText) 
+        // ActionText теперь управляется через TextAnimator в distance-based режиме
+        if (actionAnimator != null)
+        {
+            actionAnimator.SetText("");
+            actionAnimator.ResetProgress();
+        }
+        else if (actionText)
         {
             actionText.text = "";
             actionText.maxVisibleCharacters = 0;
         }
         
-        _currentChoiceText = "";
-        _currentVisibleCharsFloat = 0f;
+
         
         _isLocked = false;
         _isFront = isFront;
@@ -210,12 +220,12 @@ public class CardDisplay : MonoBehaviour
 
     void StartTypewriter()
     {
-        if (tmpWriter != null)
+        if (questionAnimator != null)
         {
-            // TMPWriter автоматически анимирует появление текста
-            tmpWriter.StartWriter();
+            // TextAnimator автоматически анимирует появление текста
+            questionAnimator.StartWriter();
             // Можно подписаться на события:
-            // tmpWriter.OnCharacterShown.AddListener((CharData data) => PlayTypeSound());
+            // questionAnimator.OnCharacterShown.AddListener((char c) => PlayTypeSound());
         }
     }
 
@@ -422,134 +432,96 @@ public class CardDisplay : MonoBehaviour
         // Скрываем если падает ИЛИ если ЗАБЛОКИРОВАНО (но не во время анимации разблокировки!)
         if (_currentVerticalOffset > 150f || (_safetyLock && !_isUnlockAnimating)) 
         {
-            if (actionText)
+            if (actionAnimator != null)
+            {
+                actionAnimator.SetText("");
+                actionAnimator.ResetProgress();
+            }
+            else if (actionText)
             {
                 actionText.text = "";
                 actionText.maxVisibleCharacters = 0;
             }
-            _currentVisibleCharsFloat = 0f;
-            _currentChoiceText = "";
             GameManager.Instance.ResetHighlights();
             return;
         }
 
         float absDiff = Mathf.Abs(diff);
         
-        // Определяем направление и текст
-        bool isRight = diff > 0;
-        string fullChoiceText = "";
-        
-        // Если мы близко к центру, определяем текст по предыдущему направлению или обнуляем
+        // Если мы близко к центру, сбрасываем всё
         if (absDiff < 5f)
         {
-            // В центре - сбрасываем всё
-            if (actionText)
+            if (actionAnimator != null)
+            {
+                actionAnimator.SetText("");
+                actionAnimator.ResetProgress();
+            }
+            else if (actionText)
             {
                 actionText.text = "";
                 actionText.maxVisibleCharacters = 0;
             }
-            _currentVisibleCharsFloat = 0f;
-            _currentChoiceText = "";
             GameManager.Instance.ResetHighlights();
             return;
         }
         
-        fullChoiceText = isRight ? CurrentData.rightChoiceText : CurrentData.leftChoiceText;
+        // Определяем направление и текст
+        bool isRight = diff > 0;
+        string fullChoiceText = isRight ? CurrentData.rightChoiceText : CurrentData.leftChoiceText;
         
         // При смене направления сбрасываем прогресс
-        if (_currentChoiceText != fullChoiceText)
+        if (actionAnimator != null)
         {
-            _currentChoiceText = fullChoiceText;
-            _currentVisibleCharsFloat = 0f;
+            if (actionAnimator.CurrentText != fullChoiceText)
+            {
+                actionAnimator.SetText(fullChoiceText);
+                actionAnimator.ResetProgress();
+            }
+        }
+        else if (actionText)
+        {
+            actionText.text = fullChoiceText;
         }
 
         Color targetColor = normalColor;
-        
         float progress = absDiff / choiceThreshold;
         float clampedProgress = Mathf.Clamp01(progress);
         
-        // Вычисляем прогресс показа текста (от 0 до 1)
-        // Текст появляется линейно от textShowStartDistance до textShowFullDistance
+        // Вычисляем целевое количество символов на основе расстояния
         float activeRange = textShowFullDistance - textShowStartDistance;
         int totalChars = fullChoiceText.Length;
-        
-        // Целевое количество символов на основе расстояния
         int targetIntChars = 0;
         
         if (activeRange > 0 && totalChars > 0)
         {
-            // Расстояние, которое нужно пройти для одного символа
             float distancePerChar = activeRange / totalChars;
-            
-            // Сколько символов соответствует текущему расстоянию
             float charsFromDistance = (absDiff - textShowStartDistance) / distancePerChar;
             targetIntChars = Mathf.FloorToInt(charsFromDistance);
             targetIntChars = Mathf.Clamp(targetIntChars, 0, totalChars);
         }
         
-        // ДИНАМИЧЕСКАЯ ИНТЕРПОЛЯЦИЯ (ВПЕРЁД/НАЗАД)
-        if (targetIntChars > _currentVisibleCharsFloat)
+        // Передаем целевое количество символов в TextAnimator (дистанционный режим)
+        if (actionAnimator != null)
         {
-            // ВПЕРЁД
-            _wasMovingBack = false;
-            
-            _currentVisibleCharsFloat = Mathf.MoveTowards(
-                _currentVisibleCharsFloat, 
-                targetIntChars, 
-                Time.deltaTime * typewriterSmoothSpeed
-            );
+            actionAnimator.SetTargetCharacterCount(targetIntChars);
         }
-        else if (targetIntChars < _currentVisibleCharsFloat)
+        else if (actionText)
         {
-            // НАЗАД
-            // "Грамотная отмена" - срабатывает только в момент СМЕНЫ направления на "назад".
-            // Если мы только что начали идти назад, сбрасываем "накопленный хвост" (текущую анимацию появления).
-            if (!_wasMovingBack)
-            {
-                if (_currentVisibleCharsFloat % 1f > 0.001f)
-                {
-                     _currentVisibleCharsFloat = Mathf.Floor(_currentVisibleCharsFloat);
-                }
-            }
-            
-            _wasMovingBack = true;
+            // Fallback для старой системы
+            actionText.maxVisibleCharacters = targetIntChars;
+        }
 
-            // Далее плавно убываем с нормальной скоростью, чтобы сохранять ритм исчезновения
-            _currentVisibleCharsFloat = Mathf.MoveTowards(
-                _currentVisibleCharsFloat, 
-                targetIntChars, 
-                Time.deltaTime * typewriterSmoothSpeed
-            );
-        }
-        else
-        {
-            // Стоим на месте
-             _wasMovingBack = false;
-        }
-        // Если targetIntChars == currentIntChars - остаёмся на месте
-        
-        int visibleChars = Mathf.FloorToInt(_currentVisibleCharsFloat);
-        visibleChars = Mathf.Clamp(visibleChars, 0, totalChars);
-        
-        // ДИНАМИЧЕСКОЕ ЗАПОЛНЕНИЕ: используем substring для правильного центрирования
-        string displayText = visibleChars > 0 ? fullChoiceText.Substring(0, visibleChars) : "";
-        if (actionText.text != displayText)
-        {
-            actionText.text = displayText;
-        }
-        actionText.maxVisibleCharacters = visibleChars;
-
+        // Анимация скейла текста
         float targetScale = Mathf.Lerp(minScale, maxScale, clampedProgress);
         if (progress > 1.0f) targetScale += Mathf.Sin(Time.time * 20f) * 0.1f;
         _textRectTransform.localScale = Vector3.one * targetScale;
-
-        // Покачивание отключено
         _textRectTransform.localRotation = Quaternion.identity;
 
+        // Цвет и хайлайты
         if (progress >= 1.0f)
         {
             targetColor = snapColor;
-             if (isRight) GameManager.Instance.HighlightResources(CurrentData.rightCrown, CurrentData.rightChurch, CurrentData.rightMob, CurrentData.rightPlague);
+            if (isRight) GameManager.Instance.HighlightResources(CurrentData.rightCrown, CurrentData.rightChurch, CurrentData.rightMob, CurrentData.rightPlague);
             else GameManager.Instance.HighlightResources(CurrentData.leftCrown, CurrentData.leftChurch, CurrentData.leftMob, CurrentData.leftPlague);
         }
         else
@@ -557,7 +529,6 @@ public class CardDisplay : MonoBehaviour
             GameManager.Instance.ResetHighlights();
         }
         
-        // Opacity (alpha) отключен - текст всегда полностью видим
         actionText.color = targetColor;
     }
 
@@ -568,14 +539,16 @@ public class CardDisplay : MonoBehaviour
         _isLocked = true;
         _isInteractable = false;
         
-        if (actionText) 
+        if (actionAnimator != null)
+        {
+            actionAnimator.SetText("");
+            actionAnimator.ResetProgress();
+        }
+        else if (actionText)
         {
             actionText.text = "";
             actionText.maxVisibleCharacters = 0;
         }
-        
-        _currentChoiceText = "";
-        _currentVisibleCharsFloat = 0f;
 
         if (isRight) GameManager.Instance.ApplyCardEffect(CurrentData.rightCrown, CurrentData.rightChurch, CurrentData.rightMob, CurrentData.rightPlague);
         else GameManager.Instance.ApplyCardEffect(CurrentData.leftCrown, CurrentData.leftChurch, CurrentData.leftMob, CurrentData.leftPlague);

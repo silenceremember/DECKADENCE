@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using TMPEffects.Components;
+// TMPEffects replaced with TextAnimator
 
 /// <summary>
 /// Adds a dynamic shadow to the object.
@@ -49,7 +49,7 @@ public class Shadow : MonoBehaviour
     private Image _shadowImage;
     private SpriteRenderer _shadowSprite;
     private TMP_Text _shadowText;
-    private TMPWriter _shadowWriter; // TMPWriter для синхронизации с оригиналом
+    private TextAnimator _shadowAnimator; // TextAnimator для синхронизации с оригиналом
     
     private bool _hasInitialized = false;
 
@@ -171,13 +171,13 @@ public class Shadow : MonoBehaviour
         _shadowText.raycastTarget = false;
         _shadowText.color = shadowColor;
         
-        // Проверяем, есть ли TMPWriter на оригинале
-        TMPWriter targetWriter = targetText.GetComponent<TMPWriter>();
-        if (targetWriter != null)
+        // Проверяем, есть ли TextAnimator на оригинале
+        TextAnimator targetAnimator = targetText.GetComponent<TextAnimator>();
+        if (targetAnimator != null)
         {
-            // Добавляем TMPWriter и на shadow для синхронизации
-            _shadowWriter = _shadowObject.AddComponent<TMPWriter>();
-            _shadowWriter.enabled = false; // Отключаем, будем синхронизировать вручную
+            // Добавляем TextAnimator и на shadow для синхронизации
+            _shadowAnimator = _shadowObject.AddComponent<TextAnimator>();
+            _shadowAnimator.enabled = false; // Отключаем, будем синхронизировать вручную
         }
         
         SyncText();
@@ -415,12 +415,12 @@ public class Shadow : MonoBehaviour
         _shadowText.alignment = targetText.alignment;
         _shadowText.textWrappingMode = targetText.textWrappingMode;
         
-        // Проверяем наличие TMPWriter для корректной синхронизации видимых символов
-        TMPWriter tmpWriter = targetText.GetComponent<TMPWriter>();
-        if (tmpWriter != null && _shadowWriter != null && !perCharacterShadow)
+        // Проверяем наличие TextAnimator для корректной синхронизации видимых символов
+        TextAnimator textAnimator = targetText.GetComponent<TextAnimator>();
+        if (textAnimator != null && _shadowAnimator != null && !perCharacterShadow)
         {
             // ЛУЧШИЙ ПОДХОД: Копируем mesh data напрямую от оригинала
-            // Это гарантирует 100% синхронизацию, включая все эффекты TMPWriter
+            // Это гарантирует 100% синхронизацию, включая все эффекты TextAnimator
             targetText.ForceMeshUpdate();
             _shadowText.ForceMeshUpdate();
             
@@ -448,7 +448,7 @@ public class Shadow : MonoBehaviour
             }
         }
         
-        // ВСЕГДА синхронизируем maxVisibleCharacters независимо от наличия TMPWriter
+        // ВСЕГДА синхронизируем maxVisibleCharacters независимо от наличия TextAnimator
         // Это критично для корректной работы с динамическим typewriter
         _shadowText.maxVisibleCharacters = targetText.maxVisibleCharacters;
         
