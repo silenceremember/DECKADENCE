@@ -50,6 +50,14 @@ public class CardDisplay : MonoBehaviour
     public float shakeAngle = 10f;
     public Color normalColor = Color.white;
     public Color snapColor = Color.yellow;
+    
+    [Header("Настройки Typewriter для ActionText")]
+    [Tooltip("Расстояние от центра, когда начинает показываться первый символ")]
+    public float textShowStartDistance = 90f;
+    [Tooltip("Расстояние от центра, когда показывается весь текст полностью")]
+    public float textShowFullDistance = 300f;
+    [Tooltip("Скорость интерполяции количества символов")]
+    public float typewriterSmoothSpeed = 15f;
 
     [Header("Idle Effect")]
     public bool enableIdleRotation = true;
@@ -86,6 +94,10 @@ public class CardDisplay : MonoBehaviour
 
     // Idle effect vars
     private float _idleTime = 0f;
+    
+    // Typewriter vars
+    private string _currentChoiceText = "";
+    private float _currentVisibleCharsFloat = 0f;
 
     void Awake()
     {
@@ -117,7 +129,14 @@ public class CardDisplay : MonoBehaviour
             questionText.text = data.dialogueText;
         } 
 
-        if (actionText) actionText.gameObject.SetActive(false);
+        if (actionText) 
+        {
+            actionText.gameObject.SetActive(false);
+            actionText.text = "";
+        }
+        
+        _currentChoiceText = "";
+        _currentVisibleCharsFloat = 0f;
         
         _isLocked = false;
         _isFront = isFront;
@@ -420,23 +439,43 @@ public class CardDisplay : MonoBehaviour
         if (actionText && !actionText.gameObject.activeSelf) actionText.gameObject.SetActive(true);
 
         bool isRight = diff > 0;
-        actionText.text = isRight ? CurrentData.rightChoiceText : CurrentData.leftChoiceText;
-
-        float fadeRange = 150f;
-        float alpha = Mathf.Clamp01((absDiff - (lockedLimit + 10f)) / fadeRange);
+        string fullChoiceText = isRight ? CurrentData.rightChoiceText : CurrentData.leftChoiceText;
         
+        // Сбрасываем прогресс если направление изменилось
+        if (_currentChoiceText != fullChoiceText)
+        {
+            _currentChoiceText = fullChoiceText;
+            _currentVisibleCharsFloat = 0f;
+        }
+
         Color targetColor = normalColor;
         
         float progress = absDiff / choiceThreshold;
         float clampedProgress = Mathf.Clamp01(progress);
+        
+        // Вычисляем количество видимых символов на основе расстояния
+        float activeRange = textShowFullDistance - textShowStartDistance;
+        float normalizedProgress = 0f;
+        
+        if (activeRange > 0)
+        {
+            normalizedProgress = Mathf.Clamp01((absDiff - textShowStartDistance) / activeRange);
+        }
+        
+        // Плавно интерполируем количество видимых символов
+        int targetVisibleChars = Mathf.RoundToInt(normalizedProgress * _currentChoiceText.Length);
+        _currentVisibleCharsFloat = Mathf.Lerp(_currentVisibleCharsFloat, targetVisibleChars, Time.deltaTime * typewriterSmoothSpeed);
+        
+        // Обновляем текст динамически (побуквенно)
+        int actualVisibleChars = Mathf.Clamp(Mathf.RoundToInt(_currentVisibleCharsFloat), 0, _currentChoiceText.Length);
+        actionText.text = _currentChoiceText.Substring(0, actualVisibleChars);
 
         float targetScale = Mathf.Lerp(minScale, maxScale, clampedProgress);
         if (progress > 1.0f) targetScale += Mathf.Sin(Time.time * 20f) * 0.1f;
         _textRectTransform.localScale = Vector3.one * targetScale;
 
-        float baseAngle = isRight ? -5f : 5f;
-        float currentShake = Mathf.Sin(Time.time * shakeSpeed) * (shakeAngle * clampedProgress);
-        _textRectTransform.localRotation = Quaternion.Euler(0, 0, baseAngle + currentShake);
+        // Покачивание отключено
+        _textRectTransform.localRotation = Quaternion.identity;
 
         if (progress >= 1.0f)
         {
@@ -449,7 +488,7 @@ public class CardDisplay : MonoBehaviour
             GameManager.Instance.ResetHighlights();
         }
         
-        targetColor.a = alpha;
+        // Opacity (alpha) отключен - текст всегда полностью видим
         actionText.color = targetColor;
     }
 
@@ -460,7 +499,14 @@ public class CardDisplay : MonoBehaviour
         _isLocked = true;
         _isInteractable = false;
         
-        if (actionText) actionText.gameObject.SetActive(false);
+        if (actionText) 
+        {
+            actionText.gameObject.SetActive(false);
+            actionText.text = "";
+        }
+        
+        _currentChoiceText = "";
+        _currentVisibleCharsFloat = 0f;
 
         if (isRight) GameManager.Instance.ApplyCardEffect(CurrentData.rightCrown, CurrentData.rightChurch, CurrentData.rightMob, CurrentData.rightPlague);
         else GameManager.Instance.ApplyCardEffect(CurrentData.leftCrown, CurrentData.leftChurch, CurrentData.leftMob, CurrentData.leftPlague);
