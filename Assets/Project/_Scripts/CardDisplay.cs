@@ -98,6 +98,7 @@ public class CardDisplay : MonoBehaviour
     // Typewriter vars
     private string _currentChoiceText = "";
     private float _currentVisibleCharsFloat = 0f;
+    private int _previousNonSpaceCount = 0; // Для ограничения прироста символов
 
     void Awake()
     {
@@ -131,12 +132,13 @@ public class CardDisplay : MonoBehaviour
 
         if (actionText) 
         {
-            actionText.gameObject.SetActive(false);
             actionText.text = "";
+            actionText.maxVisibleCharacters = 0;
         }
         
         _currentChoiceText = "";
         _currentVisibleCharsFloat = 0f;
+        _previousNonSpaceCount = 0;
         
         _isLocked = false;
         _isFront = isFront;
@@ -421,7 +423,11 @@ public class CardDisplay : MonoBehaviour
         // Скрываем если падает ИЛИ если ЗАБЛОКИРОВАНО (но не во время анимации разблокировки!)
         if (_currentVerticalOffset > 150f || (_safetyLock && !_isUnlockAnimating)) 
         {
-            if (actionText && actionText.gameObject.activeSelf) actionText.gameObject.SetActive(false);
+            if (actionText)
+            {
+                actionText.text = "";
+                actionText.maxVisibleCharacters = 0;
+            }
             GameManager.Instance.ResetHighlights();
             return;
         }
@@ -431,12 +437,16 @@ public class CardDisplay : MonoBehaviour
         // Deadzone
         if (absDiff < lockedLimit + 10f)
         {
-             if (actionText && actionText.gameObject.activeSelf) actionText.gameObject.SetActive(false);
+             if (actionText)
+             {
+                 actionText.text = "";
+                 actionText.maxVisibleCharacters = 0;
+             }
              GameManager.Instance.ResetHighlights();
              return;
         }
 
-        if (actionText && !actionText.gameObject.activeSelf) actionText.gameObject.SetActive(true);
+        // actionText всегда активен, управляем только содержимым
 
         bool isRight = diff > 0;
         string fullChoiceText = isRight ? CurrentData.rightChoiceText : CurrentData.leftChoiceText;
@@ -446,6 +456,7 @@ public class CardDisplay : MonoBehaviour
         {
             _currentChoiceText = fullChoiceText;
             _currentVisibleCharsFloat = 0f;
+            _previousNonSpaceCount = 0; // Сбрасываем счетчик при смене направления
         }
 
         Color targetColor = normalColor;
@@ -453,7 +464,8 @@ public class CardDisplay : MonoBehaviour
         float progress = absDiff / choiceThreshold;
         float clampedProgress = Mathf.Clamp01(progress);
         
-        // Вычисляем количество видимых символов на основе расстояния
+        // Вычисляем количество видимых символов напрямую из расстояния
+        // Это гарантирует что каждый символ появляется на определенном расстоянии
         float activeRange = textShowFullDistance - textShowStartDistance;
         float normalizedProgress = 0f;
         
@@ -462,13 +474,75 @@ public class CardDisplay : MonoBehaviour
             normalizedProgress = Mathf.Clamp01((absDiff - textShowStartDistance) / activeRange);
         }
         
-        // Плавно интерполируем количество видимых символов
-        int targetVisibleChars = Mathf.RoundToInt(normalizedProgress * _currentChoiceText.Length);
-        _currentVisibleCharsFloat = Mathf.Lerp(_currentVisibleCharsFloat, targetVisibleChars, Time.deltaTime * typewriterSmoothSpeed);
+        // Считаем количество НЕпробельных символов для расчета прогресса
+        int nonSpaceCount = 0;
+        for (int i = 0; i < _currentChoiceText.Length; i++)
+        {
+            if (_currentChoiceText[i] != ' ') nonSpaceCount++;
+        }
         
-        // Обновляем текст динамически (побуквенно)
-        int actualVisibleChars = Mathf.Clamp(Mathf.RoundToInt(_currentVisibleCharsFloat), 0, _currentChoiceText.Length);
-        actionText.text = _currentChoiceText.Substring(0, actualVisibleChars);
+        // Вычисляем сколько непробельных символов должно быть видно
+        int targetNonSpaceChars = Mathf.FloorToInt(normalizedProgress * nonSpaceCount);
+        
+        // ОГРАНИЧЕНИЕ: максимум +1 непробельный символ за раз
+        // Это предотвращает появление МЫ вместо М при быстром движении мыши
+        if (targetNonSpaceChars > _previousNonSpaceCount + 1)
+        {
+            targetNonSpaceChars = _previousNonSpaceCount + 1;
+        }
+        else if (targetNonSpaceChars < _previousNonSpaceCount)
+        {
+            // При движении назад - мгновенно уменьшаем
+            targetNonSpaceChars = targetNonSpaceChars;
+        }
+        
+        // Сохраняем для следующего кадра
+        _previousNonSpaceCount = targetNonSpaceChars;
+        
+        // Объявляем переменную для видимых символов
+        int actualVisibleChars = 0;
+        
+        // При нулевом прогрессе - 0 символов
+        if (targetNonSpaceChars == 0)
+        {
+            actualVisibleChars = 0;
+        }
+        else
+        {
+            // Находим позицию в тексте соответствующую этому количеству непробельных символов
+            int currentNonSpaceCount = 0;
+            
+            for (int i = 0; i < _currentChoiceText.Length; i++)
+            {
+                // Если нашли непробельный символ
+                if (_currentChoiceText[i] != ' ')
+                {
+                    currentNonSpaceCount++;
+                    // Включаем этот символ в видимый текст
+                    actualVisibleChars = i + 1;
+                    
+                    // Если достигли нужного количества - останавливаемся
+                    if (currentNonSpaceCount >= targetNonSpaceChars)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Обновляем внутренний счетчик для консистентности
+        _currentVisibleCharsFloat = actualVisibleChars;
+        
+        // Обновляем текст только если количество символов изменилось
+        string newText = _currentChoiceText.Substring(0, actualVisibleChars);
+        if (actionText.text != newText)
+        {
+            actionText.text = newText;
+        }
+        
+        // ВСЕГДА синхронизируем maxVisibleCharacters для идеальной работы Shadow
+        // (Shadow проверяет это в LateUpdate)
+        actionText.maxVisibleCharacters = actualVisibleChars;
 
         float targetScale = Mathf.Lerp(minScale, maxScale, clampedProgress);
         if (progress > 1.0f) targetScale += Mathf.Sin(Time.time * 20f) * 0.1f;
@@ -501,12 +575,13 @@ public class CardDisplay : MonoBehaviour
         
         if (actionText) 
         {
-            actionText.gameObject.SetActive(false);
             actionText.text = "";
+            actionText.maxVisibleCharacters = 0;
         }
         
         _currentChoiceText = "";
         _currentVisibleCharsFloat = 0f;
+        _previousNonSpaceCount = 0;
 
         if (isRight) GameManager.Instance.ApplyCardEffect(CurrentData.rightCrown, CurrentData.rightChurch, CurrentData.rightMob, CurrentData.rightPlague);
         else GameManager.Instance.ApplyCardEffect(CurrentData.leftCrown, CurrentData.leftChurch, CurrentData.leftMob, CurrentData.leftPlague);

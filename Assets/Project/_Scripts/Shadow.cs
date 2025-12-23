@@ -240,6 +240,15 @@ public class Shadow : MonoBehaviour
         if (targetText != null && _shadowText != null)
         {
             SyncText();
+            
+            // Если текст пустой или нет видимых символов - скрываем тень
+            if (string.IsNullOrEmpty(targetText.text) || targetText.maxVisibleCharacters == 0)
+            {
+                finalColor.a = 0; // Полностью прозрачная тень
+                _shadowText.color = finalColor;
+                return; // Не применяем offset/per-character shadow
+            }
+            
             targetAlpha = targetText.alpha;
             finalColor.a = shadowColor.a * targetAlpha;
             _shadowText.color = finalColor;
@@ -438,11 +447,10 @@ public class Shadow : MonoBehaviour
                 _shadowText.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices);
             }
         }
-        else
-        {
-            // Обычная синхронизация для текста без TMPWriter
-            _shadowText.maxVisibleCharacters = targetText.maxVisibleCharacters;
-        }
+        
+        // ВСЕГДА синхронизируем maxVisibleCharacters независимо от наличия TMPWriter
+        // Это критично для корректной работы с динамическим typewriter
+        _shadowText.maxVisibleCharacters = targetText.maxVisibleCharacters;
         
         _shadowText.characterSpacing = targetText.characterSpacing;
         
