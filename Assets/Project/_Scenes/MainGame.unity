@@ -398,7 +398,7 @@ GameObject:
   - component: {fileID: 290773390}
   - component: {fileID: 290773389}
   m_Layer: 5
-  m_Name: Crown_Fill
+  m_Name: Spades_Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1069,9 +1069,6 @@ MonoBehaviour:
   OnCharacterShown:
     m_PersistentCalls:
       m_Calls: []
-  OnAllLettersDisappeared:
-    m_PersistentCalls:
-      m_Calls: []
   OnTextComplete:
     m_PersistentCalls:
       m_Calls: []
@@ -1086,7 +1083,7 @@ GameObject:
   - component: {fileID: 700920395}
   - component: {fileID: 700920396}
   m_Layer: 5
-  m_Name: Res_Slot_Plague
+  m_Name: Res_Slot_Clubs
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1191,7 +1188,7 @@ GameObject:
   - component: {fileID: 791369279}
   - component: {fileID: 791369278}
   m_Layer: 5
-  m_Name: Church_BG
+  m_Name: Hearts_BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1279,7 +1276,7 @@ GameObject:
   - component: {fileID: 819786473}
   - component: {fileID: 819786474}
   m_Layer: 5
-  m_Name: Res_Slot_Crown
+  m_Name: Res_Slot_Spades
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1415,8 +1412,15 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   snapColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   textShowStartDistance: 0
-  textShowFullDistance: 300
+  textShowFullDistance: 200
   typewriterSmoothSpeed: 15
+  actionTextTiltAngle: 8
+  actionTextTiltSpeed: 10
+  actionTextScaleMin: 1
+  actionTextScaleMax: 1.25
+  actionTextPulseAmount: 0.05
+  actionTextWobbleAngle: 3
+  actionTextFadeDistance: 100
   enableIdleRotation: 1
   idleRotationAmount: 1
   idleRotationSpeed: 1.5
@@ -1611,9 +1615,6 @@ MonoBehaviour:
   OnCharacterShown:
     m_PersistentCalls:
       m_Calls: []
-  OnAllLettersDisappeared:
-    m_PersistentCalls:
-      m_Calls: []
   OnTextComplete:
     m_PersistentCalls:
       m_Calls: []
@@ -1630,7 +1631,7 @@ GameObject:
   - component: {fileID: 1161021127}
   - component: {fileID: 1161021126}
   m_Layer: 5
-  m_Name: Crown_BG
+  m_Name: Spades_BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1844,7 +1845,7 @@ GameObject:
   - component: {fileID: 1505369103}
   - component: {fileID: 1505369105}
   m_Layer: 5
-  m_Name: DayText
+  m_Name: ShuffleText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1889,7 +1890,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\u0414\u0435\u043D\u044C 1"
+  m_text: "\u0422\u0410\u0421\u041E\u0412\u041A\u0410 1"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
   m_sharedMaterial: {fileID: 274595606537286125, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
@@ -1916,7 +1917,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 41.45
+  m_fontSize: 36.45
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -2004,7 +2005,7 @@ GameObject:
   - component: {fileID: 1524703377}
   - component: {fileID: 1524703376}
   m_Layer: 5
-  m_Name: Mob_BG
+  m_Name: Diamonds_BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2128,17 +2129,18 @@ MonoBehaviour:
   cardTemplate: {fileID: 853034491}
   cardLoader: {fileID: 2096314089}
   allCards: []
-  crown: 50
-  church: 50
-  mob: 50
-  plague: 50
-  crownIcon: {fileID: 290773390}
-  churchIcon: {fileID: 2063988430}
-  mobIcon: {fileID: 1918162389}
-  plagueIcon: {fileID: 2066376435}
-  dayText: {fileID: 1505369103}
+  spades: 50
+  hearts: 50
+  diamonds: 50
+  clubs: 50
+  spadesIcon: {fileID: 290773390}
+  heartsIcon: {fileID: 2063988430}
+  diamondsIcon: {fileID: 1918162389}
+  clubsIcon: {fileID: 2066376435}
+  shuffleText: {fileID: 1505369103}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   highlightColor: {r: 0, g: 1, b: 0, a: 1}
+  cardsPerShuffle: 15
 --- !u!1 &1771396904
 GameObject:
   m_ObjectHideFlags: 0
@@ -2229,7 +2231,7 @@ GameObject:
   - component: {fileID: 1799412876}
   - component: {fileID: 1799412877}
   m_Layer: 5
-  m_Name: Res_Slot_Mob
+  m_Name: Res_Slot_Diamonds
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2289,7 +2291,7 @@ GameObject:
   - component: {fileID: 1918162389}
   - component: {fileID: 1918162388}
   m_Layer: 5
-  m_Name: Mob_Fill
+  m_Name: Diamonds_Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2379,7 +2381,7 @@ GameObject:
   - component: {fileID: 2041120561}
   - component: {fileID: 2041120560}
   m_Layer: 5
-  m_Name: Plague_BG
+  m_Name: Clubs_BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2469,7 +2471,7 @@ GameObject:
   - component: {fileID: 2063988430}
   - component: {fileID: 2063988429}
   m_Layer: 5
-  m_Name: Church_Fill
+  m_Name: Hearts_Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2559,7 +2561,7 @@ GameObject:
   - component: {fileID: 2066376435}
   - component: {fileID: 2066376434}
   m_Layer: 5
-  m_Name: Plague_Fill
+  m_Name: Clubs_Fill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2647,7 +2649,7 @@ GameObject:
   - component: {fileID: 2082334216}
   - component: {fileID: 2082334217}
   m_Layer: 5
-  m_Name: Res_Slot_Church
+  m_Name: Res_Slot_Hearts
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

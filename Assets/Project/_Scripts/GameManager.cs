@@ -21,26 +21,36 @@ public class GameManager : MonoBehaviour
     public List<CardData> allCards = new List<CardData>();
     private List<CardData> _activeDeck;
 
-    [Header("Ресурсы (0-100)")]
-    public int crown = 50;
-    public int church = 50;
-    public int mob = 50;
-    public int plague = 50;
+    [Header("Ресурсы (0-100) — Четыре Масти")]
+    [Tooltip("♠ Пики — Армия/Клинки")]
+    public int spades = 50;
+    [Tooltip("♥ Черви — Народ/Алый Двор")]
+    public int hearts = 50;
+    [Tooltip("♦ Бубны — Казна/Златая Гильдия")]
+    public int diamonds = 50;
+    [Tooltip("♣ Трефы — Хаос/Дикий Рост")]
+    public int clubs = 50;
 
     [Header("UI Иконки (Filled Images)")]
-    public Image crownIcon;
-    public Image churchIcon;
-    public Image mobIcon;
-    public Image plagueIcon;
+    public Image spadesIcon;
+    public Image heartsIcon;
+    public Image diamondsIcon;
+    public Image clubsIcon;
     
     [Header("UI Текст")]
-    public TextMeshProUGUI dayText;
+    public TextMeshProUGUI shuffleText;
 
     [Header("Настройки Визуала")]
-    public Color normalColor = Color.white;    // Обычный цвет иконки
-    public Color highlightColor = Color.yellow; // Цвет предсказания
+    public Color normalColor = Color.white;
+    public Color highlightColor = Color.yellow;
 
-    private int _currentDay = 1;
+    // Прогрессия
+    private int _currentShuffle = 1;
+    private int _cardsInShuffle = 0;
+    
+    [Header("Настройки Прогрессии")]
+    [Tooltip("Сколько карт до перехода к следующей Тасовке")]
+    public int cardsPerShuffle = 15;
 
     void Awake()
     {
@@ -72,9 +82,9 @@ public class GameManager : MonoBehaviour
         _activeDeck = new List<CardData>(allCards);
 
         // 3. Запоминаем базовый цвет иконок
-        if (crownIcon) normalColor = crownIcon.color;
+        if (spadesIcon) normalColor = spadesIcon.color;
         
-        // 4. Обновляем UI (статы и день)
+        // 4. Обновляем UI (статы и тасовку)
         UpdateUI();
 
         // 5. Запускаем игру (Спавн карт)
@@ -129,6 +139,9 @@ public class GameManager : MonoBehaviour
             _activeDeck = new List<CardData>(allCards);
         }
 
+        // TODO: Фильтрация карт по текущей Тасовке (прогрессия)
+        // Чем выше _currentShuffle, тем "серьёзнее" карты
+
         int randomIndex = Random.Range(0, _activeDeck.Count);
         CardData card = _activeDeck[randomIndex];
         
@@ -139,57 +152,85 @@ public class GameManager : MonoBehaviour
     }
 
     // Применение эффектов выбора
-    public void ApplyCardEffect(int dCrown, int dChurch, int dMob, int dPlague)
+    public void ApplyCardEffect(int dSpades, int dHearts, int dDiamonds, int dClubs)
     {
         // Ограничиваем статы от 0 до 100
-        crown = Mathf.Clamp(crown + dCrown, 0, 100);
-        church = Mathf.Clamp(church + dChurch, 0, 100);
-        mob = Mathf.Clamp(mob + dMob, 0, 100);
-        plague = Mathf.Clamp(plague + dPlague, 0, 100);
+        spades = Mathf.Clamp(spades + dSpades, 0, 100);
+        hearts = Mathf.Clamp(hearts + dHearts, 0, 100);
+        diamonds = Mathf.Clamp(diamonds + dDiamonds, 0, 100);
+        clubs = Mathf.Clamp(clubs + dClubs, 0, 100);
 
         if (CheckGameOver()) return;
 
-        _currentDay++;
+        // Увеличиваем счётчик карт в текущей тасовке
+        _cardsInShuffle++;
+        
+        // Проверяем переход к новой Тасовке
+        if (_cardsInShuffle >= cardsPerShuffle)
+        {
+            _currentShuffle++;
+            _cardsInShuffle = 0;
+            OnNewShuffle();
+        }
+        
         UpdateUI();
+    }
+
+    // Вызывается при переходе к новой Тасовке
+    void OnNewShuffle()
+    {
+        Debug.Log($"[GameManager] Новая Тасовка #{_currentShuffle}! Карты становятся серьёзнее...");
+        // TODO: Здесь можно показать особую карту-разделитель (Шут комментирует)
+        // TODO: Изменить пул доступных карт
+        // TODO: Возможно изменить визуал (фон темнеет?)
     }
 
     void UpdateUI()
     {
         // Обновляем заполнение иконок
-        if (crownIcon) crownIcon.fillAmount = crown / 100f;
-        if (churchIcon) churchIcon.fillAmount = church / 100f;
-        if (mobIcon) mobIcon.fillAmount = mob / 100f;
-        if (plagueIcon) plagueIcon.fillAmount = plague / 100f;
+        if (spadesIcon) spadesIcon.fillAmount = spades / 100f;
+        if (heartsIcon) heartsIcon.fillAmount = hearts / 100f;
+        if (diamondsIcon) diamondsIcon.fillAmount = diamonds / 100f;
+        if (clubsIcon) clubsIcon.fillAmount = clubs / 100f;
 
-        if (dayText != null) dayText.text = "День " + _currentDay;
+        if (shuffleText != null) shuffleText.text = "Тасовка " + _currentShuffle;
     }
 
     // Подсветка иконок (Предсказание)
-    public void HighlightResources(int dCrown, int dChurch, int dMob, int dPlague)
+    public void HighlightResources(int dSpades, int dHearts, int dDiamonds, int dClubs)
     {
         // Красим иконку, если её ресурс изменится
-        if (crownIcon) crownIcon.color = (dCrown != 0) ? highlightColor : normalColor;
-        if (churchIcon) churchIcon.color = (dChurch != 0) ? highlightColor : normalColor;
-        if (mobIcon) mobIcon.color = (dMob != 0) ? highlightColor : normalColor;
-        if (plagueIcon) plagueIcon.color = (dPlague != 0) ? highlightColor : normalColor;
+        if (spadesIcon) spadesIcon.color = (dSpades != 0) ? highlightColor : normalColor;
+        if (heartsIcon) heartsIcon.color = (dHearts != 0) ? highlightColor : normalColor;
+        if (diamondsIcon) diamondsIcon.color = (dDiamonds != 0) ? highlightColor : normalColor;
+        if (clubsIcon) clubsIcon.color = (dClubs != 0) ? highlightColor : normalColor;
     }
 
     // Сброс цветов
     public void ResetHighlights()
     {
-        if (crownIcon) crownIcon.color = normalColor;
-        if (churchIcon) churchIcon.color = normalColor;
-        if (mobIcon) mobIcon.color = normalColor;
-        if (plagueIcon) plagueIcon.color = normalColor;
+        if (spadesIcon) spadesIcon.color = normalColor;
+        if (heartsIcon) heartsIcon.color = normalColor;
+        if (diamondsIcon) diamondsIcon.color = normalColor;
+        if (clubsIcon) clubsIcon.color = normalColor;
     }
 
     bool CheckGameOver()
     {
-        // Упрощенная проверка смерти (в будущем здесь будет вызов экрана GameOver)
-        if (crown <= 0 || crown >= 100) { Debug.Log("Game Over: Crown"); return true; }
-        if (church <= 0 || church >= 100) { Debug.Log("Game Over: Church"); return true; }
-        if (mob <= 0 || mob >= 100) { Debug.Log("Game Over: Mob"); return true; }
-        if (plague >= 100) { Debug.Log("Game Over: Plague"); return true; }
+        // Проверка смерти с информацией о типе
+        // TODO: Здесь будут уникальные концовки для каждого типа смерти
+        
+        if (spades <= 0) { Debug.Log("Game Over: ♠ Spades = 0 (НОЧЬ ДЛИННЫХ КЛИНКОВ)"); return true; }
+        if (spades >= 100) { Debug.Log("Game Over: ♠ Spades = 100 (МАРШ НА ТРОН)"); return true; }
+        
+        if (hearts <= 0) { Debug.Log("Game Over: ♥ Hearts = 0 (МОЛЧАНИЕ ПЛОЩАДЕЙ)"); return true; }
+        if (hearts >= 100) { Debug.Log("Game Over: ♥ Hearts = 100 (КАРНАВАЛ ОБОЖАНИЯ)"); return true; }
+        
+        if (diamonds <= 0) { Debug.Log("Game Over: ♦ Diamonds = 0 (БАНКРОТСТВО КОРОНЫ)"); return true; }
+        if (diamonds >= 100) { Debug.Log("Game Over: ♦ Diamonds = 100 (ЗОЛОТАЯ ТЮРЬМА)"); return true; }
+        
+        if (clubs <= 0) { Debug.Log("Game Over: ♣ Clubs = 0 (ПОСЛЕДНИЙ ЛИСТ)"); return true; }
+        if (clubs >= 100) { Debug.Log("Game Over: ♣ Clubs = 100 (ЗЕЛЁНЫЙ ПОТОП)"); return true; }
 
         return false;
     }

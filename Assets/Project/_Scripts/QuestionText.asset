@@ -17,8 +17,8 @@ MonoBehaviour:
   charactersPerSecond: 50
   delay: 0
   startOnEnable: 0
-  interpolationSpeed: 15
-  appearDuration: 0.08
+  interpolationSpeed: 200
+  appearDuration: 1
   appearStagger: 0.02
   effectSmoothSpeed: 18
   stateTransitionDuration: 0.1

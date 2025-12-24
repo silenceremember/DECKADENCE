@@ -548,8 +548,8 @@ public class CardDisplay : MonoBehaviour
         if (progress >= 1.0f)
         {
             targetColor = snapColor;
-            if (isRight) GameManager.Instance.HighlightResources(CurrentData.rightCrown, CurrentData.rightChurch, CurrentData.rightMob, CurrentData.rightPlague);
-            else GameManager.Instance.HighlightResources(CurrentData.leftCrown, CurrentData.leftChurch, CurrentData.leftMob, CurrentData.leftPlague);
+            if (isRight) GameManager.Instance.HighlightResources(CurrentData.rightSpades, CurrentData.rightHearts, CurrentData.rightDiamonds, CurrentData.rightClubs);
+            else GameManager.Instance.HighlightResources(CurrentData.leftSpades, CurrentData.leftHearts, CurrentData.leftDiamonds, CurrentData.leftClubs);
         }
         else
         {
@@ -622,8 +622,8 @@ public class CardDisplay : MonoBehaviour
             actionText.maxVisibleCharacters = 0;
         }
 
-        if (isRight) GameManager.Instance.ApplyCardEffect(CurrentData.rightCrown, CurrentData.rightChurch, CurrentData.rightMob, CurrentData.rightPlague);
-        else GameManager.Instance.ApplyCardEffect(CurrentData.leftCrown, CurrentData.leftChurch, CurrentData.leftMob, CurrentData.leftPlague);
+        if (isRight) GameManager.Instance.ApplyCardEffect(CurrentData.rightSpades, CurrentData.rightHearts, CurrentData.rightDiamonds, CurrentData.rightClubs);
+        else GameManager.Instance.ApplyCardEffect(CurrentData.leftSpades, CurrentData.leftHearts, CurrentData.leftDiamonds, CurrentData.leftClubs);
 
         float endX = isRight ? 1500f : -1500f;
         float endRotation = isRight ? -45f : 45f;
