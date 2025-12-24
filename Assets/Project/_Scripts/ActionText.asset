@@ -194,4 +194,17 @@ MonoBehaviour:
       slideDistance: 0
       jitterIntensity: 2
       jitterSpeed: 30
+    - type: 4
+      waveAmplitude: 4
+      waveSpeedMin: 1
+      waveSpeedMax: 2.5
+      pulseAmplitude: 0.1
+      pulseSpeed: 6
+      bounceOvershoot: 1.2
+      fadeFrom: 1
+      fadeTo: 0
+      slideDirection: 0
+      slideDistance: 0
+      jitterIntensity: 2
+      jitterSpeed: 30
   disappearSelectedDuration: 0.25
