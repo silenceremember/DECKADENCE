@@ -59,6 +59,20 @@ public class CardDisplay : MonoBehaviour
     public float textShowFullDistance = 300f;
     [Tooltip("Скорость интерполяции количества символов")]
     public float typewriterSmoothSpeed = 15f;
+    [Tooltip("Угол наклона текста в сторону свайпа")]
+    public float actionTextTiltAngle = 8f;
+    [Tooltip("Скорость интерполяции наклона текста")]
+    public float actionTextTiltSpeed = 10f;
+    [Tooltip("Минимальный масштаб блока текста")]
+    public float actionTextScaleMin = 1.0f;
+    [Tooltip("Максимальный масштаб блока текста (при полном выборе)")]
+    public float actionTextScaleMax = 1.25f;
+    [Tooltip("Амплитуда пульсации при полном прогрессе")]
+    public float actionTextPulseAmount = 0.05f;
+    [Tooltip("Амплитуда покачивания при полном прогрессе (градусы)")]
+    public float actionTextWobbleAngle = 3f;
+    [Tooltip("Дистанция для нарастания прозрачности текста (0 = текст невидим)")]
+    public float actionTextFadeDistance = 50f;
 
     [Header("Idle Effect")]
     public bool enableIdleRotation = true;
@@ -100,6 +114,9 @@ public class CardDisplay : MonoBehaviour
     private Coroutine _disappearCoroutine = null;
     private string _pendingText = null;
     private bool _isWaitingForDisappear = false;
+    
+    // Canvas group for action text opacity control
+    private CanvasGroup _actionTextCanvasGroup;
 
     void Awake()
     {
@@ -120,6 +137,13 @@ public class CardDisplay : MonoBehaviour
             if (actionAnimator == null)
             {
                 Debug.LogWarning("TextAnimator component not found on actionText! Please add it.");
+            }
+            
+            // Получаем или создаём CanvasGroup для управления opacity
+            _actionTextCanvasGroup = actionText.GetComponent<CanvasGroup>();
+            if (_actionTextCanvasGroup == null)
+            {
+                _actionTextCanvasGroup = actionText.gameObject.AddComponent<CanvasGroup>();
             }
         }
     }
@@ -532,7 +556,52 @@ public class CardDisplay : MonoBehaviour
             GameManager.Instance.ResetHighlights();
         }
         
+        // Прозрачность блока текста через CanvasGroup (0 -> 50)
+        // Не меняем пока ждём disappear анимацию
+        if (!_isWaitingForDisappear && _actionTextCanvasGroup != null)
+        {
+            float targetAlpha = Mathf.Clamp01(absDiff / actionTextFadeDistance);
+            // Плавная интерполяция alpha
+            _actionTextCanvasGroup.alpha = Mathf.Lerp(_actionTextCanvasGroup.alpha, targetAlpha, Time.deltaTime * 12f);
+        }
+        
         actionText.color = targetColor;
+        
+        // Наклон блока текста в сторону свайпа (фиксированный угол)
+        // Не меняем наклон пока текст исчезает
+        if (_textRectTransform != null && !_isWaitingForDisappear)
+        {
+            // Фиксированный угол в зависимости от направления
+            float targetTilt = isRight ? actionTextTiltAngle : -actionTextTiltAngle;
+            
+            // Покачивание при полном выборе (желтый цвет)
+            if (progress >= 1.0f)
+            {
+                targetTilt += Mathf.Sin(Time.time * 10f) * actionTextWobbleAngle;
+            }
+            
+            Quaternion targetRot = Quaternion.Euler(0f, 0f, -targetTilt);
+            _textRectTransform.localRotation = Quaternion.Slerp(
+                _textRectTransform.localRotation, 
+                targetRot, 
+                Time.deltaTime * actionTextTiltSpeed
+            );
+            
+            // Масштаб блока текста в зависимости от прогресса
+            float targetScale = Mathf.Lerp(actionTextScaleMin, actionTextScaleMax, clampedProgress);
+            
+            // Пульсация при полном выборе
+            if (progress >= 1.0f)
+            {
+                targetScale += Mathf.Sin(Time.time * 8f) * actionTextPulseAmount;
+            }
+            
+            _textRectTransform.localScale = Vector3.Lerp(
+                _textRectTransform.localScale,
+                Vector3.one * targetScale,
+                Time.deltaTime * 10f
+            );
+        }
     }
 
     // HandleInput(float diff) удаляем, перенесли логику в Update для Release
@@ -639,15 +708,35 @@ public class CardDisplay : MonoBehaviour
     {
         _isWaitingForDisappear = true;
         
-        // Получаем длительность анимации из preset + буфер для гарантированного завершения
-        float waitTime = 0.3f; // fallback
+        // Получаем длительность анимации из preset
+        float waitTime = 0.15f; // fallback
         if (actionAnimator != null && actionAnimator.preset != null)
         {
-            // Удвоенное время + буфер для гарантии
-            waitTime = actionAnimator.preset.disappearReturnDuration * 2f + 0.08f;
+            waitTime = actionAnimator.preset.disappearReturnDuration * 1.2f + 0.03f;
         }
         
-        yield return new WaitForSeconds(waitTime);
+        // Плавно гасим текст
+        float fadeOutTime = 0.1f;
+        float elapsed = 0f;
+        float startAlpha = _actionTextCanvasGroup != null ? _actionTextCanvasGroup.alpha : 1f;
+        
+        while (elapsed < fadeOutTime)
+        {
+            elapsed += Time.deltaTime;
+            if (_actionTextCanvasGroup != null)
+            {
+                _actionTextCanvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, elapsed / fadeOutTime);
+            }
+            yield return null;
+        }
+        
+        if (_actionTextCanvasGroup != null)
+        {
+            _actionTextCanvasGroup.alpha = 0f;
+        }
+        
+        // Ждём завершения disappear анимации
+        yield return new WaitForSeconds(Mathf.Max(0f, waitTime - fadeOutTime));
         
         if (actionAnimator != null)
         {
@@ -655,26 +744,66 @@ public class CardDisplay : MonoBehaviour
             actionAnimator.ResetProgress();
         }
         
+        // alpha остаётся 0 так как текст пустой
+        
         _isWaitingForDisappear = false;
         _disappearCoroutine = null;
     }
     
     IEnumerator WaitForDisappearAndChangeText()
     {
-        // Получаем длительность анимации из preset + буфер для гарантированного завершения
-        float waitTime = 0.3f; // fallback
+        // Получаем длительность анимации из preset
+        float waitTime = 0.15f; // fallback
         if (actionAnimator != null && actionAnimator.preset != null)
         {
-            // Удвоенное время + буфер для гарантии
-            waitTime = actionAnimator.preset.disappearReturnDuration * 2f + 0.08f;
+            waitTime = actionAnimator.preset.disappearReturnDuration * 1.2f + 0.03f;
         }
         
-        yield return new WaitForSeconds(waitTime);
+        // Плавно гасим текст
+        float fadeTime = 0.1f;
+        float elapsed = 0f;
+        float startAlpha = _actionTextCanvasGroup != null ? _actionTextCanvasGroup.alpha : 1f;
         
+        while (elapsed < fadeTime)
+        {
+            elapsed += Time.deltaTime;
+            if (_actionTextCanvasGroup != null)
+            {
+                _actionTextCanvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, elapsed / fadeTime);
+            }
+            yield return null;
+        }
+        
+        if (_actionTextCanvasGroup != null)
+        {
+            _actionTextCanvasGroup.alpha = 0f;
+        }
+        
+        // Ждём завершения disappear анимации
+        yield return new WaitForSeconds(Mathf.Max(0f, waitTime - fadeTime));
+        
+        // Устанавливаем новый текст
         if (actionAnimator != null && !string.IsNullOrEmpty(_pendingText))
         {
             actionAnimator.SetText(_pendingText);
             actionAnimator.ResetProgress();
+        }
+        
+        // Плавно показываем новый текст
+        elapsed = 0f;
+        while (elapsed < fadeTime)
+        {
+            elapsed += Time.deltaTime;
+            if (_actionTextCanvasGroup != null)
+            {
+                _actionTextCanvasGroup.alpha = Mathf.Lerp(0f, 1f, elapsed / fadeTime);
+            }
+            yield return null;
+        }
+        
+        if (_actionTextCanvasGroup != null)
+        {
+            _actionTextCanvasGroup.alpha = 1f;
         }
         
         _pendingText = null;

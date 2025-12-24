@@ -273,6 +273,14 @@ public class TextAnimator : MonoBehaviour
         progress = Mathf.Clamp01(value);
     }
     
+    // Global alpha multiplier for the entire text (for fade effects)
+    private float _globalAlpha = 1f;
+    
+    public void SetGlobalAlpha(float alpha)
+    {
+        _globalAlpha = Mathf.Clamp01(alpha);
+    }
+    
     public void SetIntensity(float value) => SetProgress(value);
 
     public void SetTargetCharacterCount(int targetCount)
@@ -617,6 +625,16 @@ public class TextAnimator : MonoBehaviour
                     float disappearT = Mathf.Clamp01(letter.stateTime / disappearDuration);
                     result = preset.CalculateDisappear(_animationTime, i, disappearT, mode);
                     
+                    // Для Selected и Return disappear: сохраняем позиции из предыдущего состояния
+                    // Буквы должны исчезать "на месте", а не выстраиваться в линию
+                    if (letter.state == LetterState.DisappearingSelected || 
+                        letter.state == LetterState.DisappearingReturn)
+                    {
+                        // Добавляем сохранённые смещения к результату disappear
+                        result.offset += letter.prevOffset;
+                        result.rotation += letter.prevRotation;
+                    }
+                    
                     if (disappearT >= 1f)
                     {
                         newState = LetterState.Hidden;
@@ -718,7 +736,7 @@ public class TextAnimator : MonoBehaviour
                 destVertices[vertexIndex + j] = vertex + center + offset;
             }
             
-            byte alpha = (byte)(letter.currentAlpha * 255f);
+            byte alpha = (byte)(letter.currentAlpha * _globalAlpha * 255f);
             for (int j = 0; j < 4; j++)
             {
                 Color32 c = destColors[vertexIndex + j];

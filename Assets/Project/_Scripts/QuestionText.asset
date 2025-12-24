@@ -12,10 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a064b5de9435f44ba6877670473eb7e, type: 3}
   m_Name: QuestionText
   m_EditorClassIdentifier: Assembly-CSharp::TextAnimatorPreset
-  appearDuration: 0.25
-  appearStagger: 0.03
-  disappearDuration: 0.15
-  effectSmoothSpeed: 15
+  mode: 0
+  enableEffects: 0
+  charactersPerSecond: 50
+  delay: 0
+  startOnEnable: 0
+  interpolationSpeed: 15
+  appearDuration: 0.08
+  appearStagger: 0.02
+  effectSmoothSpeed: 18
+  stateTransitionDuration: 0.1
   appearEffects:
     effects: []
   idleEffects:
@@ -24,5 +30,12 @@ MonoBehaviour:
     effects: []
   selectedEffects:
     effects: []
-  disappearEffects:
+  disappearNormalEffects:
     effects: []
+  disappearNormalDuration: 0.1
+  disappearReturnEffects:
+    effects: []
+  disappearReturnDuration: 0.1
+  disappearSelectedEffects:
+    effects: []
+  disappearSelectedDuration: 0.1

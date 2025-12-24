@@ -242,6 +242,19 @@ public class Shadow : MonoBehaviour
         {
             SyncText();
             
+            // Проверяем CanvasGroup родителя для общего alpha блока
+            CanvasGroup parentCanvasGroup = targetText.GetComponentInParent<CanvasGroup>();
+            float canvasGroupAlpha = (parentCanvasGroup != null) ? parentCanvasGroup.alpha : 1f;
+            
+            // Если CanvasGroup alpha = 0, скрываем тень
+            if (canvasGroupAlpha <= 0.01f)
+            {
+                finalColor.a = 0;
+                _shadowText.color = finalColor;
+                _shadowObject.SetActive(false);
+                return;
+            }
+            
             // Проверяем TextAnimator - если он есть и его текст пуст, скрываем тень
             // Это предотвращает показ тени от исходного TMP текста до вызова SetText
             if (_targetAnimator != null)
@@ -301,7 +314,7 @@ public class Shadow : MonoBehaviour
                 return;
             }
             
-            targetAlpha = targetText.alpha;
+            targetAlpha = targetText.alpha * canvasGroupAlpha;
             finalColor.a = shadowColor.a * targetAlpha;
             _shadowText.color = finalColor;
             

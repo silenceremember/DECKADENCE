@@ -100,7 +100,17 @@ public class TextAnimatorPreset : ScriptableObject
     /// </summary>
     public EffectResult CalculateAppear(float time, int charIndex, float stateProgress)
     {
-        return appearEffects.Calculate(time, charIndex, stateProgress, 1f);
+        EffectResult result = appearEffects.Calculate(time, charIndex, stateProgress, 1f);
+        
+        // Если нет эффектов появления - просто показываем сразу без интерполяции scale
+        // (scale уже = 1 от Identity, так что буква появляется мгновенно)
+        // Если нужна базовая интерполяция - раскомментируйте:
+        // if (appearEffects.effects == null || appearEffects.effects.Length == 0)
+        // {
+        //     result.scale = stateProgress; // 0 -> 1
+        // }
+        
+        return result;
     }
     
     /// <summary>
