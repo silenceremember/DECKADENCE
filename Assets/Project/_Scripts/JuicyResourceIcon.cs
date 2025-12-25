@@ -28,6 +28,10 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     [Range(0.05f, 0.2f)] public float bubbleSize = 0.1f;
     [Range(0, 1)] public float splashIntensity = 0f;          // Splash (choice)
     
+    [Header("Pixelation")]
+    [Tooltip("0 = off, 32-128 = pixelated")]
+    public float pixelDensity = 0f;
+    
     [Header("Glow and Pulse")]
     public Color glowColor = new Color(1f, 0.8f, 0.2f, 1f);
     [Range(0, 2)] public float glowIntensity = 0f;
@@ -112,6 +116,7 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     private static readonly int BubbleIntensityID = Shader.PropertyToID("_BubbleIntensity");
     private static readonly int BubbleSizeID = Shader.PropertyToID("_BubbleSize");
     private static readonly int SplashIntensityID = Shader.PropertyToID("_SplashIntensity");
+    private static readonly int PixelDensityID = Shader.PropertyToID("_PixelDensity");
     
     private static readonly int GlowColorID = Shader.PropertyToID("_GlowColor");
     private static readonly int GlowIntensityID = Shader.PropertyToID("_GlowIntensity");
@@ -405,6 +410,7 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
         _materialInstance.SetFloat(BubbleIntensityID, bubbleIntensity);
         _materialInstance.SetFloat(BubbleSizeID, bubbleSize);
         _materialInstance.SetFloat(SplashIntensityID, splashIntensity);
+        _materialInstance.SetFloat(PixelDensityID, pixelDensity);
         
         // Glow/Pulse
         _materialInstance.SetColor(GlowColorID, glowColor);

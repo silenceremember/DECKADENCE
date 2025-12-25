@@ -20,6 +20,9 @@ Shader "Custom/JuicyResourceIcon"
         _BubbleSize ("Bubble Size", Range(0.05, 0.2)) = 0.1
         _SplashIntensity ("Splash", Range(0, 1)) = 0.0
         
+        [Header(Pixelation)]
+        _PixelDensity ("Pixel Density (0=off)", Float) = 0
+        
         [Header(Glow and Pulse)]
         _GlowColor ("Glow Color", Color) = (1, 0.8, 0.2, 1)
         _GlowIntensity ("Glow Intensity", Range(0, 2)) = 0.0
@@ -122,6 +125,7 @@ Shader "Custom/JuicyResourceIcon"
                 float _BubbleIntensity;
                 float _BubbleSize;
                 float _SplashIntensity;
+                float _PixelDensity;
                 
                 float4 _GlowColor;
                 float _GlowIntensity;
@@ -240,30 +244,58 @@ Shader "Custom/JuicyResourceIcon"
             {
                 float time = _Time.y;
                 float2 uv = IN.uv;
+                float2 pixelUV = uv; // For pixelated calculations
                 
-                half4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv);
+                // Pixelation
+                bool pixelated = _PixelDensity > 0.5;
+                if (pixelated)
+                {
+                    pixelUV = floor(uv * _PixelDensity) / _PixelDensity;
+                }
+                
+                half4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, pixelUV);
                 
                 if (IN.isShadow > 0.5)
                 {
                     return half4(_ShadowColor.rgb, texColor.a * _ShadowColor.a * IN.color.a);
                 }
                 
-                float fillLine = getLiquidSurface(uv, time);
-                float isFilled = smoothstep(fillLine + 0.012, fillLine - 0.012, uv.y);
+                // Use pixelated UV for liquid calculations
+                float fillLine = getLiquidSurface(pixelUV, time);
+                
+                // Pixelate the fill line itself for sharp edges
+                if (pixelated)
+                {
+                    fillLine = floor(fillLine * _PixelDensity) / _PixelDensity;
+                }
+                
+                // Sharp edge when pixelated, soft when not
+                float isFilled;
+                if (pixelated)
+                {
+                    isFilled = step(pixelUV.y, fillLine); // Sharp edge
+                }
+                else
+                {
+                    isFilled = smoothstep(fillLine + 0.012, fillLine - 0.012, uv.y);
+                }
                 
                 half4 background = half4(_BackgroundColor.rgb, texColor.a * _BackgroundAlpha);
                 half4 filled = texColor * _FillColor;
                 
-                // Bubbles
-                float bubbles = getBubbles(uv, fillLine, time);
+                // Bubbles (use pixelated UV)
+                float bubbles = getBubbles(pixelUV, fillLine, time);
                 filled.rgb += bubbles * 0.6;
                 
-                // Surface glow line
-                float surfaceGlow = exp(-abs(uv.y - fillLine) * 60.0) * 0.4 * isFilled;
-                filled.rgb += surfaceGlow;
+                // Surface glow line (skip when pixelated for cleaner look)
+                if (!pixelated)
+                {
+                    float surfaceGlow = exp(-abs(uv.y - fillLine) * 60.0) * 0.4 * isFilled;
+                    filled.rgb += surfaceGlow;
+                }
                 
                 // Depth gradient
-                filled.rgb *= lerp(0.85, 1.0, uv.y / max(fillLine, 0.01));
+                filled.rgb *= lerp(0.85, 1.0, pixelUV.y / max(fillLine, 0.01));
                 
                 half4 result;
                 result.rgb = lerp(background.rgb, filled.rgb, isFilled);
