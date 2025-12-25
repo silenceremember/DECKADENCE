@@ -1,10 +1,13 @@
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 /// <summary>
 /// Controller for JuicyResourceIcon shader effects.
 /// Provides C# API for triggering and animating all juicy effects.
 /// Supports mesh-based shadow like ShaderShadow for Image.
+/// 
+/// MAXIMUM JUICE: Includes DOTween-based animations for all effects.
 /// </summary>
 [RequireComponent(typeof(Graphic))]
 [ExecuteAlways]
@@ -40,13 +43,35 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     public Color shadowColor = new Color(0, 0, 0, 0.5f);
     public float shadowIntensity = 5f;
     
+    [Header("Animation Presets")]
+    [Tooltip("Duration for fill animations")]
+    public float fillDuration = 0.5f;
+    public Ease fillEase = Ease.OutBack;
+    
+    [Tooltip("Duration for highlight/flash")]
+    public float flashDuration = 0.15f;
+    
+    [Tooltip("Duration for shake")]
+    public float shakeDuration = 0.3f;
+    
+    [Tooltip("Scale punch intensity")]
+    public float punchScale = 0.2f;
+    
     [Header("Debug")]
     [SerializeField] private Vector2 currentShadowOffset;
     
     private Graphic _graphic;
     private Canvas _canvas;
     private Material _materialInstance;
-    private float _lastScale;
+    private RectTransform _rectTransform;
+    private Sequence _currentSequence;
+    private Tween _fillTween;
+    private Tween _shakeTween;
+    private Tween _pulseTween;
+    private Tween _glowTween;
+    private Tween _previewGlowTween;
+    private Tween _previewPulseTween;
+    private bool _isPreviewActive;
     
     // Shader property IDs
     private static readonly int FillAmountID = Shader.PropertyToID("_FillAmount");
@@ -70,6 +95,7 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     void Awake()
     {
         _graphic = GetComponent<Graphic>();
+        _rectTransform = GetComponent<RectTransform>();
     }
     
     void Start()
@@ -86,12 +112,15 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     
     void OnDisable()
     {
+        KillAllTweens();
         if (_graphic != null)
             _graphic.SetVerticesDirty();
     }
     
     void OnDestroy()
     {
+        KillAllTweens();
+        
         if (_materialInstance != null)
         {
             if (Application.isPlaying)
@@ -99,6 +128,15 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
             else
                 DestroyImmediate(_materialInstance);
         }
+    }
+    
+    void KillAllTweens()
+    {
+        _currentSequence?.Kill();
+        _fillTween?.Kill();
+        _shakeTween?.Kill();
+        _pulseTween?.Kill();
+        _glowTween?.Kill();
     }
     
     void CreateMaterialInstance()
@@ -286,26 +324,324 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
             UpdateShaderProperties();
     }
     
-    // === PUBLIC API FOR ANIMATIONS ===
+    // =====================================================
+    // === MAXIMUM JUICE API ===
+    // =====================================================
     
-    /// <summary>Set fill with optional animation target for DOTween.</summary>
+    /// <summary>
+    /// Animate fill to target value with all the juice!
+    /// Includes scale punch and glow.
+    /// </summary>
+    public Tween AnimateFillTo(float targetFill, float duration = -1)
+    {
+        if (duration < 0) duration = fillDuration;
+        
+        _fillTween?.Kill();
+        _fillTween = DOTween.To(() => fillAmount, x => fillAmount = x, targetFill, duration)
+            .SetEase(fillEase);
+        
+        return _fillTween;
+    }
+    
+    /// <summary>
+    /// JUICY resource gain effect!
+    /// Flash + scale punch + glow burst + fill increase.
+    /// </summary>
+    public Sequence PlayGainEffect(float newFillAmount, Color? flashColor = null)
+    {
+        _currentSequence?.Kill();
+        _currentSequence = DOTween.Sequence();
+        
+        Color flash = flashColor ?? new Color(0.5f, 1f, 0.5f, 1f); // Green flash
+        
+        // Scale punch
+        _currentSequence.Append(
+            _rectTransform.DOPunchScale(Vector3.one * punchScale, flashDuration * 2, 1, 0.5f)
+        );
+        
+        // Flash
+        _currentSequence.Join(
+            DOTween.To(() => highlightIntensity, x => highlightIntensity = x, 0.8f, flashDuration * 0.5f)
+                .SetEase(Ease.OutQuad)
+        );
+        highlightColor = flash;
+        
+        // Glow burst
+        _currentSequence.Join(
+            DOTween.To(() => glowIntensity, x => glowIntensity = x, 1.5f, flashDuration)
+                .SetEase(Ease.OutQuad)
+        );
+        glowColor = flash;
+        
+        // Fill animation
+        _currentSequence.Join(AnimateFillTo(newFillAmount));
+        
+        // Fade out effects
+        _currentSequence.Append(
+            DOTween.To(() => highlightIntensity, x => highlightIntensity = x, 0f, flashDuration)
+        );
+        _currentSequence.Join(
+            DOTween.To(() => glowIntensity, x => glowIntensity = x, 0f, flashDuration * 2)
+        );
+        
+        return _currentSequence;
+    }
+    
+    /// <summary>
+    /// JUICY resource loss effect!
+    /// Red flash + shake + fill decrease.
+    /// </summary>
+    public Sequence PlayLossEffect(float newFillAmount, Color? flashColor = null)
+    {
+        _currentSequence?.Kill();
+        _currentSequence = DOTween.Sequence();
+        
+        Color flash = flashColor ?? new Color(1f, 0.3f, 0.3f, 1f); // Red flash
+        
+        // Shake
+        _currentSequence.Append(
+            DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 15f, shakeDuration * 0.3f)
+                .SetEase(Ease.OutQuad)
+        );
+        
+        // Flash
+        _currentSequence.Join(
+            DOTween.To(() => highlightIntensity, x => highlightIntensity = x, 0.6f, flashDuration * 0.5f)
+                .SetEase(Ease.OutQuad)
+        );
+        highlightColor = flash;
+        
+        // Tint overlay
+        tintOverlay = new Color(flash.r, flash.g, flash.b, 0.3f);
+        
+        // Fill animation
+        _currentSequence.Join(AnimateFillTo(newFillAmount, fillDuration * 0.7f));
+        
+        // Fade out effects
+        _currentSequence.Append(
+            DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 0f, shakeDuration)
+        );
+        _currentSequence.Join(
+            DOTween.To(() => highlightIntensity, x => highlightIntensity = x, 0f, flashDuration)
+        );
+        _currentSequence.Join(
+            DOTween.To(() => tintOverlay, x => tintOverlay = x, new Color(1, 1, 1, 0), flashDuration * 2)
+        );
+        
+        return _currentSequence;
+    }
+    
+    /// <summary>
+    /// Critical/low resource warning effect!
+    /// Continuous pulse + red glow.
+    /// </summary>
+    public void StartCriticalPulse(Color? pulseColor = null)
+    {
+        Color glow = pulseColor ?? new Color(1f, 0.2f, 0.2f, 1f);
+        glowColor = glow;
+        
+        _pulseTween?.Kill();
+        pulseIntensity = 0.5f;
+        glowIntensity = 0.8f;
+    }
+    
+    public void StopCriticalPulse()
+    {
+        _pulseTween?.Kill();
+        
+        DOTween.To(() => pulseIntensity, x => pulseIntensity = x, 0f, 0.3f);
+        DOTween.To(() => glowIntensity, x => glowIntensity = x, 0f, 0.3f);
+    }
+    
+    /// <summary>
+    /// Quick highlight flash.
+    /// </summary>
+    public Tween Flash(Color? color = null, float intensity = 0.7f)
+    {
+        highlightColor = color ?? Color.white;
+        highlightIntensity = intensity;
+        
+        return DOTween.To(() => highlightIntensity, x => highlightIntensity = x, 0f, flashDuration)
+            .SetEase(Ease.OutQuad);
+    }
+    
+    /// <summary>
+    /// Punch scale effect.
+    /// </summary>
+    public Tween PunchScale(float scale = -1)
+    {
+        if (scale < 0) scale = punchScale;
+        return _rectTransform.DOPunchScale(Vector3.one * scale, flashDuration * 2, 1, 0.5f);
+    }
+    
+    /// <summary>
+    /// Shake effect.
+    /// </summary>
+    public Tween Shake(float intensity = 10f, float duration = -1)
+    {
+        if (duration < 0) duration = shakeDuration;
+        
+        _shakeTween?.Kill();
+        shakeIntensity = intensity;
+        _shakeTween = DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 0f, duration)
+            .SetEase(Ease.OutQuad);
+        
+        return _shakeTween;
+    }
+    
+    /// <summary>
+    /// Glow effect with auto-fade.
+    /// </summary>
+    public Tween Glow(Color? color = null, float intensity = 1f, float duration = 0.5f)
+    {
+        glowColor = color ?? glowColor;
+        glowIntensity = intensity;
+        
+        _glowTween?.Kill();
+        _glowTween = DOTween.To(() => glowIntensity, x => glowIntensity = x, 0f, duration)
+            .SetEase(Ease.OutQuad);
+        
+        return _glowTween;
+    }
+    
+    // === SIMPLE API (no animation) ===
+    
     public void SetFill(float amount) => fillAmount = amount;
-    
-    /// <summary>Flash highlight effect.</summary>
-    public void TriggerHighlight(float intensity = 1f) => highlightIntensity = intensity;
-    
-    /// <summary>Start pulse effect.</summary>
-    public void StartPulse(float intensity = 0.5f) => pulseIntensity = intensity;
-    public void StopPulse() => pulseIntensity = 0f;
-    
-    /// <summary>Start glow effect.</summary>
-    public void SetGlow(float intensity) => glowIntensity = intensity;
-    
-    /// <summary>Start shake effect.</summary>
-    public void StartShake(float intensity = 10f) => shakeIntensity = intensity;
-    public void StopShake() => shakeIntensity = 0f;
-    
-    /// <summary>Set tint overlay (alpha controls blend).</summary>
+    public void SetHighlight(float intensity) => highlightIntensity = intensity;
+    public void SetPulse(float intensity) => pulseIntensity = intensity;
+    public void SetGlowIntensity(float intensity) => glowIntensity = intensity;
+    public void SetShake(float intensity) => shakeIntensity = intensity;
     public void SetTint(Color color) => tintOverlay = color;
     public void ClearTint() => tintOverlay = new Color(1, 1, 1, 0);
+    
+    // =====================================================
+    // === MAGNITUDE-BASED JUICE (no gain/loss reveal) ===
+    // =====================================================
+    
+    /// <summary>
+    /// Play magnitude-based effect - intensity scales with |delta|.
+    /// Doesn't reveal whether it's gain or loss, just how BIG the change is.
+    /// Uses neutral golden color.
+    /// </summary>
+    /// <param name="newFillAmount">Target fill 0-1</param>
+    /// <param name="magnitude">Absolute magnitude 0-100 (or whatever your max delta is)</param>
+    /// <param name="maxMagnitude">Max expected magnitude for scaling (default 30)</param>
+    public Sequence PlayMagnitudeEffect(float newFillAmount, float magnitude, float maxMagnitude = 30f)
+    {
+        _currentSequence?.Kill();
+        _currentSequence = DOTween.Sequence();
+        
+        // Normalize magnitude to 0-1 scale
+        float t = Mathf.Clamp01(magnitude / maxMagnitude);
+        
+        // Neutral golden color - doesn't reveal gain/loss
+        Color effectColor = new Color(1f, 0.85f, 0.4f, 1f);
+        
+        // === SCALE PUNCH (stronger with magnitude) ===
+        float punchAmount = Mathf.Lerp(0.05f, punchScale * 1.5f, t);
+        _currentSequence.Append(
+            _rectTransform.DOPunchScale(Vector3.one * punchAmount, flashDuration * 2f, 1, 0.5f)
+        );
+        
+        // === SHAKE (only for significant changes) ===
+        if (t > 0.2f)
+        {
+            float shakeAmount = Mathf.Lerp(0.5f, 3f, t);
+            _currentSequence.Join(
+                DOTween.To(() => shakeIntensity, x => shakeIntensity = x, shakeAmount, shakeDuration * 0.3f)
+                    .SetEase(Ease.OutQuad)
+            );
+        }
+        
+        // === GLOW (scales with magnitude) ===
+        float glowAmount = Mathf.Lerp(0.3f, 1.5f, t);
+        glowColor = effectColor;
+        _currentSequence.Join(
+            DOTween.To(() => glowIntensity, x => glowIntensity = x, glowAmount, flashDuration)
+                .SetEase(Ease.OutQuad)
+        );
+        
+        // === HIGHLIGHT FLASH (subtle for small, strong for big) ===
+        float flashAmount = Mathf.Lerp(0.2f, 0.7f, t);
+        highlightColor = effectColor;
+        _currentSequence.Join(
+            DOTween.To(() => highlightIntensity, x => highlightIntensity = x, flashAmount, flashDuration * 0.5f)
+                .SetEase(Ease.OutQuad)
+        );
+        
+        // === FILL ANIMATION ===
+        // Duration also scales - big changes animate slightly faster (more dramatic)
+        float fillDur = Mathf.Lerp(fillDuration, fillDuration * 0.7f, t);
+        _currentSequence.Join(AnimateFillTo(newFillAmount, fillDur));
+        
+        // === FADE OUT ALL EFFECTS ===
+        float fadeTime = Mathf.Lerp(0.2f, 0.4f, t);
+        
+        _currentSequence.Append(
+            DOTween.To(() => highlightIntensity, x => highlightIntensity = x, 0f, fadeTime)
+        );
+        _currentSequence.Join(
+            DOTween.To(() => glowIntensity, x => glowIntensity = x, 0f, fadeTime * 1.5f)
+        );
+        _currentSequence.Join(
+            DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 0f, fadeTime * 2f)
+        );
+        
+        return _currentSequence;
+    }
+    
+    /// <summary>
+    /// Preview/highlight effect for when player is hovering/dragging.
+    /// Shows that this resource WILL change, intensity based on magnitude.
+    /// Includes SHAKE for juicy feedback!
+    /// </summary>
+    public void PlayHighlightPreview(float magnitude, float maxMagnitude = 30f)
+    {
+        // Kill any fade-out tweens
+        _previewGlowTween?.Kill();
+        _previewPulseTween?.Kill();
+        
+        _isPreviewActive = true;
+        
+        float t = Mathf.Clamp01(magnitude / maxMagnitude);
+        
+        // Subtle neutral glow
+        glowColor = new Color(1f, 0.9f, 0.6f, 1f);
+        glowIntensity = Mathf.Lerp(0.3f, 0.8f, t);
+        
+        // Pulse for larger changes
+        pulseIntensity = Mathf.Lerp(0f, 0.4f, t);
+        
+        // SHAKE - scales with magnitude (the juice!)
+        // Values are in local space units (UI pixels)
+        shakeIntensity = Mathf.Lerp(0.5f, 3f, t);
+    }
+    
+    /// <summary>
+    /// Stop preview highlight.
+    /// </summary>
+    public void StopHighlightPreview()
+    {
+        if (!_isPreviewActive) return; // Not showing preview
+        _isPreviewActive = false;
+        
+        // Kill existing tweens before creating new ones
+        _previewGlowTween?.Kill();
+        _previewPulseTween?.Kill();
+        
+        _previewGlowTween = DOTween.To(() => glowIntensity, x => glowIntensity = x, 0f, 0.2f);
+        _previewPulseTween = DOTween.To(() => pulseIntensity, x => pulseIntensity = x, 0f, 0.2f);
+        
+        // Fade out shake
+        DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 0f, 0.15f);
+    }
+    
+    public void ClearAllEffects()
+    {
+        highlightIntensity = 0;
+        pulseIntensity = 0;
+        glowIntensity = 0;
+        shakeIntensity = 0;
+        tintOverlay = new Color(1, 1, 1, 0);
+    }
 }

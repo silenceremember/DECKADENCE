@@ -29,6 +29,7 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _BackgroundAlpha: 0.5
     - _ColorMask: 15
     - _FillAmount: 1
     - _FillWaveSpeed: 3
@@ -46,6 +47,7 @@ Material:
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
     m_Colors:
+    - _BackgroundColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 0.8}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
     - _FillColor: {r: 1, g: 1, b: 1, a: 1}

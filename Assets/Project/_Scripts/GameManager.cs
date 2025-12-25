@@ -31,11 +31,11 @@ public class GameManager : MonoBehaviour
     [Tooltip("♣ Трефы — Хаос/Дикий Рост")]
     public int clubs = 50;
 
-    [Header("UI Иконки (Filled Images)")]
-    public Image spadesIcon;
-    public Image heartsIcon;
-    public Image diamondsIcon;
-    public Image clubsIcon;
+    [Header("UI Иконки (JuicyResourceIcon)")]
+    public JuicyResourceIcon spadesIcon;
+    public JuicyResourceIcon heartsIcon;
+    public JuicyResourceIcon diamondsIcon;
+    public JuicyResourceIcon clubsIcon;
     
     [Header("UI Текст")]
     public TextMeshProUGUI shuffleText;
@@ -43,6 +43,12 @@ public class GameManager : MonoBehaviour
     [Header("Настройки Визуала")]
     public Color normalColor = Color.white;
     public Color highlightColor = Color.yellow;
+    
+    [Header("Критические Уровни")]
+    [Tooltip("Ниже этого значения включается Critical Pulse")]
+    public int criticalLowThreshold = 20;
+    [Tooltip("Выше этого значения включается Critical Pulse")]
+    public int criticalHighThreshold = 80;
 
     // Прогрессия
     private int _currentShuffle = 1;
@@ -81,13 +87,10 @@ public class GameManager : MonoBehaviour
         // 2. Инициализация колоды
         _activeDeck = new List<CardData>(allCards);
 
-        // 3. Запоминаем базовый цвет иконок
-        if (spadesIcon) normalColor = spadesIcon.color;
-        
-        // 4. Обновляем UI (статы и тасовку)
+        // 3. Обновляем UI (статы и тасовку)
         UpdateUI();
 
-        // 5. Запускаем игру (Спавн карт)
+        // 4. Запускаем игру (Спавн карт)
         InitCards();
     }
 
@@ -154,6 +157,12 @@ public class GameManager : MonoBehaviour
     // Применение эффектов выбора
     public void ApplyCardEffect(int dSpades, int dHearts, int dDiamonds, int dClubs)
     {
+        // Сохраняем старые значения для определения gain/loss
+        int oldSpades = spades;
+        int oldHearts = hearts;
+        int oldDiamonds = diamonds;
+        int oldClubs = clubs;
+        
         // Ограничиваем статы от 0 до 100
         spades = Mathf.Clamp(spades + dSpades, 0, 100);
         hearts = Mathf.Clamp(hearts + dHearts, 0, 100);
@@ -173,7 +182,63 @@ public class GameManager : MonoBehaviour
             OnNewShuffle();
         }
         
-        UpdateUI();
+        // JUICY анимации для каждого изменённого ресурса
+        ApplyJuicyEffect(spadesIcon, oldSpades, spades, dSpades);
+        ApplyJuicyEffect(heartsIcon, oldHearts, hearts, dHearts);
+        ApplyJuicyEffect(diamondsIcon, oldDiamonds, diamonds, dDiamonds);
+        ApplyJuicyEffect(clubsIcon, oldClubs, clubs, dClubs);
+        
+        // Обновляем текст тасовки
+        if (shuffleText != null) shuffleText.text = "Тасовка " + _currentShuffle;
+    }
+    
+    void ApplyJuicyEffect(JuicyResourceIcon icon, int oldValue, int newValue, int delta)
+    {
+        if (icon == null) return;
+        
+        float newFill = newValue / 100f;
+        float magnitude = Mathf.Abs(delta);
+        
+        if (delta != 0)
+        {
+            // MAGNITUDE-BASED EFFECT - doesn't reveal gain/loss, just intensity
+            icon.PlayMagnitudeEffect(newFill, magnitude);
+        }
+        else
+        {
+            // Нет изменения - просто обновляем fill
+            icon.AnimateFillTo(newFill);
+        }
+        
+        // Проверяем критические уровни
+        CheckCriticalLevel(icon, newValue);
+    }
+    
+    void CheckCriticalLevel(JuicyResourceIcon icon, int value)
+    {
+        if (icon == null) return;
+        
+        if (value <= criticalLowThreshold || value >= criticalHighThreshold)
+        {
+            // Включаем пульс предупреждения
+            icon.StartCriticalPulse();
+        }
+        else
+        {
+            // Выключаем пульс
+            icon.StopCriticalPulse();
+        }
+    }
+
+    void UpdateUI()
+    {
+        // Обновляем заполнение иконок (без анимации - для инициализации)
+        if (spadesIcon) spadesIcon.SetFill(spades / 100f);
+        if (heartsIcon) heartsIcon.SetFill(hearts / 100f);
+        if (diamondsIcon) diamondsIcon.SetFill(diamonds / 100f);
+        if (clubsIcon) clubsIcon.SetFill(clubs / 100f);
+
+        if (shuffleText != null) shuffleText.text = "Тасовка " + _currentShuffle;
     }
 
     // Вызывается при переходе к новой Тасовке
@@ -185,34 +250,38 @@ public class GameManager : MonoBehaviour
         // TODO: Возможно изменить визуал (фон темнеет?)
     }
 
-    void UpdateUI()
-    {
-        // Обновляем заполнение иконок
-        if (spadesIcon) spadesIcon.fillAmount = spades / 100f;
-        if (heartsIcon) heartsIcon.fillAmount = hearts / 100f;
-        if (diamondsIcon) diamondsIcon.fillAmount = diamonds / 100f;
-        if (clubsIcon) clubsIcon.fillAmount = clubs / 100f;
-
-        if (shuffleText != null) shuffleText.text = "Тасовка " + _currentShuffle;
-    }
-
-    // Подсветка иконок (Предсказание)
+    // Подсветка иконок (Предсказание) - magnitude-based, без подсказки gain/loss
     public void HighlightResources(int dSpades, int dHearts, int dDiamonds, int dClubs)
     {
-        // Красим иконку, если её ресурс изменится
-        if (spadesIcon) spadesIcon.color = (dSpades != 0) ? highlightColor : normalColor;
-        if (heartsIcon) heartsIcon.color = (dHearts != 0) ? highlightColor : normalColor;
-        if (diamondsIcon) diamondsIcon.color = (dDiamonds != 0) ? highlightColor : normalColor;
-        if (clubsIcon) clubsIcon.color = (dClubs != 0) ? highlightColor : normalColor;
+        // Показываем magnitude-based preview на иконках, которые изменятся
+        HighlightIcon(spadesIcon, Mathf.Abs(dSpades));
+        HighlightIcon(heartsIcon, Mathf.Abs(dHearts));
+        HighlightIcon(diamondsIcon, Mathf.Abs(dDiamonds));
+        HighlightIcon(clubsIcon, Mathf.Abs(dClubs));
+    }
+    
+    void HighlightIcon(JuicyResourceIcon icon, int magnitude)
+    {
+        if (icon == null) return;
+        
+        if (magnitude > 0)
+        {
+            // Magnitude-based preview - neutral golden glow
+            icon.PlayHighlightPreview(magnitude);
+        }
+        else
+        {
+            icon.StopHighlightPreview();
+        }
     }
 
-    // Сброс цветов
+    // Сброс подсветки
     public void ResetHighlights()
     {
-        if (spadesIcon) spadesIcon.color = normalColor;
-        if (heartsIcon) heartsIcon.color = normalColor;
-        if (diamondsIcon) diamondsIcon.color = normalColor;
-        if (clubsIcon) clubsIcon.color = normalColor;
+        if (spadesIcon) spadesIcon.SetGlowIntensity(0f);
+        if (heartsIcon) heartsIcon.SetGlowIntensity(0f);
+        if (diamondsIcon) diamondsIcon.SetGlowIntensity(0f);
+        if (clubsIcon) clubsIcon.SetGlowIntensity(0f);
     }
 
     bool CheckGameOver()

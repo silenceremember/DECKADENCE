@@ -119,6 +119,42 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!21 &87939401
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance)
+  m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
+  m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 8652641995189294035, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _OutlineWidth: 0
+    m_Colors:
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &101998755
 GameObject:
   m_ObjectHideFlags: 0
@@ -180,9 +216,9 @@ MonoBehaviour:
   m_text: NameText
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
-  m_sharedMaterial: {fileID: 1482254014}
+  m_sharedMaterial: {fileID: 1895067028}
   m_fontSharedMaterials: []
-  m_fontMaterial: {fileID: 402350098}
+  m_fontMaterial: {fileID: 639241394}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
@@ -270,12 +306,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TextShadow
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  intensity: 0.5
+  intensity: 0.25
   useScaleInfluence: 0
   scaleInfluence: 1
   scaleReference: {fileID: 0}
-  currentShadowOffset: {x: 0.35355338, y: -0.35355338}
-  currentEffectiveIntensity: 0.5
+  currentShadowOffset: {x: 0.17677669, y: -0.17677669}
+  currentEffectiveIntensity: 0.25
 --- !u!1 &231931108
 GameObject:
   m_ObjectHideFlags: 0
@@ -392,6 +428,7 @@ GameObject:
   m_Component:
   - component: {fileID: 290773388}
   - component: {fileID: 290773391}
+  - component: {fileID: 290773392}
   - component: {fileID: 290773390}
   - component: {fileID: 290773389}
   m_Layer: 5
@@ -446,7 +483,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 2100000, guid: 577e96df6f8bd6947a038fd919344e48, type: 2}
+  m_Material: {fileID: 1923022654}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -472,20 +509,56 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 290773387}
   m_CullTransparentMesh: 1
---- !u!21 &402350098
+--- !u!114 &290773392
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 290773387}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fe185afb1d8fa54ea3689785e4bd96f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JuicyResourceIcon
+  fillAmount: 0.5
+  fillColor: {r: 1, g: 1, b: 1, a: 1}
+  backgroundColor: {r: 0.5660378, g: 0.5660378, b: 0.5660378, a: 1}
+  backgroundAlpha: 0.5
+  fillWaveStrength: 0.02
+  fillWaveSpeed: 3
+  glowColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+  glowIntensity: 0
+  glowSize: 0.02
+  pulseSpeed: 2
+  pulseIntensity: 0
+  shakeIntensity: 0
+  shakeSpeed: 30
+  highlightColor: {r: 1, g: 1, b: 1, a: 1}
+  highlightIntensity: 0
+  tintOverlay: {r: 1, g: 1, b: 1, a: 0}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  shadowIntensity: 0.25
+  fillDuration: 0.5
+  fillEase: 27
+  flashDuration: 0.15
+  shakeDuration: 0.3
+  punchScale: 0.2
+  currentShadowOffset: {x: 0.14142136, y: -0.14142136}
+--- !u!21 &409975367
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance)
-  m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
-  m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
+  m_Name: Custom_UIShadow
+  m_Shader: {fileID: 4800000, guid: 14ca700f7c04e144bb6006eccd10b5f1, type: 3}
+  m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _USEDYNAMICSHADOW_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -497,14 +570,29 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 8652641995189294035, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _OutlineWidth: 0
+    - _ColorMask: 15
+    - _ShadowIntensity: 5
+    - _ShadowOffsetX: 0
+    - _ShadowOffsetY: 0
+    - _ShadowSoftness: 0
+    - _SolidRect: 1
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _UseDynamicShadow: 1
     m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _LightCenter: {r: 0, g: 0, b: 0, a: 0}
+    - _RectSize: {r: 750, g: 1000, b: 0, a: 0}
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+    - _ShadowOffset: {r: 3.535534, g: -3.535534, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &466759769
@@ -875,7 +963,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 923957159}
+  m_Material: {fileID: 409975367}
   m_Color: {r: 0.6509804, g: 0.6509804, b: 0.6509804, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -920,6 +1008,99 @@ MonoBehaviour:
   scaleReference: {fileID: 853034488}
   currentShadowOffset: {x: 3.535534, y: -3.535534}
   currentEffectiveIntensity: 5
+--- !u!21 &627826449
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Custom_JuicyResourceIcon
+  m_Shader: {fileID: 4800000, guid: 0a95f524eda177f4880fa4a0a43cc726, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BackgroundAlpha: 0.5
+    - _ColorMask: 15
+    - _FillAmount: 0.5
+    - _FillWaveSpeed: 3
+    - _FillWaveStrength: 0.02
+    - _GlowIntensity: 0
+    - _GlowSize: 0.02
+    - _HighlightIntensity: 0
+    - _PulseIntensity: 0
+    - _PulseSpeed: 2
+    - _ShakeIntensity: 0
+    - _ShakeSpeed: 30
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    m_Colors:
+    - _BackgroundColor: {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
+    - _FillColor: {r: 1, g: 1, b: 1, a: 1}
+    - _GlowColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+    - _TintOverlay: {r: 1, g: 1, b: 1, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
+--- !u!21 &639241394
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance)
+  m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
+  m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 8652641995189294035, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _OutlineWidth: 0
+    m_Colors:
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &646137484
 GameObject:
   m_ObjectHideFlags: 0
@@ -982,9 +1163,9 @@ MonoBehaviour:
   m_text: QuestionText
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
-  m_sharedMaterial: {fileID: 820408568}
+  m_sharedMaterial: {fileID: 1300657114}
   m_fontSharedMaterials: []
-  m_fontMaterial: {fileID: 1171611180}
+  m_fontMaterial: {fileID: 1214517991}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
@@ -1092,12 +1273,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TextShadow
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  intensity: 0.5
+  intensity: 0.25
   useScaleInfluence: 0
   scaleInfluence: 1
   scaleReference: {fileID: 0}
-  currentShadowOffset: {x: 0.35355338, y: -0.35355338}
-  currentEffectiveIntensity: 0.5
+  currentShadowOffset: {x: 0.17677669, y: -0.17677669}
+  currentEffectiveIntensity: 0.25
 --- !u!1 &700920394
 GameObject:
   m_ObjectHideFlags: 0
@@ -1257,41 +1438,6 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
---- !u!21 &820408568
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance)
-  m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
-  m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 8652641995189294035, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _OutlineWidth: 0
-    m_Colors:
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &853034487
 GameObject:
   m_ObjectHideFlags: 0
@@ -1406,56 +1552,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!21 &923957159
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Custom_UIShadow
-  m_Shader: {fileID: 4800000, guid: 14ca700f7c04e144bb6006eccd10b5f1, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords:
-  - _USEDYNAMICSHADOW_ON
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _ColorMask: 15
-    - _ShadowIntensity: 5
-    - _ShadowOffsetX: 0
-    - _ShadowOffsetY: 0
-    - _ShadowSoftness: 0
-    - _SolidRect: 1
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    - _UseDynamicShadow: 1
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _LightCenter: {r: 0, g: 0, b: 0, a: 0}
-    - _RectSize: {r: 750, g: 1000, b: 0, a: 0}
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-    - _ShadowOffset: {r: 3.535534, g: -3.535534, b: 0, a: 0}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &1036642013
 GameObject:
   m_ObjectHideFlags: 0
@@ -1518,9 +1614,9 @@ MonoBehaviour:
   m_text: 'ActionText '
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
-  m_sharedMaterial: {fileID: 1310734778}
+  m_sharedMaterial: {fileID: 2119503272}
   m_fontSharedMaterials: []
-  m_fontMaterial: {fileID: 1624829002}
+  m_fontMaterial: {fileID: 87939401}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
@@ -1628,23 +1724,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TextShadow
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  intensity: 1
+  intensity: 0.5
   useScaleInfluence: 0
   scaleInfluence: 1
   scaleReference: {fileID: 0}
-  currentShadowOffset: {x: 0.70710677, y: -0.70710677}
-  currentEffectiveIntensity: 1
---- !u!21 &1095139358
+  currentShadowOffset: {x: 0.35355338, y: -0.35355338}
+  currentEffectiveIntensity: 0.5
+--- !u!21 &1119272024
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance)
-  m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
-  m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
+  m_Name: Custom_JuicyResourceIcon
+  m_Shader: {fileID: 4800000, guid: 0a95f524eda177f4880fa4a0a43cc726, type: 3}
+  m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
@@ -1659,17 +1754,40 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 8652641995189294035, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _OutlineWidth: 0
+    - _BackgroundAlpha: 0.5
+    - _ColorMask: 15
+    - _FillAmount: 0.5
+    - _FillWaveSpeed: 3
+    - _FillWaveStrength: 0.02
+    - _GlowIntensity: 0
+    - _GlowSize: 0.02
+    - _HighlightIntensity: 0
+    - _PulseIntensity: 0
+    - _PulseSpeed: 2
+    - _ShakeIntensity: 0
+    - _ShakeSpeed: 30
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
     m_Colors:
+    - _BackgroundColor: {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
+    - _FillColor: {r: 1, g: 1, b: 1, a: 1}
+    - _GlowColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+    - _TintOverlay: {r: 1, g: 1, b: 1, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!21 &1171611180
+--- !u!21 &1214517991
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
@@ -1677,6 +1795,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
     (Instance) (Instance)
   m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
   m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
@@ -1704,7 +1823,7 @@ Material:
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!21 &1310734778
+--- !u!21 &1300657114
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
@@ -1712,6 +1831,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
     (Instance) (Instance)
   m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
   m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
@@ -1863,41 +1983,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1330394591}
   m_CullTransparentMesh: 1
---- !u!21 &1482254014
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance)
-  m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
-  m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 8652641995189294035, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _OutlineWidth: 0
-    m_Colors:
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &1505369101
 GameObject:
   m_ObjectHideFlags: 0
@@ -1959,9 +2044,9 @@ MonoBehaviour:
   m_text: "\u0422\u0430\u0441\u043E\u0432\u043A\u0430 1"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
-  m_sharedMaterial: {fileID: 1095139358}
+  m_sharedMaterial: {fileID: 1580777651}
   m_fontSharedMaterials: []
-  m_fontMaterial: {fileID: 1803288642}
+  m_fontMaterial: {fileID: 1791277949}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
@@ -2049,12 +2134,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TextShadow
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  intensity: 0.5
+  intensity: 0.25
   useScaleInfluence: 0
   scaleInfluence: 1
   scaleReference: {fileID: 0}
-  currentShadowOffset: {x: 0.35355338, y: -0.35355338}
-  currentEffectiveIntensity: 0.5
+  currentShadowOffset: {x: 0.17677669, y: -0.17677669}
+  currentEffectiveIntensity: 0.25
 --- !u!1 &1579959003
 GameObject:
   m_ObjectHideFlags: 0
@@ -2106,15 +2191,17 @@ MonoBehaviour:
   hearts: 50
   diamonds: 50
   clubs: 50
-  spadesIcon: {fileID: 290773390}
-  heartsIcon: {fileID: 2063988430}
-  diamondsIcon: {fileID: 1918162389}
-  clubsIcon: {fileID: 2066376435}
+  spadesIcon: {fileID: 290773392}
+  heartsIcon: {fileID: 2063988432}
+  diamondsIcon: {fileID: 1918162391}
+  clubsIcon: {fileID: 2066376437}
   shuffleText: {fileID: 1505369103}
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   highlightColor: {r: 0, g: 1, b: 0, a: 1}
+  criticalLowThreshold: 20
+  criticalHighThreshold: 80
   cardsPerShuffle: 15
---- !u!21 &1624829002
+--- !u!21 &1580777651
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
@@ -2122,7 +2209,8 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance)
   m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
   m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
   m_ModifiedSerializedProperties: 0
@@ -2228,6 +2316,99 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!21 &1782286226
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Custom_JuicyResourceIcon
+  m_Shader: {fileID: 4800000, guid: 0a95f524eda177f4880fa4a0a43cc726, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BackgroundAlpha: 0.5
+    - _ColorMask: 15
+    - _FillAmount: 0.5
+    - _FillWaveSpeed: 3
+    - _FillWaveStrength: 0.02
+    - _GlowIntensity: 0
+    - _GlowSize: 0.02
+    - _HighlightIntensity: 0
+    - _PulseIntensity: 0
+    - _PulseSpeed: 2
+    - _ShakeIntensity: 0
+    - _ShakeSpeed: 30
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    m_Colors:
+    - _BackgroundColor: {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
+    - _FillColor: {r: 1, g: 1, b: 1, a: 1}
+    - _GlowColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+    - _TintOverlay: {r: 1, g: 1, b: 1, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
+--- !u!21 &1791277949
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance)
+  m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
+  m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 8652641995189294035, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _OutlineWidth: 0
+    m_Colors:
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &1799412875
 GameObject:
   m_ObjectHideFlags: 0
@@ -2285,7 +2466,7 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
---- !u!21 &1803288642
+--- !u!21 &1895067028
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
@@ -2293,7 +2474,8 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
-    (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance)
   m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
   m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
   m_ModifiedSerializedProperties: 0
@@ -2331,6 +2513,7 @@ GameObject:
   - component: {fileID: 1918162387}
   - component: {fileID: 1918162390}
   - component: {fileID: 1918162389}
+  - component: {fileID: 1918162391}
   - component: {fileID: 1918162388}
   m_Layer: 5
   m_Name: Diamonds_Fill
@@ -2384,7 +2567,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 2100000, guid: 577e96df6f8bd6947a038fd919344e48, type: 2}
+  m_Material: {fileID: 627826449}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -2410,6 +2593,99 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1918162386}
   m_CullTransparentMesh: 1
+--- !u!114 &1918162391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1918162386}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fe185afb1d8fa54ea3689785e4bd96f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JuicyResourceIcon
+  fillAmount: 0.5
+  fillColor: {r: 1, g: 1, b: 1, a: 1}
+  backgroundColor: {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 1}
+  backgroundAlpha: 0.5
+  fillWaveStrength: 0.02
+  fillWaveSpeed: 3
+  glowColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+  glowIntensity: 0
+  glowSize: 0.02
+  pulseSpeed: 2
+  pulseIntensity: 0
+  shakeIntensity: 0
+  shakeSpeed: 30
+  highlightColor: {r: 1, g: 1, b: 1, a: 1}
+  highlightIntensity: 0
+  tintOverlay: {r: 1, g: 1, b: 1, a: 0}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  shadowIntensity: 0.25
+  fillDuration: 0.5
+  fillEase: 27
+  flashDuration: 0.15
+  shakeDuration: 0.3
+  punchScale: 0.2
+  currentShadowOffset: {x: 0.17677669, y: -0.17677669}
+--- !u!21 &1923022654
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Custom_JuicyResourceIcon
+  m_Shader: {fileID: 4800000, guid: 0a95f524eda177f4880fa4a0a43cc726, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BackgroundAlpha: 0.5
+    - _ColorMask: 15
+    - _FillAmount: 0.5
+    - _FillWaveSpeed: 3
+    - _FillWaveStrength: 0.02
+    - _GlowIntensity: 0
+    - _GlowSize: 0.02
+    - _HighlightIntensity: 0
+    - _PulseIntensity: 0
+    - _PulseSpeed: 2
+    - _ShakeIntensity: 0
+    - _ShakeSpeed: 30
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    m_Colors:
+    - _BackgroundColor: {r: 0.5660378, g: 0.5660378, b: 0.5660378, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
+    - _FillColor: {r: 1, g: 1, b: 1, a: 1}
+    - _GlowColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+    - _TintOverlay: {r: 1, g: 1, b: 1, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &2063988427
 GameObject:
   m_ObjectHideFlags: 0
@@ -2421,6 +2697,7 @@ GameObject:
   - component: {fileID: 2063988428}
   - component: {fileID: 2063988431}
   - component: {fileID: 2063988430}
+  - component: {fileID: 2063988432}
   - component: {fileID: 2063988429}
   m_Layer: 5
   m_Name: Hearts_Fill
@@ -2474,7 +2751,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 2100000, guid: 577e96df6f8bd6947a038fd919344e48, type: 2}
+  m_Material: {fileID: 1782286226}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -2500,6 +2777,42 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2063988427}
   m_CullTransparentMesh: 1
+--- !u!114 &2063988432
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2063988427}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fe185afb1d8fa54ea3689785e4bd96f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JuicyResourceIcon
+  fillAmount: 0.5
+  fillColor: {r: 1, g: 1, b: 1, a: 1}
+  backgroundColor: {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 1}
+  backgroundAlpha: 0.5
+  fillWaveStrength: 0.02
+  fillWaveSpeed: 3
+  glowColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+  glowIntensity: 0
+  glowSize: 0.02
+  pulseSpeed: 2
+  pulseIntensity: 0
+  shakeIntensity: 0
+  shakeSpeed: 30
+  highlightColor: {r: 1, g: 1, b: 1, a: 1}
+  highlightIntensity: 0
+  tintOverlay: {r: 1, g: 1, b: 1, a: 0}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  shadowIntensity: 0.25
+  fillDuration: 0.5
+  fillEase: 27
+  flashDuration: 0.15
+  shakeDuration: 0.3
+  punchScale: 0.2
+  currentShadowOffset: {x: 0.17677669, y: -0.17677669}
 --- !u!1 &2066376432
 GameObject:
   m_ObjectHideFlags: 0
@@ -2512,6 +2825,7 @@ GameObject:
   - component: {fileID: 2066376436}
   - component: {fileID: 2066376435}
   - component: {fileID: 2066376434}
+  - component: {fileID: 2066376437}
   m_Layer: 5
   m_Name: Clubs_Fill
   m_TagString: Untagged
@@ -2564,7 +2878,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 2100000, guid: 577e96df6f8bd6947a038fd919344e48, type: 2}
+  m_Material: {fileID: 1119272024}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -2590,6 +2904,42 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2066376432}
   m_CullTransparentMesh: 1
+--- !u!114 &2066376437
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2066376432}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fe185afb1d8fa54ea3689785e4bd96f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JuicyResourceIcon
+  fillAmount: 0.5
+  fillColor: {r: 1, g: 1, b: 1, a: 1}
+  backgroundColor: {r: 0.5647059, g: 0.5647059, b: 0.5647059, a: 1}
+  backgroundAlpha: 0.5
+  fillWaveStrength: 0.02
+  fillWaveSpeed: 3
+  glowColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+  glowIntensity: 0
+  glowSize: 0.02
+  pulseSpeed: 2
+  pulseIntensity: 0
+  shakeIntensity: 0
+  shakeSpeed: 30
+  highlightColor: {r: 1, g: 1, b: 1, a: 1}
+  highlightIntensity: 0
+  tintOverlay: {r: 1, g: 1, b: 1, a: 0}
+  shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  shadowIntensity: 0.25
+  fillDuration: 0.5
+  fillEase: 27
+  flashDuration: 0.15
+  shakeDuration: 0.3
+  punchScale: 0.2
+  currentShadowOffset: {x: 0.17677669, y: -0.17677669}
 --- !u!1 &2082334215
 GameObject:
   m_ObjectHideFlags: 0
@@ -2692,6 +3042,42 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!21 &2119503272
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: RussoOne-Regular SDF Material (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance) (Instance) (Instance) (Instance) (Instance) (Instance)
+    (Instance) (Instance)
+  m_Shader: {fileID: 4800000, guid: 9aacd64aca2042840a5587318decc081, type: 3}
+  m_Parent: {fileID: 2100000, guid: a32338fed5fec5a45bf69d8ab34a2f59, type: 2}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 8652641995189294035, guid: d4fb93030cd81014eacd92b6e6d9c625, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _OutlineWidth: 0
+    m_Colors:
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

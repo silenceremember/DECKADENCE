@@ -140,13 +140,13 @@ Shader "Custom/JuicyResourceIcon"
                 
                 float3 posOS = IN.positionOS.xyz;
                 
-                // Apply shake in vertex shader
+                // Apply shake in vertex shader (UI needs larger values)
                 if (_ShakeIntensity > 0.001)
                 {
                     float time = _Time.y * _ShakeSpeed;
                     float2 shake;
-                    shake.x = sin(time) * cos(time * 1.3) * _ShakeIntensity * 0.01;
-                    shake.y = cos(time * 0.7) * sin(time * 1.1) * _ShakeIntensity * 0.01;
+                    shake.x = sin(time) * cos(time * 1.3) * _ShakeIntensity;
+                    shake.y = cos(time * 0.7) * sin(time * 1.1) * _ShakeIntensity;
                     posOS.xy += shake;
                 }
                 
