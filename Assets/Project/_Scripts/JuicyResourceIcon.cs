@@ -14,14 +14,11 @@ using DG.Tweening;
 public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
 {
     [Header("Color Preset")]
-    [Tooltip("Optional: assign a color preset to override colors")]
+    [Tooltip("Assign a color preset for this icon")]
     public JuicyIconColorPreset colorPreset;
     
     [Header("Fill Effect")]
     [Range(0, 1)] public float fillAmount = 1f;
-    public Color fillColor = new Color(0.3f, 0.7f, 0.95f, 1f);  // Nice blue
-    public Color backgroundColor = new Color(0.1f, 0.15f, 0.25f, 1f);  // Dark blue
-    [Range(0, 1)] public float backgroundAlpha = 0.7f;
     public float fillWaveStrength = 0.02f;
     public float fillWaveSpeed = 3f;
     
@@ -30,7 +27,6 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     [Range(0, 1)] public float liquidTurbulence = 0f;         // Sharp waves (shake)
     [Range(0, 1)] public float bubbleIntensity = 0f;          // Bubbles (shake)
     [Range(0.05f, 0.2f)] public float bubbleSize = 0.1f;
-    public Color bubbleColor = new Color(0.7f, 0.9f, 1f, 0.8f);  // Light blue bubbles
     [Range(0, 1)] public float splashIntensity = 0f;          // Splash (choice)
     
     [Header("Pixelation")]
@@ -38,11 +34,17 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     public float pixelDensity = 0f;
     
     [Header("Glow and Pulse")]
-    public Color glowColor = new Color(1f, 0.8f, 0.2f, 1f);
     [Range(0, 2)] public float glowIntensity = 0f;
     [Range(0, 0.1f)] public float glowSize = 0.02f;
     public float pulseSpeed = 2f;
     [Range(0, 1)] public float pulseIntensity = 0f;
+    
+    // Colors from preset (with fallbacks)
+    Color FillColor => colorPreset != null ? colorPreset.fillColor : Color.white;
+    Color BackgroundColor => colorPreset != null ? colorPreset.backgroundColor : new Color(0.1f, 0.1f, 0.1f);
+    float BackgroundAlpha => colorPreset != null ? colorPreset.backgroundAlpha : 0.7f;
+    Color BubbleColor => colorPreset != null ? colorPreset.bubbleColor : Color.white;
+    Color GlowColor => colorPreset != null ? colorPreset.glowColor : Color.yellow;
     
     [Header("Shake Effect")]
     [Range(0, 20)] public float shakeIntensity = 0f;
@@ -152,25 +154,8 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
         _baseScale = _rectTransform.localScale;
         _baseRotation = _rectTransform.localRotation;
         
-        // Apply color preset if assigned
-        ApplyColorPreset();
-        
         // Reset liquid to calm state on start
         ResetLiquidToCalm();
-    }
-    
-    /// <summary>
-    /// Apply colors from the color preset (if assigned)
-    /// </summary>
-    public void ApplyColorPreset()
-    {
-        if (colorPreset == null) return;
-        
-        fillColor = colorPreset.fillColor;
-        backgroundColor = colorPreset.backgroundColor;
-        backgroundAlpha = colorPreset.backgroundAlpha;
-        bubbleColor = colorPreset.bubbleColor;
-        glowColor = colorPreset.glowColor;
     }
     
     /// <summary>
@@ -419,11 +404,11 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     
     void UpdateShaderProperties()
     {
-        // Fill
+        // Fill (colors from preset)
         _materialInstance.SetFloat(FillAmountID, fillAmount);
-        _materialInstance.SetColor(FillColorID, fillColor);
-        _materialInstance.SetColor(BackgroundColorID, backgroundColor);
-        _materialInstance.SetFloat(BackgroundAlphaID, backgroundAlpha);
+        _materialInstance.SetColor(FillColorID, FillColor);
+        _materialInstance.SetColor(BackgroundColorID, BackgroundColor);
+        _materialInstance.SetFloat(BackgroundAlphaID, BackgroundAlpha);
         _materialInstance.SetFloat(FillWaveStrengthID, fillWaveStrength);
         _materialInstance.SetFloat(FillWaveSpeedID, fillWaveSpeed);
         
@@ -432,12 +417,12 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
         _materialInstance.SetFloat(LiquidTurbulenceID, liquidTurbulence);
         _materialInstance.SetFloat(BubbleIntensityID, bubbleIntensity);
         _materialInstance.SetFloat(BubbleSizeID, bubbleSize);
-        _materialInstance.SetColor(BubbleColorID, bubbleColor);
+        _materialInstance.SetColor(BubbleColorID, BubbleColor);
         _materialInstance.SetFloat(SplashIntensityID, splashIntensity);
         _materialInstance.SetFloat(PixelDensityID, pixelDensity);
         
         // Glow/Pulse
-        _materialInstance.SetColor(GlowColorID, glowColor);
+        _materialInstance.SetColor(GlowColorID, GlowColor);
         _materialInstance.SetFloat(GlowIntensityID, glowIntensity);
         _materialInstance.SetFloat(GlowSizeID, glowSize);
         _materialInstance.SetFloat(PulseSpeedID, pulseSpeed);
@@ -622,7 +607,6 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
             DOTween.To(() => glowIntensity, x => glowIntensity = x, 1.5f, flashDuration)
                 .SetEase(Ease.OutQuad)
         );
-        glowColor = flash;
         
         // Fill animation
         _currentSequence.Join(AnimateFillTo(newFillAmount));
@@ -689,11 +673,8 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     /// Critical/low resource warning effect!
     /// Continuous pulse + red glow.
     /// </summary>
-    public void StartCriticalPulse(Color? pulseColor = null)
+    public void StartCriticalPulse()
     {
-        Color glow = pulseColor ?? new Color(1f, 0.2f, 0.2f, 1f);
-        glowColor = glow;
-        
         _pulseTween?.Kill();
         pulseIntensity = 0.5f;
         glowIntensity = 0.8f;
@@ -746,9 +727,8 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     /// <summary>
     /// Glow effect with auto-fade.
     /// </summary>
-    public Tween Glow(Color? color = null, float intensity = 1f, float duration = 0.5f)
+    public Tween Glow(float intensity = 1f, float duration = 0.5f)
     {
-        glowColor = color ?? glowColor;
         glowIntensity = intensity;
         
         _glowTween?.Kill();
@@ -862,7 +842,6 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
         
         // === GLOW (scales with magnitude) ===
         float glowAmount = Mathf.Lerp(0.3f, 1.5f, t);
-        glowColor = effectColor;
         _currentSequence.Join(
             DOTween.To(() => glowIntensity, x => glowIntensity = x, glowAmount, flashDuration)
                 .SetEase(Ease.OutQuad)
