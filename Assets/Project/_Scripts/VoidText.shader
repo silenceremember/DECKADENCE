@@ -11,6 +11,9 @@ Shader "UI/VoidText"
         [Header(Boil Effect)]
         _DistortStrength ("Boil Strength", Range(0, 0.05)) = 0.005
         _Speed ("Boil Speed", Float) = 5.0
+        
+        [Header(Shadow)]
+        [HideInInspector] _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.5)
 
         // Standard UI Stencil Properties
         _StencilComp ("Stencil Comparison", Float) = 8
@@ -58,6 +61,7 @@ Shader "UI/VoidText"
                 float4 vertex   : POSITION;
                 float4 color    : COLOR;
                 float2 texcoord : TEXCOORD0;
+                float2 texcoord1 : TEXCOORD1; // UV1: x=1 means shadow vertex
             };
 
             struct v2f
@@ -66,6 +70,7 @@ Shader "UI/VoidText"
                 fixed4 color    : COLOR;
                 float2 texcoord : TEXCOORD0;
                 float4 worldPosition : TEXCOORD1;
+                float isShadow : TEXCOORD2;
             };
 
             sampler2D _MainTex;
@@ -73,16 +78,17 @@ Shader "UI/VoidText"
             float _Pixels;
             float _DistortStrength;
             float _Speed;
+            float4 _ShadowColor;
 
             v2f vert(appdata_t v)
             {
                 v2f OUT;
                 
                 OUT.worldPosition = mul(unity_ObjectToWorld, v.vertex);
-                
                 OUT.vertex = UnityObjectToClipPos(v.vertex);
                 OUT.texcoord = v.texcoord;
                 OUT.color = v.color;
+                OUT.isShadow = v.texcoord1.x;
                 
                 return OUT;
             }
@@ -96,21 +102,29 @@ Shader "UI/VoidText"
                 distort.y = cos(IN.texcoord.x * 12.0 + time * 1.5);
                 
                 float2 distortedUV = IN.texcoord + (distort * _DistortStrength);
-
                 float2 pixelUV = floor(distortedUV * _Pixels) / _Pixels;
 
                 float d_text = tex2D(_MainTex, pixelUV).a;
+                float mask = step(0.5, d_text);
                 
-                float mask = step(0.5, d_text); 
+                float4 finalColor;
                 
-                float4 finalColor = IN.color * mask;
+                if (IN.isShadow > 0.5)
+                {
+                    // Shadow vertex
+                    finalColor = float4(_ShadowColor.rgb, _ShadowColor.a * mask * IN.color.a);
+                }
+                else
+                {
+                    // Main text vertex
+                    finalColor = IN.color * mask;
+                }
 
                 #ifdef UNITY_UI_CLIP_RECT
                 finalColor.a *= UnityGet2DClipping(IN.worldPosition.xy, _ClipRect);
                 #endif
 
                 clip(finalColor.a - 0.001);
-
                 return finalColor;
             }
             ENDCG
