@@ -197,12 +197,16 @@ public class GameManager : MonoBehaviour
         if (icon == null) return;
         
         float newFill = newValue / 100f;
-        float magnitude = Mathf.Abs(delta);
         
-        if (delta != 0)
+        if (delta > 0)
         {
-            // MAGNITUDE-BASED EFFECT - doesn't reveal gain/loss, just intensity
-            icon.PlayMagnitudeEffect(newFill, magnitude);
+            // GAIN - Green flash + punch + glow (REVEAL!)
+            icon.PlayGainEffect(newFill);
+        }
+        else if (delta < 0)
+        {
+            // LOSS - Red flash + shake (REVEAL!)
+            icon.PlayLossEffect(newFill);
         }
         else
         {
@@ -250,24 +254,47 @@ public class GameManager : MonoBehaviour
         // TODO: Возможно изменить визуал (фон темнеет?)
     }
 
-    // Подсветка иконок (Предсказание) - magnitude-based, без подсказки gain/loss
-    public void HighlightResources(int dSpades, int dHearts, int dDiamonds, int dClubs)
+    // Подсветка иконок (Предсказание) - magnitude + progress based, без подсказки gain/loss
+    // Вызывается постоянно во время свайпа с текущим swipeProgress
+    public void HighlightResources(int dSpades, int dHearts, int dDiamonds, int dClubs, float swipeProgress, Vector3 cardWorldPosition)
     {
+        const float maxMagnitude = 30f; // Normalize against this
+        
+        // Set card position and magnitude for all icons (3D look-at effect)
+        // Bigger magnitude = more intense stare at the card
+        if (spadesIcon) { 
+            spadesIcon.SetCardPosition(cardWorldPosition);
+            spadesIcon.SetMagnitude(Mathf.Abs(dSpades) / maxMagnitude);
+        }
+        if (heartsIcon) { 
+            heartsIcon.SetCardPosition(cardWorldPosition);
+            heartsIcon.SetMagnitude(Mathf.Abs(dHearts) / maxMagnitude);
+        }
+        if (diamondsIcon) { 
+            diamondsIcon.SetCardPosition(cardWorldPosition);
+            diamondsIcon.SetMagnitude(Mathf.Abs(dDiamonds) / maxMagnitude);
+        }
+        if (clubsIcon) { 
+            clubsIcon.SetCardPosition(cardWorldPosition);
+            clubsIcon.SetMagnitude(Mathf.Abs(dClubs) / maxMagnitude);
+        }
+        
         // Показываем magnitude-based preview на иконках, которые изменятся
-        HighlightIcon(spadesIcon, Mathf.Abs(dSpades));
-        HighlightIcon(heartsIcon, Mathf.Abs(dHearts));
-        HighlightIcon(diamondsIcon, Mathf.Abs(dDiamonds));
-        HighlightIcon(clubsIcon, Mathf.Abs(dClubs));
+        // swipeProgress: 0 = far from center, 1 = at choice threshold
+        HighlightIcon(spadesIcon, Mathf.Abs(dSpades), swipeProgress);
+        HighlightIcon(heartsIcon, Mathf.Abs(dHearts), swipeProgress);
+        HighlightIcon(diamondsIcon, Mathf.Abs(dDiamonds), swipeProgress);
+        HighlightIcon(clubsIcon, Mathf.Abs(dClubs), swipeProgress);
     }
     
-    void HighlightIcon(JuicyResourceIcon icon, int magnitude)
+    void HighlightIcon(JuicyResourceIcon icon, int magnitude, float swipeProgress)
     {
         if (icon == null) return;
         
-        if (magnitude > 0)
+        if (magnitude > 0 && swipeProgress > 0.1f)
         {
-            // Magnitude-based preview - neutral golden glow
-            icon.PlayHighlightPreview(magnitude);
+            // Magnitude + progress based preview - SHAKE ONLY, no color
+            icon.PlayHighlightPreview(magnitude, swipeProgress);
         }
         else
         {
@@ -278,10 +305,11 @@ public class GameManager : MonoBehaviour
     // Сброс подсветки
     public void ResetHighlights()
     {
-        if (spadesIcon) spadesIcon.SetGlowIntensity(0f);
-        if (heartsIcon) heartsIcon.SetGlowIntensity(0f);
-        if (diamondsIcon) diamondsIcon.SetGlowIntensity(0f);
-        if (clubsIcon) clubsIcon.SetGlowIntensity(0f);
+        // Reset tracking and preview
+        if (spadesIcon) { spadesIcon.StopHighlightPreview(); spadesIcon.ResetCardTracking(); }
+        if (heartsIcon) { heartsIcon.StopHighlightPreview(); heartsIcon.ResetCardTracking(); }
+        if (diamondsIcon) { diamondsIcon.StopHighlightPreview(); diamondsIcon.ResetCardTracking(); }
+        if (clubsIcon) { clubsIcon.StopHighlightPreview(); clubsIcon.ResetCardTracking(); }
     }
 
     bool CheckGameOver()

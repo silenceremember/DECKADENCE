@@ -57,6 +57,17 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     [Tooltip("Scale punch intensity")]
     public float punchScale = 0.2f;
     
+    [Header("Idle Animation")]
+    public bool enableIdleAnimation = true;
+    public float idleRotationAmount = 2f;     // Degrees of Z rotation
+    public float idleScaleAmount = 0.02f;     // Scale breathing
+    public float idleSpeed = 1.5f;            // Animation speed
+    
+    [Header("Card Following (3D Look At)")]
+    public bool enableCardFollowing = true;
+    public float followTiltAmount = 8f;        // Max tilt degrees towards card
+    public float followSpeed = 8f;             // How fast to follow
+    
     [Header("Debug")]
     [SerializeField] private Vector2 currentShadowOffset;
     
@@ -72,6 +83,13 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     private Tween _previewGlowTween;
     private Tween _previewPulseTween;
     private bool _isPreviewActive;
+    
+    // Idle and follow tracking
+    private float _idleTime;
+    private Vector2 _cardScreenPosition; // Card position in screen space for 3D look-at
+    private float _currentMagnitude; // How much this resource will change (0-1 normalized)
+    private Vector3 _baseScale = Vector3.one;
+    private Quaternion _baseRotation = Quaternion.identity;
     
     // Shader property IDs
     private static readonly int FillAmountID = Shader.PropertyToID("_FillAmount");
@@ -102,6 +120,171 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     {
         CreateMaterialInstance();
         _canvas = GetComponentInParent<Canvas>();
+        
+        // Random offset for idle to avoid sync between icons
+        _idleTime = Random.Range(0f, 100f);
+        _baseScale = _rectTransform.localScale;
+        _baseRotation = _rectTransform.localRotation;
+    }
+    
+    void Update()
+    {
+        if (!Application.isPlaying) return;
+        
+        // Idle animation
+        _idleTime += Time.deltaTime;
+        
+        ApplyIdleAndFollowEffect();
+    }
+    
+    void ApplyIdleAndFollowEffect()
+    {
+        Vector3 targetScale = _baseScale;
+        Quaternion targetRotation = _baseRotation;
+        Vector3 targetPosition = Vector3.zero; // Local position offset
+        
+        // Get camera and my screen position once
+        Camera cam = null;
+        if (_canvas != null && _canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            cam = _canvas.worldCamera;
+        if (cam == null) cam = Camera.main;
+        
+        Vector2 myScreenPos = RectTransformUtility.WorldToScreenPoint(cam, transform.position);
+        
+        // === ENHANCED IDLE ANIMATION ===
+        if (enableIdleAnimation)
+        {
+            // Multi-frequency rotation wobble (more organic with perlin-like feel)
+            float t = _idleTime * idleSpeed;
+            
+            // Primary wobble
+            float rotZ1 = Mathf.Sin(t) * idleRotationAmount;
+            // Secondary wave (different frequency creates organic movement)
+            float rotZ2 = Mathf.Sin(t * 1.7f + 0.5f) * idleRotationAmount * 0.3f;
+            // Third harmonic
+            float rotZ3 = Mathf.Sin(t * 2.3f + 1.2f) * idleRotationAmount * 0.15f;
+            
+            float idleRotZ = rotZ1 + rotZ2 + rotZ3;
+            
+            // 3D tilt with multiple frequencies
+            float idleRotX = Mathf.Sin(t * 0.7f) * (idleRotationAmount * 0.4f)
+                           + Mathf.Sin(t * 1.3f + 0.8f) * (idleRotationAmount * 0.2f);
+            float idleRotY = Mathf.Cos(t * 0.5f) * (idleRotationAmount * 0.3f)
+                           + Mathf.Cos(t * 1.1f + 0.4f) * (idleRotationAmount * 0.15f);
+            
+            targetRotation = Quaternion.Euler(idleRotX, idleRotY, idleRotZ);
+            
+            // Scale breathing (multiple harmonics)
+            float breath = 1f + Mathf.Sin(t * 0.8f) * idleScaleAmount
+                             + Mathf.Sin(t * 1.6f + 0.3f) * (idleScaleAmount * 0.3f);
+            targetScale = _baseScale * breath;
+            
+            // Subtle position offset (floating effect)
+            float posX = Mathf.Sin(t * 0.9f) * 1.5f + Mathf.Sin(t * 1.5f) * 0.5f;
+            float posY = Mathf.Cos(t * 0.7f) * 1.0f + Mathf.Cos(t * 1.3f) * 0.3f;
+            targetPosition = new Vector3(posX, posY, 0);
+        }
+        
+        // === CURSOR TRACKING (subtle) ===
+        if (enableCardFollowing)
+        {
+            // Get cursor position
+            Vector2 cursorPos = UnityEngine.InputSystem.Mouse.current != null 
+                ? UnityEngine.InputSystem.Mouse.current.position.ReadValue()
+                : Vector2.zero;
+            
+            // Direction from icon to cursor
+            Vector2 dirToCursor = cursorPos - myScreenPos;
+            float cursorNormX = Mathf.Clamp(dirToCursor.x / Screen.width, -1f, 1f);
+            float cursorNormY = Mathf.Clamp(dirToCursor.y / Screen.height, -1f, 1f);
+            
+            // Subtle cursor tracking (30% weight) - equal sensitivity in all directions
+            float cursorWeight = 0.3f;
+            float cursorTiltY = -cursorNormX * followTiltAmount * cursorWeight; // Left/right
+            float cursorTiltX = cursorNormY * followTiltAmount * cursorWeight;   // Up/down (same multiplier)
+            
+            Quaternion cursorRotation = Quaternion.Euler(cursorTiltX, cursorTiltY, 0);
+            targetRotation = targetRotation * cursorRotation;
+        }
+        
+        // === CARD FOLLOWING (3D Look At) - intensity scales with magnitude ===
+        if (enableCardFollowing && _cardScreenPosition.sqrMagnitude > 0.01f)
+        {
+            // Direction from this icon to the card
+            Vector2 dirToCard = _cardScreenPosition - myScreenPos;
+            
+            // Normalize relative to screen size (account for aspect ratio)
+            float aspectRatio = (float)Screen.width / Screen.height;
+            float normX = dirToCard.x / Screen.width;
+            float normY = dirToCard.y / Screen.height * aspectRatio; // Compensate for aspect ratio
+            
+            // Magnitude-based intensity: bigger changes = more intense look-at
+            // 0 magnitude = 30% base interest, 1 magnitude = 150% (very interested!)
+            float magnitudeMultiplier = Mathf.Lerp(0.3f, 1.5f, _currentMagnitude);
+            
+            // 3D tilt (main tracking) - EQUAL sensitivity in all directions
+            float cardWeight = 0.7f * magnitudeMultiplier;
+            float tiltY = -normX * followTiltAmount * 2f * cardWeight;  // Left/right
+            float tiltX = normY * followTiltAmount * 2f * cardWeight;   // Up/down (SAME as Y now!)
+            float tiltZ = -normX * followTiltAmount * 0.3f * cardWeight; // Reduced Z roll
+            
+            Quaternion cardRotation = Quaternion.Euler(tiltX, tiltY, tiltZ);
+            targetRotation = targetRotation * cardRotation;
+            
+            // Lean towards card - EQUAL in both directions
+            float leanX = normX * 3f * magnitudeMultiplier;
+            float leanY = normY * 3f * magnitudeMultiplier; // Same as X now
+            targetPosition += new Vector3(leanX, leanY, 0);
+        }
+        
+        // Apply with smooth interpolation
+        _rectTransform.localRotation = Quaternion.Slerp(
+            _rectTransform.localRotation, 
+            targetRotation, 
+            Time.deltaTime * followSpeed
+        );
+        _rectTransform.localScale = Vector3.Lerp(
+            _rectTransform.localScale,
+            targetScale,
+            Time.deltaTime * followSpeed
+        );
+        
+        // Apply position offset (anchoredPosition)
+        Vector2 currentPos = _rectTransform.anchoredPosition;
+        Vector2 targetPos2D = new Vector2(targetPosition.x, targetPosition.y);
+        _rectTransform.anchoredPosition = Vector2.Lerp(currentPos, targetPos2D, Time.deltaTime * followSpeed * 0.5f);
+    }
+    
+    /// <summary>
+    /// Set card screen position for 3D look-at. Called by GameManager.
+    /// Pass the card's world position.
+    /// </summary>
+    public void SetCardPosition(Vector3 cardWorldPosition)
+    {
+        Camera cam = null;
+        if (_canvas != null && _canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            cam = _canvas.worldCamera;
+        if (cam == null) cam = Camera.main;
+        
+        _cardScreenPosition = RectTransformUtility.WorldToScreenPoint(cam, cardWorldPosition);
+    }
+    
+    /// <summary>
+    /// Set magnitude for this resource (how much it will change).
+    /// Scales look-at intensity: 0 = mild interest, 1 = very intense stare.
+    /// </summary>
+    public void SetMagnitude(float normalizedMagnitude)
+    {
+        _currentMagnitude = Mathf.Clamp01(normalizedMagnitude);
+    }
+    
+    /// <summary>
+    /// Reset card tracking and magnitude
+    /// </summary>
+    public void ResetCardTracking()
+    {
+        _cardScreenPosition = Vector2.zero;
+        _currentMagnitude = 0f;
     }
     
     void OnEnable()
@@ -398,9 +581,9 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
         
         Color flash = flashColor ?? new Color(1f, 0.3f, 0.3f, 1f); // Red flash
         
-        // Shake
+        // Shake (reduced to balance with punch)
         _currentSequence.Append(
-            DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 15f, shakeDuration * 0.3f)
+            DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 2.5f, shakeDuration * 0.3f)
                 .SetEase(Ease.OutQuad)
         );
         
@@ -592,10 +775,13 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
     
     /// <summary>
     /// Preview/highlight effect for when player is hovering/dragging.
-    /// Shows that this resource WILL change, intensity based on magnitude.
-    /// Includes SHAKE for juicy feedback!
+    /// Shows that this resource WILL change via SHAKE ONLY - no color hints!
+    /// Intensity scales with both magnitude AND proximity to decision.
     /// </summary>
-    public void PlayHighlightPreview(float magnitude, float maxMagnitude = 30f)
+    /// <param name="magnitude">How big the change will be (|delta|)</param>
+    /// <param name="swipeProgress">How close to making the decision (0-1)</param>
+    /// <param name="maxMagnitude">Max expected magnitude for scaling</param>
+    public void PlayHighlightPreview(float magnitude, float swipeProgress = 1f, float maxMagnitude = 30f)
     {
         // Kill any fade-out tweens
         _previewGlowTween?.Kill();
@@ -603,18 +789,21 @@ public class JuicyResourceIcon : MonoBehaviour, IMeshModifier
         
         _isPreviewActive = true;
         
-        float t = Mathf.Clamp01(magnitude / maxMagnitude);
+        // Normalize magnitude (how big the change is)
+        float magnitudeT = Mathf.Clamp01(magnitude / maxMagnitude);
         
-        // Subtle neutral glow
-        glowColor = new Color(1f, 0.9f, 0.6f, 1f);
-        glowIntensity = Mathf.Lerp(0.3f, 0.8f, t);
+        // Combine: shake intensity = magnitude * swipeProgress
+        // Far from center (progress=0.3) = light shake
+        // Close to choice (progress=1.0) = full shake
+        float combinedIntensity = magnitudeT * swipeProgress;
         
-        // Pulse for larger changes
-        pulseIntensity = Mathf.Lerp(0f, 0.4f, t);
+        // SHAKE ONLY - no glow or pulse (no color hints!)
+        // Range: 0.2 (barely visible) to 4 (intense shaking)
+        shakeIntensity = Mathf.Lerp(0.2f, 4f, combinedIntensity);
         
-        // SHAKE - scales with magnitude (the juice!)
-        // Values are in local space units (UI pixels)
-        shakeIntensity = Mathf.Lerp(0.5f, 3f, t);
+        // NO GLOW - we don't want to reveal anything by color
+        // glowIntensity stays at 0
+        // pulseIntensity stays at 0
     }
     
     /// <summary>

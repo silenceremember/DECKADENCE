@@ -544,16 +544,19 @@ public class CardDisplay : MonoBehaviour
             _textRectTransform.localRotation = Quaternion.identity;
         }
 
-        // Цвет и хайлайты
+        // Подсветка ресурсов - вызываем ПОСТОЯННО с текущим прогрессом
+        // Чем ближе к выбору, тем сильнее тряска
+        // Pass card world position for 3D look-at effect
+        Vector3 cardWorldPos = transform.position;
+        if (isRight) 
+            GameManager.Instance.HighlightResources(CurrentData.rightSpades, CurrentData.rightHearts, CurrentData.rightDiamonds, CurrentData.rightClubs, clampedProgress, cardWorldPos);
+        else 
+            GameManager.Instance.HighlightResources(CurrentData.leftSpades, CurrentData.leftHearts, CurrentData.leftDiamonds, CurrentData.leftClubs, clampedProgress, cardWorldPos);
+        
+        // Цвет текста при полном выборе
         if (progress >= 1.0f)
         {
             targetColor = snapColor;
-            if (isRight) GameManager.Instance.HighlightResources(CurrentData.rightSpades, CurrentData.rightHearts, CurrentData.rightDiamonds, CurrentData.rightClubs);
-            else GameManager.Instance.HighlightResources(CurrentData.leftSpades, CurrentData.leftHearts, CurrentData.leftDiamonds, CurrentData.leftClubs);
-        }
-        else
-        {
-            GameManager.Instance.ResetHighlights();
         }
         
         // Прозрачность блока текста через CanvasGroup (0 -> 50)
