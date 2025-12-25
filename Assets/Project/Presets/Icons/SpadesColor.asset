@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: SpadesColor
   m_EditorClassIdentifier: Assembly-CSharp::IconColorPreset
   fillColor: {r: 0.31181023, g: 0.44580057, b: 0.8584906, a: 1}
-  backgroundColor: {r: 0.20594516, g: 0.26286936, b: 0.49056602, a: 1}
+  backgroundColor: {r: 0.25882354, g: 0.3254902, b: 0.6039216, a: 1}
   backgroundAlpha: 1
   bubbleColor: {r: 0.5, g: 0.6, b: 0.9, a: 0.8}

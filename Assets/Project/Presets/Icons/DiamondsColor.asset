@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: DiamondsColor
   m_EditorClassIdentifier: Assembly-CSharp::IconColorPreset
   fillColor: {r: 0.85, g: 0.25, b: 0.3, a: 1}
-  backgroundColor: {r: 0.48235294, g: 0.18431373, b: 0.22745098, a: 1}
+  backgroundColor: {r: 0.5176471, g: 0.19215687, b: 0.23921569, a: 1}
   backgroundAlpha: 1
   bubbleColor: {r: 1, g: 0.55, b: 0.6, a: 0.8}

@@ -16,8 +16,9 @@ MonoBehaviour:
   fillWaveSpeed: 3
   meniscusStrength: 0.04
   bubbleSize: 0.1
+  pixelDensity: 64
   effectStrength: 0.5
-  glowStrength: 0.5
+  glowStrength: 0.6
   pulseSpeed: 4
   gainEffectIntensity: 1
   gainPulseIntensity: 0.6
@@ -40,12 +41,10 @@ MonoBehaviour:
   idleScaleAmount: 0.02
   idleSpeed: 1.5
   enableCardFollowing: 1
-  followTiltAmount: 8
+  followTiltAmount: 50
   followSpeed: 8
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   shadowIntensity: 0.25
   shakeSpeed: 30
-  criticalLowThreshold: 0.1
-  criticalHighThreshold: 0.9
-  criticalGlowBase: 0.05
-  criticalGlowPulse: 0.02
+  criticalLowThreshold: 0.429
+  criticalHighThreshold: 0.8

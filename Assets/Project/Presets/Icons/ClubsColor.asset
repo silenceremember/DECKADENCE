@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: ClubsColor
   m_EditorClassIdentifier: Assembly-CSharp::IconColorPreset
   fillColor: {r: 0.3137255, g: 0.44705883, b: 0.85882354, a: 1}
-  backgroundColor: {r: 0.20784314, g: 0.2627451, b: 0.49019608, a: 1}
+  backgroundColor: {r: 0.259167, g: 0.32425937, b: 0.6037736, a: 1}
   backgroundAlpha: 1
   bubbleColor: {r: 0.5, g: 0.6, b: 0.9, a: 0.8}
