@@ -11,76 +11,71 @@ using DG.Tweening;
 [ExecuteAlways]
 public class LiquidFillIcon : MonoBehaviour, IMeshModifier
 {
-    [Header("Color Preset")]
+    [Header("Presets")]
     [Tooltip("Assign a color preset for this icon")]
     public IconColorPreset colorPreset;
     
-    [Header("Fill Effect")]
+    [Tooltip("Shared effect preset for all icons")]
+    public IconEffectPreset effectPreset;
+    
+    [Header("Runtime State (read-only)")]
     [Range(0, 1)] public float fillAmount = 1f;
-    public float fillWaveStrength = 0.02f;
-    public float fillWaveSpeed = 3f;
-    
-    [Header("Liquid Effects")]
-    [Range(0, 0.15f)] public float meniscusStrength = 0.04f;  // Edge curve (always on)
-    [Range(0, 1)] public float liquidTurbulence = 0f;         // Sharp waves (shake)
-    [Range(0, 1)] public float bubbleIntensity = 0f;          // Bubbles (shake)
-    [Range(0.05f, 0.2f)] public float bubbleSize = 0.1f;
-    [Range(0, 1)] public float splashIntensity = 0f;          // Splash (choice)
-    
-    [Header("Pixelation")]
-    [Tooltip("0 = off, 32-128 = pixelated")]
-    public float pixelDensity = 0f;
-    
-    [Header("Glow and Pulse")]
+    [Range(-1, 1)] public float effectIntensity = 0f;
     [Range(0, 2)] public float glowIntensity = 0f;
-    public float pulseSpeed = 4f;
     [Range(0, 1)] public float pulseIntensity = 0f;
+    [Range(0, 20)] public float shakeIntensity = 0f;
+    [Range(0, 1)] public float liquidTurbulence = 0f;
+    [Range(0, 1)] public float bubbleIntensity = 0f;
+    [Range(0, 1)] public float splashIntensity = 0f;
     
     // Colors from preset (with fallbacks)
     Color FillColor => colorPreset != null ? colorPreset.fillColor : Color.white;
     Color BackgroundColor => colorPreset != null ? colorPreset.backgroundColor : new Color(0.1f, 0.1f, 0.1f);
     float BackgroundAlpha => colorPreset != null ? colorPreset.backgroundAlpha : 0.7f;
     Color BubbleColor => colorPreset != null ? colorPreset.bubbleColor : Color.white;
-    Color GlowColor => colorPreset != null ? colorPreset.glowColor : Color.yellow;
-    Color IncreaseColor => colorPreset != null ? colorPreset.increaseColor : new Color(0.3f, 0.9f, 1f, 1f);
-    Color DecreaseColor => colorPreset != null ? colorPreset.decreaseColor : new Color(1f, 0.6f, 0.2f, 1f);
     
-    [Header("Shake Effect")]
-    [Range(0, 20)] public float shakeIntensity = 0f;
-    public float shakeSpeed = 30f;
+    // Values from effect preset (with fallbacks)
+    float FillWaveStrength => effectPreset != null ? effectPreset.fillWaveStrength : 0.02f;
+    float FillWaveSpeed => effectPreset != null ? effectPreset.fillWaveSpeed : 3f;
+    float MeniscusStrength => effectPreset != null ? effectPreset.meniscusStrength : 0.04f;
+    float BubbleSize => effectPreset != null ? effectPreset.bubbleSize : 0.1f;
+    float PixelDensity => effectPreset != null ? effectPreset.pixelDensity : 0f;
+    float EffectStrength => effectPreset != null ? effectPreset.effectStrength : 0.5f;
+    float GlowStrength => effectPreset != null ? effectPreset.glowStrength : 0.5f;
+    float PulseSpeed => effectPreset != null ? effectPreset.pulseSpeed : 4f;
+    float GainEffectIntensity => effectPreset != null ? effectPreset.gainEffectIntensity : 1f;
+    float GainPulseIntensity => effectPreset != null ? effectPreset.gainPulseIntensity : 0.6f;
+    float GainSplashIntensity => effectPreset != null ? effectPreset.gainSplashIntensity : 1f;
+    float GainSplashDuration => effectPreset != null ? effectPreset.gainSplashDuration : 0.6f;
+    float LossEffectIntensity => effectPreset != null ? effectPreset.lossEffectIntensity : 1f;
+    float LossPulseIntensity => effectPreset != null ? effectPreset.lossPulseIntensity : 0.5f;
+    float LossShakeIntensity => effectPreset != null ? effectPreset.lossShakeIntensity : 5f;
+    float LossSplashIntensity => effectPreset != null ? effectPreset.lossSplashIntensity : 1.2f;
+    float LossSplashDuration => effectPreset != null ? effectPreset.lossSplashDuration : 0.7f;
+    float FillDuration => effectPreset != null ? effectPreset.fillDuration : 0.5f;
+    Ease FillEase => effectPreset != null ? effectPreset.fillEase : Ease.OutBack;
+    float FlashDuration => effectPreset != null ? effectPreset.flashDuration : 0.15f;
+    float ShakeDuration => effectPreset != null ? effectPreset.shakeDuration : 0.3f;
+    float PunchScale => effectPreset != null ? effectPreset.punchScale : 0.2f;
+    float EffectHoldDuration => effectPreset != null ? effectPreset.effectHoldDuration : 0.2f;
+    float EffectFadeDuration => effectPreset != null ? effectPreset.effectFadeDuration : 0.5f;
+    bool EnableIdleAnimation => effectPreset != null ? effectPreset.enableIdleAnimation : true;
+    float IdleRotationAmount => effectPreset != null ? effectPreset.idleRotationAmount : 2f;
+    float IdleScaleAmount => effectPreset != null ? effectPreset.idleScaleAmount : 0.02f;
+    float IdleSpeed => effectPreset != null ? effectPreset.idleSpeed : 1.5f;
+    bool EnableCardFollowing => effectPreset != null ? effectPreset.enableCardFollowing : true;
+    float FollowTiltAmount => effectPreset != null ? effectPreset.followTiltAmount : 8f;
+    float FollowSpeed => effectPreset != null ? effectPreset.followSpeed : 8f;
+    Color ShadowColor => effectPreset != null ? effectPreset.shadowColor : new Color(0, 0, 0, 0.5f);
+    float ShadowIntensity => effectPreset != null ? effectPreset.shadowIntensity : 5f;
+    float ShakeSpeed => effectPreset != null ? effectPreset.shakeSpeed : 30f;
+    float CriticalLowThreshold => effectPreset != null ? effectPreset.criticalLowThreshold : 0.1f;
+    float CriticalHighThreshold => effectPreset != null ? effectPreset.criticalHighThreshold : 0.9f;
     
-    [Header("Shadow")]
-    public Color shadowColor = new Color(0, 0, 0, 0.5f);
-    public float shadowIntensity = 5f;
+    // Runtime shadow tracking
+    private Vector2 _currentShadowOffset;
     
-    [Header("Animation Presets")]
-    [Tooltip("Duration for fill animations")]
-    public float fillDuration = 0.5f;
-    public Ease fillEase = Ease.OutBack;
-    
-    [Tooltip("Duration for highlight/flash")]
-    public float flashDuration = 0.15f;
-    
-    [Tooltip("Duration for shake")]
-    public float shakeDuration = 0.3f;
-    
-    [Tooltip("Scale punch intensity")]
-    public float punchScale = 0.2f;
-    
-    [Header("Idle Animation")]
-    public bool enableIdleAnimation = true;
-    public float idleRotationAmount = 2f;     // Degrees of Z rotation
-    public float idleScaleAmount = 0.02f;     // Scale breathing
-    public float idleSpeed = 1.5f;            // Animation speed
-    
-    [Header("Card Following (3D Look At)")]
-    public bool enableCardFollowing = true;
-    public float followTiltAmount = 8f;        // Max tilt degrees towards card
-    public float followSpeed = 8f;             // How fast to follow
-    
-    [Header("Debug")]
-    [SerializeField] private Vector2 currentShadowOffset;
-    
+
     private Graphic _graphic;
     private Canvas _canvas;
     private Material _materialInstance;
@@ -93,9 +88,6 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     private Tween _previewGlowTween;
     private Tween _previewPulseTween;
     private bool _isPreviewActive;
-    
-    // Active effect color (switches between Increase/Decrease/Glow color)
-    private Color? _activeEffectColor = null;
     
     // Idle and follow tracking
     private float _idleTime;
@@ -121,8 +113,10 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     private static readonly int SplashIntensityID = Shader.PropertyToID("_SplashIntensity");
     private static readonly int PixelDensityID = Shader.PropertyToID("_PixelDensity");
     
-    private static readonly int GlowColorID = Shader.PropertyToID("_GlowColor");
+    private static readonly int EffectIntensityID = Shader.PropertyToID("_EffectIntensity");
+    private static readonly int EffectStrengthID = Shader.PropertyToID("_EffectStrength");
     private static readonly int GlowIntensityID = Shader.PropertyToID("_GlowIntensity");
+    private static readonly int GlowStrengthID = Shader.PropertyToID("_GlowStrength");
     private static readonly int PulseSpeedID = Shader.PropertyToID("_PulseSpeed");
     private static readonly int PulseIntensityID = Shader.PropertyToID("_PulseIntensity");
     private static readonly int ShakeIntensityID = Shader.PropertyToID("_ShakeIntensity");
@@ -173,28 +167,28 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     }
     
     /// <summary>
-    /// Automatically enable glow when fillAmount is critical (<=10% or >=90%)
+    /// Automatically enable glow when fillAmount is critical
     /// </summary>
+    private bool _isCriticalGlowActive = false;
+    
     void UpdateCriticalGlow()
     {
-        bool isCritical = fillAmount <= 0.1f || fillAmount >= 0.9f;
+        bool isCritical = fillAmount <= CriticalLowThreshold || fillAmount >= CriticalHighThreshold;
         
         if (isCritical)
         {
-            // Use GlowColor from preset for critical state
-            _activeEffectColor = GlowColor;
-            // Pulse the glow (0.03 to 0.07, centered around 0.05)
-            float pulse = 0.05f + Mathf.Sin(Time.time * pulseSpeed) * 0.02f;
-            glowIntensity = Mathf.Lerp(glowIntensity, pulse, Time.deltaTime * 5f);
+            _isCriticalGlowActive = true;
+            // Set glow to 1.0 (strength from preset controls visual intensity)
+            glowIntensity = Mathf.Lerp(glowIntensity, 1f, Time.deltaTime * 5f);
         }
-        else if (_activeEffectColor == GlowColor)
+        else if (_isCriticalGlowActive)
         {
-            // Fade out glow if we were in critical state
+            // Fade out glow
             glowIntensity = Mathf.Lerp(glowIntensity, 0f, Time.deltaTime * 5f);
             if (glowIntensity < 0.01f)
             {
                 glowIntensity = 0f;
-                _activeEffectColor = null;
+                _isCriticalGlowActive = false;
             }
         }
     }
@@ -214,31 +208,31 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         Vector2 myScreenPos = RectTransformUtility.WorldToScreenPoint(cam, transform.position);
         
         // === ENHANCED IDLE ANIMATION ===
-        if (enableIdleAnimation)
+        if (EnableIdleAnimation)
         {
             // Multi-frequency rotation wobble (more organic with perlin-like feel)
-            float t = _idleTime * idleSpeed;
+            float t = _idleTime * IdleSpeed;
             
             // Primary wobble
-            float rotZ1 = Mathf.Sin(t) * idleRotationAmount;
+            float rotZ1 = Mathf.Sin(t) * IdleRotationAmount;
             // Secondary wave (different frequency creates organic movement)
-            float rotZ2 = Mathf.Sin(t * 1.7f + 0.5f) * idleRotationAmount * 0.3f;
+            float rotZ2 = Mathf.Sin(t * 1.7f + 0.5f) * IdleRotationAmount * 0.3f;
             // Third harmonic
-            float rotZ3 = Mathf.Sin(t * 2.3f + 1.2f) * idleRotationAmount * 0.15f;
+            float rotZ3 = Mathf.Sin(t * 2.3f + 1.2f) * IdleRotationAmount * 0.15f;
             
             float idleRotZ = rotZ1 + rotZ2 + rotZ3;
             
             // 3D tilt with multiple frequencies
-            float idleRotX = Mathf.Sin(t * 0.7f) * (idleRotationAmount * 0.4f)
-                           + Mathf.Sin(t * 1.3f + 0.8f) * (idleRotationAmount * 0.2f);
-            float idleRotY = Mathf.Cos(t * 0.5f) * (idleRotationAmount * 0.3f)
-                           + Mathf.Cos(t * 1.1f + 0.4f) * (idleRotationAmount * 0.15f);
+            float idleRotX = Mathf.Sin(t * 0.7f) * (IdleRotationAmount * 0.4f)
+                           + Mathf.Sin(t * 1.3f + 0.8f) * (IdleRotationAmount * 0.2f);
+            float idleRotY = Mathf.Cos(t * 0.5f) * (IdleRotationAmount * 0.3f)
+                           + Mathf.Cos(t * 1.1f + 0.4f) * (IdleRotationAmount * 0.15f);
             
             targetRotation = Quaternion.Euler(idleRotX, idleRotY, idleRotZ);
             
             // Scale breathing (multiple harmonics)
-            float breath = 1f + Mathf.Sin(t * 0.8f) * idleScaleAmount
-                             + Mathf.Sin(t * 1.6f + 0.3f) * (idleScaleAmount * 0.3f);
+            float breath = 1f + Mathf.Sin(t * 0.8f) * IdleScaleAmount
+                             + Mathf.Sin(t * 1.6f + 0.3f) * (IdleScaleAmount * 0.3f);
             targetScale = _baseScale * breath;
             
             // Subtle position offset (floating effect)
@@ -248,7 +242,7 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         }
         
         // === CURSOR TRACKING (subtle) ===
-        if (enableCardFollowing)
+        if (EnableCardFollowing)
         {
             // Get cursor position
             Vector2 cursorPos = UnityEngine.InputSystem.Mouse.current != null 
@@ -262,15 +256,15 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
             
             // Subtle cursor tracking (30% weight) - equal sensitivity in all directions
             float cursorWeight = 0.3f;
-            float cursorTiltY = -cursorNormX * followTiltAmount * cursorWeight; // Left/right
-            float cursorTiltX = cursorNormY * followTiltAmount * cursorWeight;   // Up/down (same multiplier)
+            float cursorTiltY = -cursorNormX * FollowTiltAmount * cursorWeight; // Left/right
+            float cursorTiltX = cursorNormY * FollowTiltAmount * cursorWeight;   // Up/down (same multiplier)
             
             Quaternion cursorRotation = Quaternion.Euler(cursorTiltX, cursorTiltY, 0);
             targetRotation = targetRotation * cursorRotation;
         }
         
         // === CARD FOLLOWING (3D Look At) - intensity scales with magnitude ===
-        if (enableCardFollowing && _cardScreenPosition.sqrMagnitude > 0.01f)
+        if (EnableCardFollowing && _cardScreenPosition.sqrMagnitude > 0.01f)
         {
             // Direction from this icon to the card
             Vector2 dirToCard = _cardScreenPosition - myScreenPos;
@@ -286,9 +280,9 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
             
             // 3D tilt (main tracking) - EQUAL sensitivity in all directions
             float cardWeight = 0.7f * magnitudeMultiplier;
-            float tiltY = -normX * followTiltAmount * 2f * cardWeight;  // Left/right
-            float tiltX = normY * followTiltAmount * 2f * cardWeight;   // Up/down (SAME as Y now!)
-            float tiltZ = -normX * followTiltAmount * 0.3f * cardWeight; // Reduced Z roll
+            float tiltY = -normX * FollowTiltAmount * 2f * cardWeight;  // Left/right
+            float tiltX = normY * FollowTiltAmount * 2f * cardWeight;   // Up/down (SAME as Y now!)
+            float tiltZ = -normX * FollowTiltAmount * 0.3f * cardWeight; // Reduced Z roll
             
             Quaternion cardRotation = Quaternion.Euler(tiltX, tiltY, tiltZ);
             targetRotation = targetRotation * cardRotation;
@@ -303,18 +297,18 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         _rectTransform.localRotation = Quaternion.Slerp(
             _rectTransform.localRotation, 
             targetRotation, 
-            Time.deltaTime * followSpeed
+            Time.deltaTime * FollowSpeed
         );
         _rectTransform.localScale = Vector3.Lerp(
             _rectTransform.localScale,
             targetScale,
-            Time.deltaTime * followSpeed
+            Time.deltaTime * FollowSpeed
         );
         
         // Apply position offset (anchoredPosition)
         Vector2 currentPos = _rectTransform.anchoredPosition;
         Vector2 targetPos2D = new Vector2(targetPosition.x, targetPosition.y);
-        _rectTransform.anchoredPosition = Vector2.Lerp(currentPos, targetPos2D, Time.deltaTime * followSpeed * 0.5f);
+        _rectTransform.anchoredPosition = Vector2.Lerp(currentPos, targetPos2D, Time.deltaTime * FollowSpeed * 0.5f);
     }
     
     /// <summary>
@@ -414,10 +408,10 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         UpdateShaderProperties();
         
         // Calculate shadow offset
-        Vector2 newOffset = CalculateShadowDirection() * shadowIntensity;
-        if (Vector2.Distance(newOffset, currentShadowOffset) > 0.1f)
+        Vector2 newOffset = CalculateShadowDirection() * ShadowIntensity;
+        if (Vector2.Distance(newOffset, _currentShadowOffset) > 0.1f)
         {
-            currentShadowOffset = newOffset;
+            _currentShadowOffset = newOffset;
             if (_graphic != null)
                 _graphic.SetVerticesDirty();
         }
@@ -430,31 +424,32 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         _materialInstance.SetColor(FillColorID, FillColor);
         _materialInstance.SetColor(BackgroundColorID, BackgroundColor);
         _materialInstance.SetFloat(BackgroundAlphaID, BackgroundAlpha);
-        _materialInstance.SetFloat(FillWaveStrengthID, fillWaveStrength);
-        _materialInstance.SetFloat(FillWaveSpeedID, fillWaveSpeed);
+        _materialInstance.SetFloat(FillWaveStrengthID, FillWaveStrength);
+        _materialInstance.SetFloat(FillWaveSpeedID, FillWaveSpeed);
         
         // Liquid Effects
-        _materialInstance.SetFloat(MeniscusStrengthID, meniscusStrength);
+        _materialInstance.SetFloat(MeniscusStrengthID, MeniscusStrength);
         _materialInstance.SetFloat(LiquidTurbulenceID, liquidTurbulence);
         _materialInstance.SetFloat(BubbleIntensityID, bubbleIntensity);
-        _materialInstance.SetFloat(BubbleSizeID, bubbleSize);
+        _materialInstance.SetFloat(BubbleSizeID, BubbleSize);
         _materialInstance.SetColor(BubbleColorID, BubbleColor);
         _materialInstance.SetFloat(SplashIntensityID, splashIntensity);
-        _materialInstance.SetFloat(PixelDensityID, pixelDensity);
+        _materialInstance.SetFloat(PixelDensityID, PixelDensity);
         
-        // Glow/Pulse (use active effect color if set, otherwise default GlowColor)
-        Color effectColor = _activeEffectColor ?? GlowColor;
-        _materialInstance.SetColor(GlowColorID, effectColor);
+        // Effects (white-based)
+        _materialInstance.SetFloat(EffectIntensityID, effectIntensity);
+        _materialInstance.SetFloat(EffectStrengthID, EffectStrength);
         _materialInstance.SetFloat(GlowIntensityID, glowIntensity);
-        _materialInstance.SetFloat(PulseSpeedID, pulseSpeed);
+        _materialInstance.SetFloat(GlowStrengthID, GlowStrength);
+        _materialInstance.SetFloat(PulseSpeedID, PulseSpeed);
         _materialInstance.SetFloat(PulseIntensityID, pulseIntensity);
         
         // Shake
         _materialInstance.SetFloat(ShakeIntensityID, shakeIntensity);
-        _materialInstance.SetFloat(ShakeSpeedID, shakeSpeed);
+        _materialInstance.SetFloat(ShakeSpeedID, ShakeSpeed);
         
         // Shadow
-        _materialInstance.SetColor(ShadowColorID, shadowColor);
+        _materialInstance.SetColor(ShadowColorID, ShadowColor);
     }
     
     Vector2 CalculateShadowDirection()
@@ -506,7 +501,7 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         }
         
         // Calculate offset
-        Vector3 offset = new Vector3(currentShadowOffset.x, currentShadowOffset.y, 0);
+        Vector3 offset = new Vector3(_currentShadowOffset.x, _currentShadowOffset.y, 0);
         if (_canvas != null)
         {
             offset /= _canvas.scaleFactor;
@@ -581,93 +576,99 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     /// </summary>
     public Tween AnimateFillTo(float targetFill, float duration = -1)
     {
-        if (duration < 0) duration = fillDuration;
+        if (duration < 0) duration = FillDuration;
         
         _fillTween?.Kill();
         _fillTween = DOTween.To(() => fillAmount, x => fillAmount = x, targetFill, duration)
-            .SetEase(fillEase);
+            .SetEase(FillEase);
         
         return _fillTween;
     }
     
     /// <summary>
     /// JUICY resource gain effect!
-    /// Uses IncreaseColor from preset. Scale punch + glow burst + fill increase + LIQUID SPLASH!
-    /// Color does NOT depend on magnitude - always uses IncreaseColor.
+    /// Uses effectIntensity > 0 to ADD white. Scale punch + fill increase + LIQUID SPLASH!
     /// </summary>
     public Sequence PlayGainEffect(float newFillAmount)
     {
         _currentSequence?.Kill();
         _currentSequence = DOTween.Sequence();
         
-        // Set effect color to IncreaseColor
-        _activeEffectColor = IncreaseColor;
-        
         // LIQUID SPLASH!
-        PlaySplash(0.8f, 0.5f);
+        PlaySplash(GainSplashIntensity, GainSplashDuration);
         
-        // Scale punch
+        // Reset glow to avoid conflict, it will restore from UpdateCriticalGlow if needed
+        glowIntensity = 0f;
+        _isCriticalGlowActive = false;
+        
+        // Immediately set strong effect (ADD white) + pulse for instant visibility
+        effectIntensity = GainEffectIntensity;
+        pulseIntensity = GainPulseIntensity;
+        
+        // Scale punch (bigger)
         _currentSequence.Append(
-            _rectTransform.DOPunchScale(Vector3.one * punchScale, flashDuration * 2, 1, 0.5f)
-        );
-        
-        // Glow burst
-        _currentSequence.Join(
-            DOTween.To(() => glowIntensity, x => glowIntensity = x, 1.5f, flashDuration)
-                .SetEase(Ease.OutQuad)
+            _rectTransform.DOPunchScale(Vector3.one * PunchScale * 1.5f, FlashDuration * 3, 2, 0.5f)
         );
         
         // Fill animation
         _currentSequence.Join(AnimateFillTo(newFillAmount));
         
-        // Fade out glow and reset color
+        // Hold effect for a moment, then fade
+        _currentSequence.AppendInterval(EffectHoldDuration);
+        
+        // Fade out effect and pulse
         _currentSequence.Append(
-            DOTween.To(() => glowIntensity, x => glowIntensity = x, 0f, flashDuration * 2)
+            DOTween.To(() => effectIntensity, x => effectIntensity = x, 0f, EffectFadeDuration).SetEase(Ease.InOutQuad)
         );
-        _currentSequence.OnComplete(() => _activeEffectColor = null);
+        _currentSequence.Join(
+            DOTween.To(() => pulseIntensity, x => pulseIntensity = x, 0f, EffectFadeDuration * 0.8f)
+        );
         
         return _currentSequence;
     }
     
     /// <summary>
     /// JUICY resource loss effect!
-    /// Uses DecreaseColor from preset. Shake + glow + fill decrease + LIQUID SPLASH!
-    /// Color does NOT depend on magnitude - always uses DecreaseColor.
+    /// Uses effectIntensity < 0 to SUBTRACT (darken). Shake + fill decrease + LIQUID SPLASH!
     /// </summary>
     public Sequence PlayLossEffect(float newFillAmount)
     {
         _currentSequence?.Kill();
         _currentSequence = DOTween.Sequence();
         
-        // Set effect color to DecreaseColor
-        _activeEffectColor = DecreaseColor;
-        
         // LIQUID SPLASH!
-        PlaySplash(1.0f, 0.6f);
+        PlaySplash(LossSplashIntensity, LossSplashDuration);
         
-        // Shake
+        // Reset glow to avoid conflict, it will restore from UpdateCriticalGlow if needed
+        glowIntensity = 0f;
+        _isCriticalGlowActive = false;
+        
+        // Immediately set strong effect (SUBTRACT/darken) + pulse + shake for instant visibility
+        effectIntensity = -LossEffectIntensity;
+        pulseIntensity = LossPulseIntensity;
+        shakeIntensity = LossShakeIntensity;
+        
+        // Strong shake burst
         _currentSequence.Append(
-            DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 2.5f, shakeDuration * 0.3f)
-                .SetEase(Ease.OutQuad)
-        );
-        
-        // Glow burst
-        _currentSequence.Join(
-            DOTween.To(() => glowIntensity, x => glowIntensity = x, 1.2f, flashDuration)
-                .SetEase(Ease.OutQuad)
+            _rectTransform.DOShakePosition(ShakeDuration, 8f, 20, 90f, false, true)
         );
         
         // Fill animation
-        _currentSequence.Join(AnimateFillTo(newFillAmount, fillDuration * 0.7f));
+        _currentSequence.Join(AnimateFillTo(newFillAmount, FillDuration * 0.6f));
         
-        // Fade out effects and reset color
+        // Hold for visibility
+        _currentSequence.AppendInterval(EffectHoldDuration * 0.75f);
+        
+        // Fade out effects
         _currentSequence.Append(
-            DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 0f, shakeDuration)
+            DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 0f, EffectFadeDuration * 0.8f)
         );
         _currentSequence.Join(
-            DOTween.To(() => glowIntensity, x => glowIntensity = x, 0f, flashDuration * 2)
+            DOTween.To(() => effectIntensity, x => effectIntensity = x, 0f, EffectFadeDuration).SetEase(Ease.InOutQuad)
         );
-        _currentSequence.OnComplete(() => _activeEffectColor = null);
+        _currentSequence.Join(
+            DOTween.To(() => pulseIntensity, x => pulseIntensity = x, 0f, EffectFadeDuration * 0.8f)
+        );
         
         return _currentSequence;
     }
@@ -698,17 +699,17 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     {
         glowIntensity = intensity;
         
-        return DOTween.To(() => glowIntensity, x => glowIntensity = x, 0f, flashDuration)
+        return DOTween.To(() => glowIntensity, x => glowIntensity = x, 0f, FlashDuration)
             .SetEase(Ease.OutQuad);
     }
     
     /// <summary>
     /// Punch scale effect.
     /// </summary>
-    public Tween PunchScale(float scale = -1)
+    public Tween DoPunchScale(float scale = -1)
     {
-        if (scale < 0) scale = punchScale;
-        return _rectTransform.DOPunchScale(Vector3.one * scale, flashDuration * 2, 1, 0.5f);
+        if (scale < 0) scale = PunchScale;
+        return _rectTransform.DOPunchScale(Vector3.one * scale, FlashDuration * 2, 1, 0.5f);
     }
     
     /// <summary>
@@ -716,7 +717,7 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     /// </summary>
     public Tween Shake(float intensity = 10f, float duration = -1)
     {
-        if (duration < 0) duration = shakeDuration;
+        if (duration < 0) duration = ShakeDuration;
         
         _shakeTween?.Kill();
         shakeIntensity = intensity;

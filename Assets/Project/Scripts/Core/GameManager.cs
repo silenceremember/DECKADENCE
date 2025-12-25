@@ -214,8 +214,7 @@ public class GameManager : MonoBehaviour
             icon.AnimateFillTo(newFill);
         }
         
-        // Проверяем критические уровни
-        CheckCriticalLevel(icon, newValue);
+        // Critical glow is handled automatically by UpdateCriticalGlow in LiquidFillIcon.Update()
     }
     
     void CheckCriticalLevel(LiquidFillIcon icon, int value)

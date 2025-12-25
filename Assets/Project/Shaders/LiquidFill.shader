@@ -24,9 +24,11 @@ Shader "RoyalLeech/UI/LiquidFill"
         [Header(Pixelation)]
         _PixelDensity ("Pixel Density (0=off)", Float) = 0
         
-        [Header(Glow and Pulse)]
-        _GlowColor ("Glow Color", Color) = (1, 0.8, 0.2, 1)
-        _GlowIntensity ("Glow Intensity", Range(0, 2)) = 0.0
+        [Header(Effects)]
+        _EffectIntensity ("Effect Intensity (-1=subtract, +1=add)", Range(-1, 1)) = 0.0
+        _EffectStrength ("Effect Strength", Range(0, 2)) = 0.5
+        _GlowIntensity ("Glow Intensity (pulsing darken)", Range(0, 2)) = 0.0
+        _GlowStrength ("Glow Strength", Range(0, 2)) = 0.5
         _PulseSpeed ("Pulse Speed", Float) = 2.0
         _PulseIntensity ("Pulse Intensity", Range(0, 1)) = 0.0
         
@@ -121,8 +123,10 @@ Shader "RoyalLeech/UI/LiquidFill"
                 float _SplashIntensity;
                 float _PixelDensity;
                 
-                float4 _GlowColor;
+                float _EffectIntensity;
+                float _EffectStrength;
                 float _GlowIntensity;
+                float _GlowStrength;
                 float _PulseSpeed;
                 float _PulseIntensity;
                 
@@ -233,7 +237,7 @@ Shader "RoyalLeech/UI/LiquidFill"
             {
                 float time = _Time.y;
                 float2 uv = IN.uv;
-                float2 pixelUV = uv; // For pixelated calculations
+                float2 pixelUV = uv; // For pixelated liquid calculations (waves, bubbles, edge)
                 
                 // Pixelation
                 bool pixelated = _PixelDensity > 0.5;
@@ -242,6 +246,7 @@ Shader "RoyalLeech/UI/LiquidFill"
                     pixelUV = floor(uv * _PixelDensity) / _PixelDensity;
                 }
                 
+                // Sample texture from pixelUV for pixelated icon, gradient will use original uv
                 half4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, pixelUV);
                 
                 if (IN.isShadow > 0.5)
@@ -269,41 +274,70 @@ Shader "RoyalLeech/UI/LiquidFill"
                     isFilled = smoothstep(fillLine + 0.012, fillLine - 0.012, uv.y);
                 }
                 
-                // Background: черный цвет ВИДИМЫЙ, BackgroundAlpha контролирует смешивание
-                // (более низкая alpha = более темный/черный фон, более высокая = ближе к textured)
-                half3 bgColor = lerp(half3(0,0,0), _BackgroundColor.rgb, _BackgroundAlpha);
-                half4 background = half4(bgColor, texColor.a); // Полная непрозрачность в границах спрайта
+                // Фон: сначала черный (непрозрачный), затем BackgroundColor накладывается поверх с альфой
+                // При BackgroundAlpha=0 видим чистый черный, при 1 видим полный BackgroundColor
+                half3 bgColor = _BackgroundColor.rgb * _BackgroundAlpha; // Pre-multiplied alpha для overlay
+                half4 background = half4(bgColor, texColor.a); // Полностью непрозрачный в границах спрайта
                 half4 filled = texColor * _FillColor;
                 
                 // Bubbles with color
                 float bubbles = getBubbles(pixelUV, fillLine, time);
                 filled.rgb = lerp(filled.rgb, _BubbleColor.rgb, bubbles * _BubbleColor.a);
                 
-                // Surface glow line (skip when pixelated for cleaner look)
+                // Surface glow line
                 if (!pixelated)
                 {
                     float surfaceGlow = exp(-abs(uv.y - fillLine) * 60.0) * 0.4 * isFilled;
                     filled.rgb += surfaceGlow;
                 }
-                
-                // Depth gradient
-                filled.rgb *= lerp(0.85, 1.0, pixelUV.y / max(fillLine, 0.01));
-                
-                half4 result;
-                result.rgb = lerp(background.rgb, filled.rgb, isFilled);
-                result.a = texColor.a; // Альфа всегда из текстуры (границы спрайта)
-                
-                // Glow (internal - does not extend beyond sprite bounds)
-                if (_GlowIntensity > 0.001)
+                else
                 {
-                    // Simply add glow color to visible pixels
-                    float glowMask = texColor.a;
-                    glowMask *= 1.0 + sin(time * _PulseSpeed) * _PulseIntensity * 0.5;
-                    result.rgb += _GlowColor.rgb * glowMask * _GlowIntensity * 0.5;
+                    // Pixelated surface glow (simpler, but still adds highlight at top)
+                    float distToSurface = abs(pixelUV.y - fillLine);
+                    float pixelGlow = step(distToSurface, 0.05) * 0.2 * isFilled;
+                    filled.rgb += pixelGlow;
                 }
                 
-                // Pulse (color brightness oscillation)
-                if (_PulseIntensity > 0.001)
+                // Depth gradient - subtle (0.9 to 1.0)
+                float gradientFactor = uv.y / max(_FillAmount, 0.01);
+                filled.rgb *= lerp(0.9, 1.0, saturate(gradientFactor));
+                
+                // Смешиваем: filled поверх background
+                half4 result;
+                result.rgb = lerp(background.rgb, filled.rgb, isFilled);
+                result.a = texColor.a; // Альфа всегда из текстуры (форма спрайта)
+                
+                // === Effects: Simple Light/Dark Overlay ===
+                float mask = texColor.a;
+                
+                // Glow: pulsing DARKEN overlay (works like effect: intensity × strength)
+                if (_GlowIntensity > 0.0001)
+                {
+                    float pulse = 0.5 + sin(time * _PulseSpeed) * 0.5; // 0 to 1 pulse
+                    float glowAmount = _GlowIntensity * _GlowStrength * mask;
+                    // Lerp towards darker, pulse modulates target darkness
+                    half3 darkColor = result.rgb * lerp(0.5, 0.2, pulse);
+                    result.rgb = lerp(result.rgb, darkColor, glowAmount);
+                }
+                
+                // Effect: LIGHTEN (positive) or DARKEN (negative) overlay
+                if (abs(_EffectIntensity) > 0.0001)
+                {
+                    float effectAmount = abs(_EffectIntensity) * _EffectStrength * mask;
+                    if (_EffectIntensity > 0)
+                    {
+                        // Positive: lerp towards white (lighten)
+                        result.rgb = lerp(result.rgb, half3(1, 1, 1), effectAmount);
+                    }
+                    else
+                    {
+                        // Negative: lerp towards black (darken) - symmetric with increase
+                        result.rgb = lerp(result.rgb, half3(0, 0, 0), effectAmount);
+                    }
+                }
+                
+                // Pulse (overall brightness oscillation when no glow)
+                if (_PulseIntensity > 0.001 && _GlowIntensity < 0.001)
                     result.rgb *= 1.0 + sin(time * _PulseSpeed) * _PulseIntensity * 0.3;
                 
                 return result * IN.color;
