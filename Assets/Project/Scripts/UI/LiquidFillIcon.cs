@@ -978,21 +978,25 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         _fillTween = DOTween.To(() => fillAmount, x => fillAmount = x, newFill, 0.15f)
             .SetEase(Ease.OutQuad);
         
+        // Scale effects by fillDelta magnitude (larger changes = stronger effects)
+        // Base scale: fillDelta of 0.1 (10%) = full base intensity
+        float effectScale = Mathf.Abs(fillDelta) / 0.1f;
+        
         // Apply increase/decrease effect based on fillDelta direction
         if (fillDelta > 0)
         {
             // INCREASE - add white highlight (positive effectIntensity)
-            effectIntensity = Mathf.Min(effectIntensity + LetterEffectIntensity, 1.5f);
+            effectIntensity = Mathf.Min(effectIntensity + LetterEffectIntensity * effectScale, 1.5f);
         }
         else if (fillDelta < 0)
         {
             // DECREASE - add darken effect (negative effectIntensity) + shake
-            effectIntensity = Mathf.Max(effectIntensity - LetterEffectIntensity, -1.5f);
-            shakeIntensity = Mathf.Min(shakeIntensity + LetterShakeIntensity, 15f);
+            effectIntensity = Mathf.Max(effectIntensity - LetterEffectIntensity * effectScale, -1.5f);
+            shakeIntensity = Mathf.Min(shakeIntensity + LetterShakeIntensity * effectScale, 15f);
         }
         
-        // Accumulate splash (capped)
-        splashIntensity = Mathf.Min(splashIntensity + LetterSplashIntensity, 0.8f);
+        // Accumulate splash (scaled by delta)
+        splashIntensity = Mathf.Min(splashIntensity + LetterSplashIntensity * effectScale, 0.8f);
         
         // Reset trailing delay on each letter - trailing waits X seconds after LAST letter
         _trailingDelayTimer = TrailingDelay;
