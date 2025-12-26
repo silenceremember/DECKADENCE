@@ -69,12 +69,6 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     float CriticalLowThreshold => effectPreset != null ? effectPreset.criticalLowThreshold : 0.1f;
     float CriticalHighThreshold => effectPreset != null ? effectPreset.criticalHighThreshold : 0.9f;
     
-    // Per-letter effect properties
-    float LetterEffectIntensity => effectPreset != null ? effectPreset.letterEffectIntensity : 0.25f;
-    float LetterSplashIntensity => effectPreset != null ? effectPreset.letterSplashIntensity : 0.1f;
-    float LetterShakeIntensity => effectPreset != null ? effectPreset.letterShakeIntensity : 2f;
-    float LetterPunchScale => effectPreset != null ? effectPreset.letterPunchScale : 0.03f;
-    
     // Runtime shadow tracking
     private Vector2 _currentShadowOffset;
     
@@ -965,10 +959,10 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     /// <summary>
     /// Called when a letter "arrives" at this icon during explosion effect.
     /// Applies a portion of fill change with increase/decrease effect.
-    /// All values are taken from IconEffectPreset.
     /// </summary>
     /// <param name="fillDelta">Delta to add to fillAmount (can be positive or negative)</param>
-    public void ReceiveLetterWithFill(float fillDelta)
+    /// <param name="effectMultiplier">Effect multiplier for this letter (tier * 1/letterCount)</param>
+    public void ReceiveLetterWithFill(float fillDelta, float effectMultiplier)
     {
         // Calculate new fill target
         float newFill = Mathf.Clamp01(fillAmount + fillDelta);
@@ -978,34 +972,31 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         _fillTween = DOTween.To(() => fillAmount, x => fillAmount = x, newFill, 0.15f)
             .SetEase(Ease.OutQuad);
         
-        // Scale effects by fillDelta magnitude (larger changes = stronger effects)
-        // Base scale: fillDelta of 0.1 (10%) = full base intensity
-        float effectScale = Mathf.Abs(fillDelta) / 0.1f;
-        
         // Apply increase/decrease effect based on fillDelta direction
+        // effectMultiplier already includes tier and 1/letterCount scaling
         if (fillDelta > 0)
         {
             // INCREASE - add white highlight (positive effectIntensity)
-            effectIntensity = Mathf.Min(effectIntensity + LetterEffectIntensity * effectScale, 1.5f);
+            effectIntensity = Mathf.Min(effectIntensity + IncreaseStrength * effectMultiplier, 1.5f);
+            splashIntensity = Mathf.Min(splashIntensity + GainSplashIntensity * effectMultiplier * 0.3f, 0.8f);
         }
         else if (fillDelta < 0)
         {
             // DECREASE - add darken effect (negative effectIntensity) + shake
-            effectIntensity = Mathf.Max(effectIntensity - LetterEffectIntensity * effectScale, -1.5f);
-            shakeIntensity = Mathf.Min(shakeIntensity + LetterShakeIntensity * effectScale, 15f);
+            effectIntensity = Mathf.Max(effectIntensity - DecreaseStrength * effectMultiplier, -1.5f);
+            shakeIntensity = Mathf.Min(shakeIntensity + LossShakeIntensity * effectMultiplier * 0.3f, 15f);
+            splashIntensity = Mathf.Min(splashIntensity + LossSplashIntensity * effectMultiplier * 0.3f, 0.8f);
         }
-        
-        // Accumulate splash (scaled by delta)
-        splashIntensity = Mathf.Min(splashIntensity + LetterSplashIntensity * effectScale, 0.8f);
         
         // Reset trailing delay on each letter - trailing waits X seconds after LAST letter
         _trailingDelayTimer = TrailingDelay;
         
-        // Mini scale punch
+        // Mini scale punch (scaled by effectMultiplier)
         if (_rectTransform != null)
         {
+            float punchScale = (fillDelta > 0 ? IncreasePunchScale : DecreasePunchScale) * effectMultiplier;
             DOTween.Kill(_rectTransform, true);
-            _rectTransform.DOPunchScale(Vector3.one * LetterPunchScale, 0.12f, 5, 0.5f);
+            _rectTransform.DOPunchScale(Vector3.one * punchScale, 0.12f, 5, 0.5f);
         }
     }
     

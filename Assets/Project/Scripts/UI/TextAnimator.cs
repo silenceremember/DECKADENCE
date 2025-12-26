@@ -535,9 +535,9 @@ public class TextAnimator : MonoBehaviour
                 float sideOffset = Random.Range(-expPreset.arcSideOffset, expPreset.arcSideOffset);
                 letter.controlPoint = midPoint + Vector2.up * arcOffset + Vector2.right * sideOffset;
                 
-                // Timing
+                // Timing - all letters fly simultaneously (no stagger)
                 letter.flightDuration = expPreset.flightDuration * (1f + Random.Range(-expPreset.flightDurationRandomness, expPreset.flightDurationRandomness));
-                letter.flightDelay = currentLetterIndex * expPreset.staggerDelay;
+                letter.flightDelay = 0f; // All letters start at the same time
                 
                 // Rotation direction
                 letter.rotationDirection = expPreset.randomRotationDirection ? (Random.value > 0.5f ? 1f : -1f) : 1f;
@@ -551,13 +551,12 @@ public class TextAnimator : MonoBehaviour
         _targetCharCount = 0;
         _currentVisibleCharsFloat = 0f;
         
-        // Рассчитываем время окончания взрыва:
-        // maxFlightTime = (letterCount - 1) * staggerDelay + flightDuration * (1 + randomness) + buffer
+        // Рассчитываем время окончания взрыва (все буквы летят одновременно):
+        // endTime = flightDuration * (1 + randomness) + buffer
         int totalExplodingLetters = currentLetterIndex;
-        float maxStaggerTime = (totalExplodingLetters > 0 ? (totalExplodingLetters - 1) : 0) * expPreset.staggerDelay;
         float maxFlightDuration = expPreset.flightDuration * (1f + expPreset.flightDurationRandomness);
         float buffer = 0.1f; // Дополнительный буфер на всякий случай
-        _explosionEndTime = Time.time + maxStaggerTime + maxFlightDuration + buffer;
+        _explosionEndTime = Time.time + maxFlightDuration + buffer;
         
         Debug.Log($"[TextAnimator] Explosion started: {totalExplodingLetters} letters, endTime={_explosionEndTime - Time.time}s from now");
         

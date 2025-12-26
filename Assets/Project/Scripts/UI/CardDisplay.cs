@@ -730,8 +730,12 @@ public class CardDisplay : MonoBehaviour
                 // Calculate fill delta per letter for each icon
                 // Fill is 0-1, change is -100 to 100
                 float[] fillDeltaPerLetter = new float[4];
+                float[] effectMultiplierPerLetter = new float[4]; // Tier-based effect per letter
                 float[] finalFillValues = new float[4]; // Final fill values for trailing
                 int[] currentResourceValues = new int[] { gm.spades, gm.hearts, gm.diamonds, gm.clubs };
+                
+                // Store icon references (needed for tier calculation and callback)
+                LiquidFillIcon[] icons = new LiquidFillIcon[] { gm.spadesIcon, gm.heartsIcon, gm.diamondsIcon, gm.clubsIcon };
                 
                 for (int i = 0; i < 4; i++)
                 {
@@ -743,24 +747,43 @@ public class CardDisplay : MonoBehaviour
                     {
                         // Total fill change = changes[i] / 100f, distributed across letterCounts[i] letters
                         fillDeltaPerLetter[i] = (changes[i] / 100f) / letterCounts[i];
+                        
+                        // Calculate tier multiplier based on absolute change
+                        LiquidFillIcon icon = icons[i];
+                        if (icon != null && icon.effectPreset != null)
+                        {
+                            var preset = icon.effectPreset;
+                            int absDelta = Mathf.Abs(changes[i]);
+                            float tierMultiplier;
+                            
+                            if (absDelta <= preset.minorThreshold)
+                                tierMultiplier = preset.minorMultiplier;
+                            else if (absDelta > preset.majorThreshold)
+                                tierMultiplier = preset.majorMultiplier;
+                            else
+                                tierMultiplier = 1f; // Normal
+                            
+                            // Effect per letter = tierMultiplier / letterCount
+                            effectMultiplierPerLetter[i] = tierMultiplier / letterCounts[i];
+                        }
+                        else
+                        {
+                            effectMultiplierPerLetter[i] = 1f / letterCounts[i]; // Fallback
+                        }
                     }
                 }
-                
-                // Store icon references for callback
-                LiquidFillIcon[] icons = new LiquidFillIcon[] { gm.spadesIcon, gm.heartsIcon, gm.diamondsIcon, gm.clubsIcon };
                 
                 // Track arrival count to fade out effects when all letters arrive
                 int[] arrivalCounts = new int[4];
                 
                 // Trigger explosion with callback that applies per-letter fill
-                // Effect settings come from IconEffectPreset on each icon
                 actionAnimator.TriggerExplosion(changes, iconPositions, (iconIndex) =>
                 {
-                    // Letter arrived - apply fill delta with effect
+                    // Letter arrived - apply fill delta with tier-based effect
                     LiquidFillIcon icon = icons[iconIndex];
                     if (icon != null && fillDeltaPerLetter[iconIndex] != 0f)
                     {
-                        icon.ReceiveLetterWithFill(fillDeltaPerLetter[iconIndex]);
+                        icon.ReceiveLetterWithFill(fillDeltaPerLetter[iconIndex], effectMultiplierPerLetter[iconIndex]);
                     }
                     
                     // Track arrivals

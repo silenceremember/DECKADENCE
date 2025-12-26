@@ -15,10 +15,6 @@ public class LetterExplosionPreset : ScriptableObject
     [Range(0, 0.3f)]
     public float flightDurationRandomness = 0.15f;
     
-    [Tooltip("Начальная задержка перед стартом каждой буквы (stagger)")]
-    [Range(0, 0.1f)]
-    public float staggerDelay = 0.02f;
-    
     [Header("=== INITIAL EXPLOSION ===")]
     [Tooltip("Сила начального разброса (пиксели)")]
     public float explosionForce = 150f;
