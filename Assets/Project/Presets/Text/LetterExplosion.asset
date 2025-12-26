@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LetterExplosionPreset
   flightDuration: 0.7
   flightDurationRandomness: 0.1
-  explosionForce: 300
+  explosionForce: 10
   explosionAngleRandomness: 30
-  arcHeight: 30
+  arcHeight: 20
   arcRandomness: 0.2
   arcSideOffset: 20
   initialScale: 1.2

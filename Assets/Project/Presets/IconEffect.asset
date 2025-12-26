@@ -25,13 +25,14 @@ MonoBehaviour:
   lossShakeIntensity: 10
   increasePunchScale: 0.5
   decreasePunchScale: 0.1
-  minorThreshold: 5
+  minorThreshold: 6
   majorThreshold: 12
   minorMultiplier: 0.75
   majorMultiplier: 1.25
-  effectDuration: 0.8
+  effectDuration: 0.5
+  effectFadeDuration: 1
   pulseSpeed: 4
-  trailingDelay: 1
+  trailingDelay: 0.8
   trailingDuration: 0.4
   previewShakeBase: 2
   enableIdleAnimation: 1
@@ -43,5 +44,5 @@ MonoBehaviour:
   followSpeed: 8
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   shadowIntensity: 0.25
-  criticalLowThreshold: 0.2
+  criticalLowThreshold: 0.3
   criticalHighThreshold: 0.8
