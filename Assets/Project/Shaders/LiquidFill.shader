@@ -284,22 +284,10 @@ Shader "RoyalLeech/UI/LiquidFill"
                 }
                 
                 // === TRAILING FILL (works for both increase and decrease) ===
-                // Use the SAME wave calculation but with _TrailingFill as base
-                // This is a simple mask: area between trailing level and fill level
-                
-                // Calculate trailing fill level (same wave formula, different base)
-                float trailingBase = _TrailingFill;
-                float trailEdgeDist = min(uv.x, 1.0 - uv.x);
-                float trailMeniscus = pow(1.0 - saturate(trailEdgeDist * 2.5), 2.0) * _MeniscusStrength;
-                trailingBase += trailMeniscus;
-                float trailWave = sin(uv.x * 8.0 + time * _FillWaveSpeed) * _FillWaveStrength;
-                trailingBase += trailWave;
-                
-                float trailingLine = trailingBase;
-                if (pixelated)
-                {
-                    trailingLine = floor(trailingLine * _PixelDensity) / _PixelDensity;
-                }
+                // Instead of calculating trailing surface separately, use fillLine + offset
+                // This ensures PERFECT wave sync (no floating point mismatch)
+                float trailingOffset = _TrailingFill - _FillAmount;
+                float trailingLine = fillLine + trailingOffset;
                 
                 // isTrailingFilled = using trailing level instead of fill level
                 float isTrailingFilled;
