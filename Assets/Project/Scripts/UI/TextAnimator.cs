@@ -550,11 +550,26 @@ public class TextAnimator : MonoBehaviour
                 letter.targetWorldPos = iconPositions[iconIdx];
                 letter.targetIconIndex = iconIdx;
                 
-                // Bezier control point (arc with side offset for curve)
-                Vector2 midPoint = (letter.startWorldPos + letter.targetWorldPos) * 0.5f;
-                float arcOffset = expPreset.arcHeight * (1f + Random.Range(-expPreset.arcRandomness, expPreset.arcRandomness));
+                // Bezier control point with explosion force for initial burst
+                Vector2 direction = letter.targetWorldPos - letter.startWorldPos;
+                float distance = direction.magnitude;
+                
+                // Initial explosion: random outward direction from the letter
+                float explosionAngle = Random.Range(0f, 360f) + Random.Range(-expPreset.explosionAngleRandomness, expPreset.explosionAngleRandomness);
+                Vector2 explosionDir = new Vector2(
+                    Mathf.Cos(explosionAngle * Mathf.Deg2Rad),
+                    Mathf.Sin(explosionAngle * Mathf.Deg2Rad)
+                );
+                
+                // Control point: start with explosion burst, then arc towards target
+                // The control point is offset from the start position by explosion force
+                // Plus arc height in the upward direction for a nice arc
+                Vector2 explosionOffset = explosionDir * expPreset.explosionForce;
+                float arcHeight = expPreset.arcHeight * (1f + Random.Range(-expPreset.arcRandomness, expPreset.arcRandomness));
                 float sideOffset = Random.Range(-expPreset.arcSideOffset, expPreset.arcSideOffset);
-                letter.controlPoint = midPoint + Vector2.up * arcOffset + Vector2.right * sideOffset;
+                
+                // Control point is between start and target, offset by explosion and arc
+                letter.controlPoint = letter.startWorldPos + explosionOffset + Vector2.up * arcHeight + Vector2.right * sideOffset;
                 
                 // Timing - all letters fly simultaneously (no stagger)
                 // Randomness ONLY DECREASES duration to ensure all letters finish within flightDuration
@@ -574,10 +589,9 @@ public class TextAnimator : MonoBehaviour
         _currentVisibleCharsFloat = 0f;
         
         // Рассчитываем время окончания взрыва:
-        // All letters now finish within base flightDuration (randomness only decreases)
+        // Based only on flight duration - icon effects have their own independent timing
         int totalExplodingLetters = currentLetterIndex;
-        float buffer = 0.05f; // Small buffer for safety
-        _explosionEndTime = Time.time + expPreset.flightDuration + buffer;
+        _explosionEndTime = Time.time + expPreset.flightDuration;
         
         Debug.Log($"[TextAnimator] Explosion started: {totalExplodingLetters} letters, endTime={_explosionEndTime - Time.time}s from now");
         
@@ -979,15 +993,13 @@ public class TextAnimator : MonoBehaviour
                         else
                         {
                             float flightT = Mathf.Clamp01(activeTime / letter.flightDuration);
-                            float curvedT = exp.positionCurve.Evaluate(flightT);
+                            // Clamp curve output to [0,1] to prevent overshoot
+                            float curvedT = Mathf.Clamp01(exp.positionCurve.Evaluate(flightT));
                             
                             // Bezier curve interpolation for world position
                             Vector2 worldPos = BezierPoint(letter.startWorldPos, letter.controlPoint, letter.targetWorldPos, curvedT);
                             
                             // Calculate offset by converting world delta to local delta
-                            // worldPos is where the letter should be in world space
-                            // startWorldPos is where it started in world space
-                            // The delta in world space needs to be converted to local space
                             Vector2 worldDelta = worldPos - letter.startWorldPos;
                             
                             // Convert world delta to local delta (accounting for parent rotation/scale)
@@ -996,17 +1008,31 @@ public class TextAnimator : MonoBehaviour
                             // Add delta to the previous offset (where letter was when explosion started)
                             result.offset = letter.prevOffset + new Vector2(localDelta.x, localDelta.y);
                             
-                            // Scale
+                            // Scale - based on time curve
                             result.scale = Mathf.Lerp(exp.initialScale, exp.finalScale, exp.scaleCurve.Evaluate(flightT));
                             
-                            // Alpha
-                            result.alpha = exp.alphaCurve.Evaluate(flightT);
+                            // === PROXIMITY-BASED ALPHA ===
+                            // Calculate how close the letter is to the target (0 = at target, 1 = at start)
+                            float totalDistance = Vector2.Distance(letter.startWorldPos, letter.targetWorldPos);
+                            float currentDistance = Vector2.Distance(worldPos, letter.targetWorldPos);
+                            // proximityT: 0 = at start, 1 = at target
+                            float proximityT = totalDistance > 0.01f ? 1f - (currentDistance / totalDistance) : 1f;
+                            // Clamp to valid range
+                            proximityT = Mathf.Clamp01(proximityT);
+                            
+                            // Alpha fades based on proximity: full alpha at start, 0 at target
+                            // Use smooth curve for nicer fade (faster fade as approaching target)
+                            float alphaFromProximity = 1f - (proximityT * proximityT); // Quadratic ease-in for fade
+                            
+                            // Also apply the preset's alpha curve as a multiplier (for additional control)
+                            result.alpha = alphaFromProximity * exp.alphaCurve.Evaluate(flightT);
                             
                             // Rotation
                             result.rotation = letter.prevRotation + activeTime * exp.rotationSpeed * letter.rotationDirection;
                             
                             // Check arrival and fire callback
-                            if (flightT >= 1f)
+                            // Letter arrives when proximity is very close OR time is up
+                            if (proximityT >= 0.95f || flightT >= 1f)
                             {
                                 if (!letter.arrivalCallbackFired)
                                 {

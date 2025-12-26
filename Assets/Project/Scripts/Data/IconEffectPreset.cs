@@ -58,6 +58,9 @@ public class IconEffectPreset : ScriptableObject
     [Tooltip("Total effect duration (fill, flash, fade all fit within this)")]
     public float effectDuration = 0.8f;
     
+    [Tooltip("Duration for fading out effects after letters arrive (seconds)")]
+    public float effectFadeDuration = 0.6f;
+    
     [Tooltip("Speed of pulse and glow animations")]
     public float pulseSpeed = 4f;
     

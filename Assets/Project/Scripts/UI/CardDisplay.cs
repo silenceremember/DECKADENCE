@@ -799,7 +799,7 @@ public class CardDisplay : MonoBehaviour
                     if (arrivalCounts[iconIndex] >= letterCounts[iconIndex] && icon != null)
                     {
                         // Pass FINAL fill value for trailing animation
-                        icon.FadeOutArrivalEffects(finalFillValues[iconIndex], 0.4f);
+                        icon.FadeOutArrivalEffects(finalFillValues[iconIndex]);
                     }
                 });
                 

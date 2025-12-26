@@ -53,6 +53,7 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     float MinorMultiplier => effectPreset != null ? effectPreset.minorMultiplier : 0.5f;
     float MajorMultiplier => effectPreset != null ? effectPreset.majorMultiplier : 1.5f;
     float EffectDuration => effectPreset != null ? effectPreset.effectDuration : 0.8f;
+    float EffectFadeDuration => effectPreset != null ? effectPreset.effectFadeDuration : 0.6f;
     float PulseSpeed => effectPreset != null ? effectPreset.pulseSpeed : 4f;
     float TrailingDelay => effectPreset != null ? effectPreset.trailingDelay : 0.8f;
     float TrailingDuration => effectPreset != null ? effectPreset.trailingDuration : 0.5f;
@@ -863,16 +864,15 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     }
     
     /// <summary>
-    /// Reset liquid to calm (no turbulence, no bubbles, no splash).
+    /// Reset liquid to calm (no turbulence, no bubbles).
+    /// NOTE: Does not affect splash - splash is controlled by FadeOutArrivalEffects.
     /// </summary>
     public void CalmLiquid(float duration = 0.3f)
     {
         _turbulenceTween?.Kill();
-        _splashTween?.Kill();
-        
         _turbulenceTween = DOTween.To(() => liquidTurbulence, x => liquidTurbulence = x, 0f, duration);
         DOTween.To(() => bubbleIntensity, x => bubbleIntensity = x, 0f, duration);
-        DOTween.To(() => splashIntensity, x => splashIntensity = x, 0f, duration);
+        // NOTE: splashIntensity NOT touched here to avoid double-wave effect
     }
     
     // =====================================================
@@ -974,19 +974,18 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
             .SetEase(Ease.OutQuad);
         
         // Apply increase/decrease effect based on fillDelta direction
-        // effectMultiplier already includes tier and 1/letterCount scaling
+        // effectMultiplier already includes tier scaling
+        // NOTE: No splash here - splash plays ONCE in FadeOutArrivalEffects to avoid duplicate wave effects
         if (fillDelta > 0)
         {
             // INCREASE - add white highlight (positive effectIntensity)
             effectIntensity = Mathf.Min(effectIntensity + IncreaseStrength * effectMultiplier, 1.5f);
-            splashIntensity = Mathf.Min(splashIntensity + GainSplashIntensity * effectMultiplier * 0.3f, 0.8f);
         }
         else if (fillDelta < 0)
         {
             // DECREASE - add darken effect (negative effectIntensity) + shake
             effectIntensity = Mathf.Max(effectIntensity - DecreaseStrength * effectMultiplier, -1.5f);
             shakeIntensity = Mathf.Min(shakeIntensity + LossShakeIntensity * effectMultiplier * 0.3f, 15f);
-            splashIntensity = Mathf.Min(splashIntensity + LossSplashIntensity * effectMultiplier * 0.3f, 0.8f);
         }
         
         // Reset trailing delay on each letter - trailing waits X seconds after LAST letter
@@ -1003,15 +1002,20 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     
     /// <summary>
     /// Fade out accumulated effects after all letters have arrived.
-    /// Sets delay timer for trailing fill to start following.
+    /// Uses effectFadeDuration from preset. Triggers splash effect once.
     /// </summary>
     /// <param name="targetFill">Not used - trailing now follows fill via Update lerp</param>
-    /// <param name="duration">Duration for effect fadeout</param>
-    public void FadeOutArrivalEffects(float targetFill, float duration = 0.4f)
+    /// <param name="durationOverride">Optional: override duration (uses EffectFadeDuration from preset if <= 0)</param>
+    public void FadeOutArrivalEffects(float targetFill, float durationOverride = -1f)
     {
+        float duration = durationOverride > 0 ? durationOverride : EffectFadeDuration;
+        
+        // Trigger splash ONCE when all letters have arrived
+        splashIntensity = 0.6f;
+        
         DOTween.To(() => effectIntensity, x => effectIntensity = x, 0f, duration).SetEase(Ease.OutQuad);
         DOTween.To(() => shakeIntensity, x => shakeIntensity = x, 0f, duration * 0.8f);
-        DOTween.To(() => splashIntensity, x => splashIntensity = x, 0f, duration * 1.5f);
+        DOTween.To(() => splashIntensity, x => splashIntensity = x, 0f, duration * 1.5f).SetEase(Ease.InOutSine);
         
         // Set trailing delay - trailing will start following after this delay
         _trailingDelayTimer = TrailingDelay;
