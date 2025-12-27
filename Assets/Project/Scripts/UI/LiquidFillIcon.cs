@@ -50,6 +50,7 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     float BubbleSizeMinor => effectPreset != null ? effectPreset.bubbleSizeMinor : 0.7f;
     float BubbleSizeNormal => effectPreset != null ? effectPreset.bubbleSizeNormal : 1.0f;
     float BubbleSizeMajor => effectPreset != null ? effectPreset.bubbleSizeMajor : 1.2f;
+    float BubbleFadeOutSpeed => effectPreset != null ? effectPreset.bubbleFadeOutSpeed : 4f;
     
     float PixelDensity => effectPreset != null ? effectPreset.pixelDensity : 0f;
     float IncreaseStrength => effectPreset != null ? effectPreset.increaseStrength : 0.5f;
@@ -238,7 +239,9 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         else
         {
             // Normal smooth transition (no context switch)
-            bubbleIntensity = Mathf.MoveTowards(bubbleIntensity, _targetBubbleIntensity, Time.deltaTime * 2f);
+            // Use fast fade out speed when going to 0, normal speed when going up
+            float fadeSpeed = _targetBubbleIntensity <= 0.01f ? BubbleFadeOutSpeed : 2f;
+            bubbleIntensity = Mathf.MoveTowards(bubbleIntensity, _targetBubbleIntensity, Time.deltaTime * fadeSpeed);
         }
         
         // Bubble speed/size multiplier changes - ONLY when bubbles are invisible!
@@ -926,6 +929,25 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         liquidTurbulence = Mathf.Lerp(0f, 0.8f, agitation);
         _targetBubbleIntensity = Mathf.Lerp(0f, 0.5f, agitation); // Use target for smooth lerp
     }
+    
+    /// <summary>
+    /// Fade out bubbles quickly (used when explosion starts).
+    /// Uses bubbleFadeOutSpeed from preset.
+    /// </summary>
+    public void FadeOutBubbles()
+    {
+        // Set target to 0 and mark as transitioning so we use fast fade
+        _targetBubbleIntensity = 0f;
+        _isBubbleTransitioning = false; // Not a context switch, just fade out
+        
+        // Also reset transition state
+        _lastBubbleDelta = 0;
+    }
+    
+    /// <summary>
+    /// Get the bubble fade out speed from preset.
+    /// </summary>
+    public float GetBubbleFadeOutSpeed() => BubbleFadeOutSpeed;
     
     /// <summary>
     /// Reset liquid to calm (no turbulence, no bubbles).

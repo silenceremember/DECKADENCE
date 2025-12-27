@@ -827,6 +827,12 @@ public class CardDisplay : MonoBehaviour
                 _pendingFinalFillValues = finalFillValues;
                 _pendingIsIncrease = isIncrease;
                 
+                // Fade out bubbles on all icons before explosion
+                foreach (var icon in icons)
+                {
+                    if (icon != null) icon.FadeOutBubbles();
+                }
+                
                 // Trigger explosion with callback that plays per-letter VISUAL effect only (no fill change)
                 actionAnimator.TriggerExplosion(changes, iconPositions, (iconIndex) =>
                 {

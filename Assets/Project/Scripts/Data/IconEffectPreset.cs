@@ -33,6 +33,9 @@ public class IconEffectPreset : ScriptableObject
     [Tooltip("Size multiplier for Major tier")]
     [Range(1f, 1.5f)] public float bubbleSizeMajor = 1.2f;
     
+    [Tooltip("How fast bubbles fade out when explosion starts (higher = faster)")]
+    [Range(1f, 10f)] public float bubbleFadeOutSpeed = 4f;
+    
     [Tooltip("0 = off, 32-128 = pixelated")]
     public float pixelDensity = 0f;
     
