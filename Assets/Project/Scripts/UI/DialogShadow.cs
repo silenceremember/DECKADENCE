@@ -95,6 +95,10 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         }
     }
     
+    private ArrowEdge _lastArrowEdge;
+    private float _lastArrowPosition;
+    private float _lastArrowSize;
+    
     void LateUpdate()
     {
         if (_materialInstance == null) return;
@@ -113,6 +117,20 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         _materialInstance.SetFloat(ArrowPositionID, arrowPosition);
         _materialInstance.SetFloat(ArrowSizeID, arrowSize);
         _materialInstance.SetFloat(ArrowWidthID, arrowWidth);
+        
+        // Check if arrow changed (need to rebuild mesh)
+        bool arrowChanged = arrowEdge != _lastArrowEdge || 
+                           Mathf.Abs(arrowPosition - _lastArrowPosition) > 0.01f ||
+                           Mathf.Abs(arrowSize - _lastArrowSize) > 0.001f;
+        
+        if (arrowChanged)
+        {
+            _lastArrowEdge = arrowEdge;
+            _lastArrowPosition = arrowPosition;
+            _lastArrowSize = arrowSize;
+            if (_graphic != null)
+                _graphic.SetVerticesDirty();
+        }
         
         // Update shadow offset
         Vector2 newOffset = CalculateShadowDirection() * intensity;
@@ -205,84 +223,105 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         if (!enabled || !gameObject.activeInHierarchy)
             return;
         
-        int originalVertCount = vh.currentVertCount;
+        if (_rectTransform == null)
+            _rectTransform = GetComponent<RectTransform>();
         
-        if (originalVertCount == 0)
-            return;
+        Rect rect = _rectTransform.rect;
         
-        List<UIVertex> originalVerts = new List<UIVertex>();
-        for (int i = 0; i < originalVertCount; i++)
-        {
-            UIVertex v = new UIVertex();
-            vh.PopulateUIVertex(ref v, i);
-            originalVerts.Add(v);
-        }
+        // Calculate arrow extension in local units
+        float arrowExtension = arrowSize * Mathf.Max(rect.width, rect.height);
         
-        Vector3 offset = new Vector3(currentShadowOffset.x, currentShadowOffset.y, 0);
+        // Calculate expanded bounds based on arrow edge
+        float expandTop = (arrowEdge == ArrowEdge.Top) ? arrowExtension : 0;
+        float expandBottom = (arrowEdge == ArrowEdge.Bottom) ? arrowExtension : 0;
+        float expandLeft = (arrowEdge == ArrowEdge.Left) ? arrowExtension : 0;
+        float expandRight = (arrowEdge == ArrowEdge.Right) ? arrowExtension : 0;
         
-        if (_canvas != null)
-        {
-            float scale = _canvas.scaleFactor;
-            offset /= scale;
-        }
+        // Calculate expanded rect
+        float left = rect.xMin - expandLeft;
+        float right = rect.xMax + expandRight;
+        float bottom = rect.yMin - expandBottom;
+        float top = rect.yMax + expandTop;
         
-        offset = transform.InverseTransformVector(offset);
-        
-        List<int> triangles = new List<int>();
-        int quadCount = originalVertCount / 4;
-        for (int q = 0; q < quadCount; q++)
-        {
-            int baseIdx = q * 4;
-            triangles.Add(baseIdx);
-            triangles.Add(baseIdx + 1);
-            triangles.Add(baseIdx + 2);
-            triangles.Add(baseIdx + 2);
-            triangles.Add(baseIdx + 3);
-            triangles.Add(baseIdx);
-        }
-        
-        int remaining = originalVertCount % 4;
-        if (remaining == 3)
-        {
-            int baseIdx = quadCount * 4;
-            triangles.Add(baseIdx);
-            triangles.Add(baseIdx + 1);
-            triangles.Add(baseIdx + 2);
-        }
+        // Calculate UV mapping: original rect maps to 0-1, arrow area extends beyond
+        float uvLeft = -expandLeft / rect.width;
+        float uvRight = 1f + expandRight / rect.width;
+        float uvBottom = -expandBottom / rect.height;
+        float uvTop = 1f + expandTop / rect.height;
         
         vh.Clear();
         
-        // Shadow vertices
-        for (int i = 0; i < originalVerts.Count; i++)
+        // Build expanded quad with proper UVs
+        // Shadow vertices first
+        Vector3 offset = new Vector3(currentShadowOffset.x, currentShadowOffset.y, 0);
+        if (_canvas != null)
         {
-            UIVertex shadowVert = originalVerts[i];
-            shadowVert.position += offset;
-            shadowVert.uv1 = new Vector4(1, 0, 0, 0);
-            vh.AddVert(shadowVert);
+            offset /= _canvas.scaleFactor;
         }
+        offset = transform.InverseTransformVector(offset);
         
-        for (int i = 0; i < triangles.Count; i += 3)
-        {
-            vh.AddTriangle(triangles[i], triangles[i + 1], triangles[i + 2]);
-        }
+        Color32 color32 = _graphic != null ? _graphic.color : Color.white;
         
-        // Main vertices
-        int mainBaseIdx = vh.currentVertCount;
-        for (int i = 0; i < originalVerts.Count; i++)
-        {
-            UIVertex mainVert = originalVerts[i];
-            mainVert.uv1 = new Vector4(0, 0, 0, 0);
-            vh.AddVert(mainVert);
-        }
+        // Shadow quad (4 vertices)
+        UIVertex vert = UIVertex.simpleVert;
+        vert.color = color32;
         
-        for (int i = 0; i < triangles.Count; i += 3)
-        {
-            vh.AddTriangle(
-                mainBaseIdx + triangles[i],
-                mainBaseIdx + triangles[i + 1],
-                mainBaseIdx + triangles[i + 2]
-            );
-        }
+        // Bottom-left
+        vert.position = new Vector3(left, bottom, 0) + offset;
+        vert.uv0 = new Vector2(uvLeft, uvBottom);
+        vert.uv1 = new Vector2(1, 0); // Shadow flag
+        vh.AddVert(vert);
+        
+        // Top-left
+        vert.position = new Vector3(left, top, 0) + offset;
+        vert.uv0 = new Vector2(uvLeft, uvTop);
+        vert.uv1 = new Vector2(1, 0);
+        vh.AddVert(vert);
+        
+        // Top-right
+        vert.position = new Vector3(right, top, 0) + offset;
+        vert.uv0 = new Vector2(uvRight, uvTop);
+        vert.uv1 = new Vector2(1, 0);
+        vh.AddVert(vert);
+        
+        // Bottom-right
+        vert.position = new Vector3(right, bottom, 0) + offset;
+        vert.uv0 = new Vector2(uvRight, uvBottom);
+        vert.uv1 = new Vector2(1, 0);
+        vh.AddVert(vert);
+        
+        // Shadow triangles
+        vh.AddTriangle(0, 1, 2);
+        vh.AddTriangle(2, 3, 0);
+        
+        // Main quad (4 vertices)
+        // Bottom-left
+        vert.position = new Vector3(left, bottom, 0);
+        vert.uv0 = new Vector2(uvLeft, uvBottom);
+        vert.uv1 = new Vector2(0, 0); // Main flag
+        vh.AddVert(vert);
+        
+        // Top-left
+        vert.position = new Vector3(left, top, 0);
+        vert.uv0 = new Vector2(uvLeft, uvTop);
+        vert.uv1 = new Vector2(0, 0);
+        vh.AddVert(vert);
+        
+        // Top-right
+        vert.position = new Vector3(right, top, 0);
+        vert.uv0 = new Vector2(uvRight, uvTop);
+        vert.uv1 = new Vector2(0, 0);
+        vh.AddVert(vert);
+        
+        // Bottom-right
+        vert.position = new Vector3(right, bottom, 0);
+        vert.uv0 = new Vector2(uvRight, uvBottom);
+        vert.uv1 = new Vector2(0, 0);
+        vh.AddVert(vert);
+        
+        // Main triangles
+        vh.AddTriangle(4, 5, 6);
+        vh.AddTriangle(6, 7, 4);
     }
     
     void OnValidate()
