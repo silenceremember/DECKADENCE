@@ -364,8 +364,8 @@ Shader "RoyalLeech/UI/LiquidFill"
                 float bubblesFilled = getBubblesFilled(pixelUV, time, uv);
                 float bubblesBackground = getBubblesBackground(pixelUV, time, uv);
                 // Filled: lighter bubbles. Background: DARKER bubbles (distinct separation)
-                half3 filledBubbleColor = filled.rgb + 0.18;
-                half3 bgBubbleColor = bgColor * 0.6; // Darker, not lighter
+                half3 filledBubbleColor = filled.rgb + 0.15;
+                half3 bgBubbleColor = bgColor * 0.65;
                 filled.rgb = lerp(filled.rgb, filledBubbleColor, bubblesFilled);
                 background.rgb = lerp(background.rgb, bgBubbleColor, bubblesBackground);
                 
