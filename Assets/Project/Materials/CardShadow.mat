@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: RoyalLeech_UI_CardTear
-  m_Shader: {fileID: 4800000, guid: 127cdeaf2541d4945a3e80bfd1065d41, type: 3}
+  m_Name: CardShadow
+  m_Shader: {fileID: 4800000, guid: 40a9991479fe81b4aa70f69d7d245633, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -29,14 +29,11 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AnimSpeed: 0.2
+    - _AnimSpeed: 1
     - _BottomTear: 0.5
     - _ColorMask: 15
-    - _CornerCut: 0.04
-    - _CornerCutMax: 0.05
-    - _CornerCutMin: 0.01
-    - _EdgeCut: 0
-    - _EdgeNoiseScale: 8
+    - _CornerCutMax: 0.12
+    - _CornerCutMin: 0.05
     - _LeftTear: 0.5
     - _RightTear: 0.5
     - _Stencil: 0
@@ -44,15 +41,14 @@ Material:
     - _StencilOp: 0
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
-    - _TearAmount: 0.048
-    - _TearDepth: 0.05
+    - _TearDepth: 0.15
     - _TearSeed: 0
-    - _TeethCount: 5
+    - _TeethCount: 3
     - _TeethMaxWidth: 0.15
-    - _TeethMinWidth: 0.02
+    - _TeethMinWidth: 0.05
     - _TopTear: 0.5
-    - _VertexJitter: 0.05
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

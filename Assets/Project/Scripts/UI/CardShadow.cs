@@ -3,12 +3,12 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 
 /// <summary>
-/// Shader-based shadow for UI Image elements using mesh modification.
-/// Adds shadow geometry directly to the Image mesh for single draw call rendering.
+/// Shader-based shadow for card elements using mesh modification.
+/// Combines shadow geometry with tear effects in a single draw call.
 /// </summary>
 [RequireComponent(typeof(Graphic))]
 [ExecuteAlways]
-public class ImageShadow : MonoBehaviour, IMeshModifier
+public class CardShadow : MonoBehaviour, IMeshModifier
 {
     [Header("Shadow Settings")]
     public Color shadowColor = new Color(0, 0, 0, 0.5f);
@@ -76,7 +76,7 @@ public class ImageShadow : MonoBehaviour, IMeshModifier
     {
         if (_graphic == null) return;
         
-        if (_graphic.material != null && _graphic.material.shader.name == "RoyalLeech/UI/ImageShadow")
+        if (_graphic.material != null && _graphic.material.shader.name == "RoyalLeech/UI/CardShadow")
         {
             _materialInstance = new Material(_graphic.material);
             _graphic.material = _materialInstance;
@@ -179,18 +179,6 @@ public class ImageShadow : MonoBehaviour, IMeshModifier
             originalVerts.Add(v);
         }
         
-        // Get original triangles (indices)
-        List<int> originalIndices = new List<int>();
-        for (int i = 0; i < originalIndexCount; i++)
-        {
-            // VertexHelper stores triangles internally, we need to extract them
-            // by reading the indices in groups of 3
-        }
-        
-        // For UI meshes, we need to reconstruct triangles
-        // Unity UI typically uses quads (4 verts, 6 indices per quad)
-        // But Sliced/Tiled can have more complex geometry
-        
         // Convert offset to local space
         Vector3 offset = new Vector3(currentShadowOffset.x, currentShadowOffset.y, 0);
         
@@ -202,15 +190,8 @@ public class ImageShadow : MonoBehaviour, IMeshModifier
         
         offset = transform.InverseTransformVector(offset);
         
-        // We need to duplicate the entire mesh structure
-        // Read all triangles by iterating through index buffer
+        // Reconstruct triangles based on vertex count
         List<int> triangles = new List<int>();
-        
-        // Since we can't directly access indices, we'll reconstruct based on vertex count
-        // Standard UI: quads with indices 0,1,2,2,3,0 pattern
-        // For complex meshes (Sliced), there are multiple quads
-        
-        // Calculate number of quads
         int quadCount = originalVertCount / 4;
         for (int q = 0; q < quadCount; q++)
         {

@@ -1,9 +1,12 @@
-Shader "RoyalLeech/UI/CardTear"
+Shader "RoyalLeech/UI/CardShadow"
 {
     Properties
     {
         [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
+        
+        [Header(Shadow Settings)]
+        [HideInInspector] _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.5)
         
         [Header(Tear Settings)]
         _TearDepth ("Max Tear Depth", Range(0, 0.4)) = 0.15
@@ -60,11 +63,14 @@ Shader "RoyalLeech/UI/CardTear"
         Cull Off
         Lighting Off
         ZWrite Off
-        Blend One OneMinusSrcAlpha
+        ZTest [unity_GUIZTestMode]
+        Blend SrcAlpha OneMinusSrcAlpha
         ColorMask [_ColorMask]
         
         Pass
         {
+            Name "CardShadow"
+            
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -76,6 +82,7 @@ Shader "RoyalLeech/UI/CardTear"
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
+                float2 uv1 : TEXCOORD1; // Shadow flag: x=1 means shadow vertex
                 float4 color : COLOR;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -84,6 +91,7 @@ Shader "RoyalLeech/UI/CardTear"
             {
                 float4 positionHCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                float isShadow : TEXCOORD1;
                 float4 color : COLOR;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -94,6 +102,7 @@ Shader "RoyalLeech/UI/CardTear"
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float4 _Color;
+                float4 _ShadowColor;
                 float _TearDepth;
                 float _TearSeed;
                 float _TeethCount;
@@ -120,11 +129,6 @@ Shader "RoyalLeech/UI/CardTear"
             }
             
             // Check if point is inside a triangle notch coming from edge
-            // edgePos: position along edge (0-1)
-            // distFromEdge: how far from edge (0 at edge, positive going inward)
-            // toothIndex: which tooth we're checking
-            // seed: random seed
-            // Returns 1 if inside notch (should be cut), 0 if outside
             float IsInsideToothNotch(float edgePos, float distFromEdge, float toothIndex, float seed,
                                       float minWidth, float maxWidth, float maxDepth)
             {
@@ -143,55 +147,41 @@ Shader "RoyalLeech/UI/CardTear"
                 
                 // Random width and depth
                 float toothWidth = lerp(minWidth, maxWidth, r3);
-                float toothDepth = maxDepth * (0.4 + r4 * 0.6); // 40-100% of max depth
+                float toothDepth = maxDepth * (0.4 + r4 * 0.6);
                 
-                // Asymmetry - tip offset from center (-0.3 to 0.3 of width)
+                // Asymmetry - tip offset from center
                 float tipOffset = (r5 - 0.5) * 0.6 * toothWidth;
-                
-                // Triangle vertices:
-                // Base left:  (toothCenter - toothWidth/2, 0)
-                // Base right: (toothCenter + toothWidth/2, 0)  
-                // Tip:        (toothCenter + tipOffset, toothDepth)
                 
                 float baseLeft = toothCenter - toothWidth * 0.5;
                 float baseRight = toothCenter + toothWidth * 0.5;
                 float tipX = toothCenter + tipOffset;
                 float tipY = toothDepth;
                 
-                // Check if edgePos is within the horizontal range of the triangle
                 if (edgePos < baseLeft || edgePos > baseRight) return 0.0;
                 
-                // For a given edgePos, calculate the max depth at that position
-                // using linear interpolation between the two edges and tip
                 float maxDepthAtPos;
                 
                 if (edgePos < tipX)
                 {
-                    // Left side of triangle
                     float t = (edgePos - baseLeft) / max(tipX - baseLeft, 0.001);
                     maxDepthAtPos = t * tipY;
                 }
                 else
                 {
-                    // Right side of triangle
                     float t = (edgePos - tipX) / max(baseRight - tipX, 0.001);
                     maxDepthAtPos = (1.0 - t) * tipY;
                 }
                 
-                // If our distance from edge is less than the triangle depth at this position,
-                // we're inside the notch
                 return step(distFromEdge, maxDepthAtPos);
             }
             
             // Calculate total tear for an edge
-            // Returns 1 if pixel should be cut (inside any notch), 0 otherwise
             float CalculateEdgeTear(float edgePos, float distFromEdge, float seed, float intensity)
             {
                 if (intensity < 0.01) return 0.0;
                 
                 float result = 0.0;
                 
-                // Check each potential tooth
                 for (int i = 0; i < 8; i++)
                 {
                     if (float(i) >= _TeethCount) break;
@@ -220,19 +210,19 @@ Shader "RoyalLeech/UI/CardTear"
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
                 OUT.uv = TRANSFORM_TEX(IN.uv, _MainTex);
                 OUT.color = IN.color * _Color;
+                OUT.isShadow = IN.uv1.x;
                 
                 return OUT;
             }
             
             half4 frag(Varyings IN) : SV_Target
             {
-                // Stepped time - changes once per frame at _AnimSpeed FPS
+                // Stepped time for animation
                 float steppedTime = floor(_Time.y * _AnimSpeed);
                 float seed = _TearSeed + steppedTime * 17.31;
                 
                 // Sample sprite
-                half4 color = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
-                color *= IN.color;
+                half4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
                 
                 // Distance from each edge
                 float distTop = 1.0 - IN.uv.y;
@@ -246,46 +236,45 @@ Shader "RoyalLeech/UI/CardTear"
                 float tearLeft = CalculateEdgeTear(IN.uv.y, distLeft, seed + 2000.0, _LeftTear);
                 float tearRight = CalculateEdgeTear(IN.uv.y, distRight, seed + 3000.0, _RightTear);
                 
-                // Combine tears - if any edge says cut, cut
+                // Combine tears
                 float shouldCut = max(max(tearTop, tearBottom), max(tearLeft, tearRight));
                 
-                // Corner cut - diagonal cuts at each corner with random size
-                // For each corner, check if we're within the cut zone
+                // Corner cut
                 float cornerMask = 1.0;
                 
-                // Random cut size per corner (changes with animation)
                 float tlCut = lerp(_CornerCutMin, _CornerCutMax, Hash(seed + 500.0));
                 float trCut = lerp(_CornerCutMin, _CornerCutMax, Hash(seed + 600.0));
                 float blCut = lerp(_CornerCutMin, _CornerCutMax, Hash(seed + 700.0));
                 float brCut = lerp(_CornerCutMin, _CornerCutMax, Hash(seed + 800.0));
                 
-                // Top-left corner
-                float tlDist = distLeft + distTop;
-                cornerMask *= step(tlCut, tlDist);
+                cornerMask *= step(tlCut, distLeft + distTop);
+                cornerMask *= step(trCut, distRight + distTop);
+                cornerMask *= step(blCut, distLeft + distBottom);
+                cornerMask *= step(brCut, distRight + distBottom);
                 
-                // Top-right corner
-                float trDist = distRight + distTop;
-                cornerMask *= step(trCut, trDist);
+                // Calculate final alpha with tears and corners
+                float finalAlpha = texColor.a * (1.0 - shouldCut) * cornerMask;
                 
-                // Bottom-left corner
-                float blDist = distLeft + distBottom;
-                cornerMask *= step(blCut, blDist);
-                
-                // Bottom-right corner
-                float brDist = distRight + distBottom;
-                cornerMask *= step(brCut, brDist);
-                
-                // Apply mask (tears + corner cuts)
-                color.a *= (1.0 - shouldCut) * cornerMask;
-                
-                // Premultiply alpha
-                color.rgb *= color.a;
-                
-                return color;
+                // Shadow or main rendering
+                if (IN.isShadow > 0.5)
+                {
+                    // Shadow vertex: use shadow color, apply tear mask
+                    half4 result;
+                    result.rgb = _ShadowColor.rgb;
+                    result.a = finalAlpha * _ShadowColor.a * IN.color.a;
+                    return result;
+                }
+                else
+                {
+                    // Main vertex: normal rendering with tear mask
+                    half4 color = texColor * IN.color;
+                    color.a = finalAlpha * IN.color.a;
+                    return color;
+                }
             }
             ENDHLSL
         }
     }
     
-    Fallback "Sprites/Default"
+    Fallback "UI/Default"
 }

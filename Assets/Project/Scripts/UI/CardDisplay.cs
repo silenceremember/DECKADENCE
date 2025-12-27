@@ -235,8 +235,8 @@ public class CardDisplay : MonoBehaviour
     private void ExecuteSetup(CardData data, bool isFront)
     {
         CurrentData = data;
-        characterImage.sprite = data.characterSprite;
-        nameText.text = data.characterName;
+        if (characterImage != null) characterImage.sprite = data.characterSprite;
+        if (nameText != null) nameText.text = data.characterName;
         
         // 1. Устанавливаем текст через TextAnimator
         if (questionAnimator != null)
