@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 399ccff3075a0da4c9a918dd952c2a0d, type: 3}
   m_Name: ClubsColor
   m_EditorClassIdentifier: Assembly-CSharp::IconColorPreset
-  fillColor: {r: 0.3137255, g: 0.44705883, b: 0.85882354, a: 1}
-  backgroundColor: {r: 0.259167, g: 0.32425937, b: 0.6037736, a: 1}
+  fillColor: {r: 0.13536847, g: 0.30038586, b: 0.735849, a: 1}
+  backgroundColor: {r: 0.08993414, g: 0.16894329, b: 0.4433962, a: 1}
   backgroundAlpha: 1
-  bubbleColor: {r: 0.5, g: 0.6, b: 0.9, a: 0.8}

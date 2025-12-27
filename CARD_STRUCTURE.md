@@ -1,62 +1,59 @@
-# 🎴 Структура карты — Royal Leech
+# 🎴 Card Structure — Royal Leech
 
-## Архитектура
+## Architecture
 
-Каждая сторона карты = **1 главный плейн** с объединённым шейдером `CardShadow`:
-- **Тень** (shadow mesh через `CardShadow.cs`)
-- **Разрывы** (tear effect)
-- **Срезы углов** (corner cut)
+Each card side = **1 main plane** with combined `CardShadow` shader:
+- **Shadow** (shadow mesh via `CardShadow.cs`)
+- **Tears** (tear effect)
+- **Corner cuts** (corner cut)
 
-## Производительность
-- **10 карт на экране** — ОК для мобильных
-- С **atlasing + batching** — ~10-20 draw calls = отлично
-- Один шейдер на карту = минимум overdraw
-
----
-
-## 🔙 РУБАШКА (5 слоёв)
-
-| # | Слой | Описание | Анимация |
-|---|------|----------|----------|
-| 1 | **Фон** | CardShadow шейдер (тень + разрывы + углы) | Разрывы + углы меняются |
-| 2 | **Рамка** | Декоративная рамка | Статичная / hover |
-| 3 | **Нижняя часть глаза** | Нижнее веко | Моргание (scale Y) |
-| 4 | **Верхняя часть глаза** | Верхнее веко | Моргание (опускается) |
-| 5 | **Зрачок** | Центр глаза | Следит за курсором |
-
-### Эффекты глаза:
-- 😐 **Idle** — зрачок слегка дрейфует
-- 👀 **Hover** — смотрит на курсор
-- 😴 **Sleep** — веки закрываются
-- 😱 **Alert** — зрачок сужается
-- 🔴 **Critical** — пульсирует
+## Performance
+- **10 cards on screen** — OK for mobile
+- With **atlasing + batching** — ~10-20 draw calls = excellent
+- Single shader per card = minimal overdraw
 
 ---
 
-## 🎭 ЛИЦЕВАЯ СТОРОНА (7 слоёв)
+## 🔙 CARD BACK (5 layers)
 
-| # | Слой | Описание | Анимация |
-|---|------|----------|----------|
-| 1 | **Задний фон** | Шейдер / цвет масти | Возможно анимация |
-| 2 | **Задняя рамка** | Глубина карты | Статичная |
-| 3 | **Передняя рамка** | Основная рамка | Статичная |
-| 4 | **Зрачки рамки** | Глаза в декоре | Следят за игроком |
-| 5 | **Масть** | Фон под персонажем | Статичная |
-| 6 | **Персонаж** | Картинка героя | Idle анимация |
-| 7 | **Глаза персонажа** | Отдельный слой | Следят за игроком |
+| # | Layer | GameObject | Description | Animation |
+|---|-------|------------|-------------|-----------|
+| 1 | **Background** | `CardBack_Background` | CardShadow shader (shadow + tears + corners) | Tears + corners change |
+| 2 | **Frame** | `CardBack_Frame` | Decorative frame | Static / hover |
+| 3 | **Lower Eyelid** | `CardBack_EyeLower` | Lower eyelid | Blink (scale Y) |
+| 4 | **Upper Eyelid** | `CardBack_EyeUpper` | Upper eyelid | Blink (moves down) |
+| 5 | **Pupil** | `CardBack_Pupil` | Eye center | Follows cursor |
+
+### Eye Effects:
+- 😐 **Idle** — pupil drifts slightly
+- 👀 **Hover** — looks at cursor
+- 😴 **Sleep** — eyelids close
+- 😱 **Alert** — pupil shrinks
+- 🔴 **Critical** — pulses
 
 ---
 
-## 📊 Итого на 1 карту
+## 🎭 CARD FRONT (4 layers)
 
-| Сторона | Слоёв |
-|---------|-------|
-| Рубашка | 5 |
-| Лицевая | 7 |
-| **Всего** | **12** |
+| # | Layer | GameObject | Description | Animation |
+|---|-------|------------|-------------|-----------|
+| 1 | **Background** | `CardFront_Background` | Solid color fill (white, can be tinted) | Color change |
+| 2 | **Back Frame** | `CardFront_FrameBack` | Back frame (depth) | Static |
+| 3 | **Character** | `CardFront_Character` | Character portrait | Idle animation |
+| 4 | **Front Frame** | `CardFront_FrameFront` | Front frame (overlay) | Static |
 
-### Оптимизации:
-1. Объединить статичные слои в **Sprite Atlas**
-2. Использовать **CanvasGroup** для групповой прозрачности
-3. Глаза (рамка + персонаж) — **один скрипт** следования
-4. Батчинг UI через **Canvas** с одним материалом
+---
+
+## 📊 Total per Card
+
+| Side | Layers |
+|------|--------|
+| Back | 5 |
+| Front | 4 |
+| **Total** | **9** |
+
+### Optimizations:
+1. Combine static layers into **Sprite Atlas**
+2. Use **CanvasGroup** for group transparency
+3. **Canvas** batching with single material
+
