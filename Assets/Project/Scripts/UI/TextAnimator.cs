@@ -444,7 +444,6 @@ public class TextAnimator : MonoBehaviour
             _textToAnimate = "";
             _textComponent.text = "";
             
-            Debug.Log($"[TextAnimator] Explosion text cleared by external call");
         }
     }
     
@@ -489,7 +488,6 @@ public class TextAnimator : MonoBehaviour
     {
         if (_letterData == null || preset?.explosionPreset == null) 
         {
-            Debug.LogWarning($"[TextAnimator] TriggerExplosion fallback to Selected: letterData={_letterData != null}, preset={preset != null}, explosionPreset={preset?.explosionPreset != null}");
             TriggerSelected();
             return;
         }
@@ -592,8 +590,6 @@ public class TextAnimator : MonoBehaviour
         // Based only on flight duration - icon effects have their own independent timing
         int totalExplodingLetters = currentLetterIndex;
         _explosionEndTime = Time.time + expPreset.flightDuration;
-        
-        Debug.Log($"[TextAnimator] Explosion started: {totalExplodingLetters} letters, endTime={_explosionEndTime - Time.time}s from now");
         
         // Убедимся что все символы видимы во время взрыва
         if (_textComponent != null)
@@ -808,7 +804,6 @@ public class TextAnimator : MonoBehaviour
                 if (wasExploding)
                 {
                     _explosionCompleteWaitingForClear = true;
-                    Debug.Log($"[TextAnimator] Explosion complete, waiting for external clear");
                     OnExplosionComplete?.Invoke();
                 }
                 else

@@ -122,6 +122,9 @@ public class CardDisplay : MonoBehaviour
     
     // Canvas group for action text opacity control
     private CanvasGroup _actionTextCanvasGroup;
+    
+    // Debug: flag to prevent repeated logging when ready
+    private bool _debugLoggedReady = false;
 
     void Awake()
     {
@@ -625,6 +628,22 @@ public class CardDisplay : MonoBehaviour
         if (progress >= 1.0f)
         {
             targetColor = snapColor;
+            
+            // Debug: вывод последствий выбора когда текст становится желтым
+            if (!_debugLoggedReady)
+            {
+                _debugLoggedReady = true;
+                string dir = isRight ? "RIGHT" : "LEFT";
+                int spades = isRight ? CurrentData.rightSpades : CurrentData.leftSpades;
+                int hearts = isRight ? CurrentData.rightHearts : CurrentData.leftHearts;
+                int diamonds = isRight ? CurrentData.rightDiamonds : CurrentData.leftDiamonds;
+                int clubs = isRight ? CurrentData.rightClubs : CurrentData.leftClubs;
+                Debug.Log($"[READY] {dir}: {fullChoiceText} → ♠{spades:+#;-#;0} ♥{hearts:+#;-#;0} ♦{diamonds:+#;-#;0} ♣{clubs:+#;-#;0}");
+            }
+        }
+        else
+        {
+            _debugLoggedReady = false;
         }
         
         // Прозрачность блока текста через CanvasGroup (0 -> 50)
