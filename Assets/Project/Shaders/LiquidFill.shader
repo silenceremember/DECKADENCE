@@ -8,6 +8,7 @@ Shader "RoyalLeech/UI/LiquidFill"
         [Header(Fill Effect)]
         _FillAmount ("Fill Amount", Range(0, 1)) = 1.0
         _TrailingFill ("Trailing Fill (delayed)", Range(0, 1)) = 1.0
+        _TrailingDirection ("Trailing Direction (-1=dark, +1=light)", Range(-1, 1)) = 1.0
         _FillColor ("Fill Color", Color) = (0.3, 0.7, 0.95, 1)
         _BackgroundColor ("Background Color", Color) = (0.1, 0.15, 0.25, 1)
         _BackgroundAlpha ("Background Blend (0=black, 1=color)", Range(0, 1)) = 0.7
@@ -114,6 +115,7 @@ Shader "RoyalLeech/UI/LiquidFill"
                 
                 float _FillAmount;
                 float _TrailingFill;
+                float _TrailingDirection;
                 float4 _FillColor;
                 float4 _BackgroundColor;
                 float _BackgroundAlpha;
@@ -367,8 +369,11 @@ Shader "RoyalLeech/UI/LiquidFill"
                 filled.rgb = lerp(filled.rgb, filledBubbleColor, bubblesFilled);
                 background.rgb = lerp(background.rgb, bgBubbleColor, bubblesBackground);
                 
-                // TRAILING: solid light color (bright version of fill)
-                half3 trailingColor = filled.rgb + 0.25; // Lighter version
+                // TRAILING: direction-based color
+                // Positive direction = lighter (gain), Negative = darker (loss)
+                half3 trailingColorLight = filled.rgb + 0.25;
+                half3 trailingColorDark = filled.rgb * 0.15;
+                half3 trailingColor = _TrailingDirection >= 0 ? trailingColorLight : trailingColorDark;
                 
                 // Blend layers: background → filled → trailing (ON TOP!)
                 // Trailing is drawn LAST so it's visible for both increase and decrease

@@ -107,6 +107,7 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     
     // Trailing fill (delayed damage indicator)
     private float trailingFill = 1f;
+    private float _trailingDirection = 1f; // +1 = light (gain), -1 = dark (loss)
     private float _trailingDelayTimer = 0f; // Timer before trailing starts following
     
     // Idle and follow tracking
@@ -157,6 +158,7 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     private static readonly int ShakeSpeedID = Shader.PropertyToID("_ShakeSpeed");
     private static readonly int ShadowColorID = Shader.PropertyToID("_ShadowColor");
     private static readonly int TrailingFillID = Shader.PropertyToID("_TrailingFill");
+    private static readonly int TrailingDirectionID = Shader.PropertyToID("_TrailingDirection");
     
     void Awake()
     {
@@ -548,6 +550,7 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         
         // Trailing fill (delayed damage indicator)
         _materialInstance.SetFloat(TrailingFillID, trailingFill);
+        _materialInstance.SetFloat(TrailingDirectionID, _trailingDirection);
         
         // Shadow
         _materialInstance.SetColor(ShadowColorID, ShadowColor);
@@ -730,6 +733,9 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         glowIntensity = 0f;
         _isCriticalGlowActive = false;
         
+        // Trailing direction: positive = light (gain)
+        _trailingDirection = 1f;
+        
         // Set effect intensity (scaled by INCREASE multiplier)
         effectIntensity = 1f * increaseMultiplier;
         
@@ -807,6 +813,9 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         // Reset glow
         glowIntensity = 0f;
         _isCriticalGlowActive = false;
+        
+        // Trailing direction: negative = dark (loss)
+        _trailingDirection = -1f;
         
         // Set effect intensity (negative = darken, scaled by DECREASE multiplier)
         effectIntensity = -1f * decreaseMultiplier;
