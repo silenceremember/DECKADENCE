@@ -30,6 +30,9 @@ Shader "RoyalLeech/UI/CardShadow"
         _CornerCutMin ("Corner Cut Min", Range(0, 0.2)) = 0.05
         _CornerCutMax ("Corner Cut Max", Range(0, 0.3)) = 0.12
         
+        [Header(Pixelation)]
+        _PixelSize ("Pixel Size", Range(0, 512)) = 0
+        
         [Header(Stencil)]
         [HideInInspector] _StencilComp ("Stencil Comparison", Float) = 8
         [HideInInspector] _Stencil ("Stencil ID", Float) = 0
@@ -99,6 +102,10 @@ Shader "RoyalLeech/UI/CardShadow"
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
             
+            // Explicit point sampler - NO interpolation for alpha or color
+            SAMPLER(my_point_clamp_sampler);
+            #define PIXELATE_SAMPLER SamplerState_Point_Clamp
+            
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float4 _Color;
@@ -115,6 +122,7 @@ Shader "RoyalLeech/UI/CardShadow"
                 float _RightTear;
                 float _CornerCutMin;
                 float _CornerCutMax;
+                float _PixelSize;
             CBUFFER_END
             
             // Hash functions
@@ -221,25 +229,39 @@ Shader "RoyalLeech/UI/CardShadow"
                 float steppedTime = floor(_Time.y * _AnimSpeed);
                 float seed = _TearSeed + steppedTime * 17.31;
                 
-                // Sample sprite
-                half4 texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, IN.uv);
+                // Apply pixelation to UV
+                float2 pixelUV = IN.uv;
+                half4 texColor;
                 
-                // Distance from each edge
-                float distTop = 1.0 - IN.uv.y;
-                float distBottom = IN.uv.y;
-                float distLeft = IN.uv.x;
-                float distRight = 1.0 - IN.uv.x;
+                if (_PixelSize > 0)
+                {
+                    // Snap to pixel grid center for crisp edges
+                    pixelUV = (floor(IN.uv * _PixelSize) + 0.5) / _PixelSize;
+                    // Use point sampler - NO interpolation, hard pixel edges, crisp alpha
+                    texColor = SAMPLE_TEXTURE2D(_MainTex, my_point_clamp_sampler, pixelUV);
+                }
+                else
+                {
+                    // Normal sampling when pixelation is off
+                    texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, pixelUV);
+                }
                 
-                // Check each edge for tears
-                float tearTop = CalculateEdgeTear(IN.uv.x, distTop, seed, _TopTear);
-                float tearBottom = CalculateEdgeTear(IN.uv.x, distBottom, seed + 1000.0, _BottomTear);
-                float tearLeft = CalculateEdgeTear(IN.uv.y, distLeft, seed + 2000.0, _LeftTear);
-                float tearRight = CalculateEdgeTear(IN.uv.y, distRight, seed + 3000.0, _RightTear);
+                // Distance from each edge (use pixelated UV for consistent pixel grid)
+                float distTop = 1.0 - pixelUV.y;
+                float distBottom = pixelUV.y;
+                float distLeft = pixelUV.x;
+                float distRight = 1.0 - pixelUV.x;
+                
+                // Check each edge for tears (pixelated coordinates)
+                float tearTop = CalculateEdgeTear(pixelUV.x, distTop, seed, _TopTear);
+                float tearBottom = CalculateEdgeTear(pixelUV.x, distBottom, seed + 1000.0, _BottomTear);
+                float tearLeft = CalculateEdgeTear(pixelUV.y, distLeft, seed + 2000.0, _LeftTear);
+                float tearRight = CalculateEdgeTear(pixelUV.y, distRight, seed + 3000.0, _RightTear);
                 
                 // Combine tears
                 float shouldCut = max(max(tearTop, tearBottom), max(tearLeft, tearRight));
                 
-                // Corner cut
+                // Corner cut (pixelated coordinates)
                 float cornerMask = 1.0;
                 
                 float tlCut = lerp(_CornerCutMin, _CornerCutMax, Hash(seed + 500.0));

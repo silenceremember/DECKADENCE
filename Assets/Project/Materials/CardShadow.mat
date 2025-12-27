@@ -29,12 +29,14 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _AlphaCutoff: 0.5
     - _AnimSpeed: 1
     - _BottomTear: 0.5
     - _ColorMask: 15
-    - _CornerCutMax: 0.12
-    - _CornerCutMin: 0.05
+    - _CornerCutMax: 0.03
+    - _CornerCutMin: 0.01
     - _LeftTear: 0.5
+    - _PixelSize: 0
     - _RightTear: 0.5
     - _Stencil: 0
     - _StencilComp: 8
