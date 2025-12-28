@@ -15,6 +15,9 @@ public class CardDisplay : MonoBehaviour
     public TextMeshProUGUI questionText;
     public TextMeshProUGUI actionText; 
     public CanvasGroup canvasGroup;
+    
+    [Tooltip("Компонент бабла для action text")]
+    public ActionTextBubble actionTextBubble;
 
     [Header("Настройки Управления")]
     public float movementLimit = 450f;
@@ -49,8 +52,16 @@ public class CardDisplay : MonoBehaviour
     public float maxScale = 1.3f;
     public float shakeSpeed = 30f;
     public float shakeAngle = 10f;
-    public Color normalColor = Color.white;
-    public Color snapColor = Color.yellow;
+    
+    [Header("Цвета Action Text")]
+    [Tooltip("Цвет текста в нормальном состоянии")]
+    public Color textNormalColor = Color.black;
+    [Tooltip("Цвет текста в активном состоянии (progress >= 1)")]
+    public Color textActiveColor = new Color(0.36f, 0.25f, 0.22f); // #5D4037
+    [Tooltip("Цвет фона бабла в нормальном состоянии")]
+    public Color bubbleNormalColor = Color.white;
+    [Tooltip("Цвет фона бабла в активном состоянии")]
+    public Color bubbleActiveColor = new Color(1f, 0.97f, 0.88f); // #FFF8E1 кремовый
     
     [Header("Настройки Typewriter для ActionText")]
     [Tooltip("Расстояние от центра, когда начинает показываться первый символ")]
@@ -73,6 +84,8 @@ public class CardDisplay : MonoBehaviour
     public float actionTextWobbleAngle = 3f;
     [Tooltip("Дистанция для нарастания прозрачности текста (0 = текст невидим)")]
     public float actionTextFadeDistance = 50f;
+    [Tooltip("Время перехода между нормальным и выделенным цветом (секунды)")]
+    public float actionTextColorTransitionTime = 0.2f;
 
     [Header("Idle Effect")]
     public bool enableIdleRotation = true;
@@ -613,7 +626,6 @@ public class CardDisplay : MonoBehaviour
             actionText.text = fullChoiceText;
         }
 
-        Color targetColor = normalColor;
         float progress = absDiff / choiceThreshold;
         float clampedProgress = Mathf.Clamp01(progress);
         
@@ -664,12 +676,9 @@ public class CardDisplay : MonoBehaviour
         else 
             GameManager.Instance.HighlightResources(CurrentData.leftSpades, CurrentData.leftHearts, CurrentData.leftDiamonds, CurrentData.leftClubs, clampedProgress, cardWorldPos);
         
-        // Цвет текста при полном выборе
+        // Debug: вывод последствий выбора
         if (progress >= 1.0f)
         {
-            targetColor = snapColor;
-            
-            // Debug: вывод последствий выбора когда текст становится желтым
             if (!_debugLoggedReady)
             {
                 _debugLoggedReady = true;
@@ -695,7 +704,21 @@ public class CardDisplay : MonoBehaviour
             _actionTextCanvasGroup.alpha = Mathf.Lerp(_actionTextCanvasGroup.alpha, targetAlpha, Time.deltaTime * 12f);
         }
         
-        actionText.color = targetColor;
+        // Плавный переход цвета текста И бабла
+        float colorLerpSpeed = actionTextColorTransitionTime > 0 ? 1f / actionTextColorTransitionTime : 100f;
+        
+        // Цвет текста
+        Color targetTextColor = progress >= 1.0f ? textActiveColor : textNormalColor;
+        actionText.color = Color.Lerp(actionText.color, targetTextColor, Time.deltaTime * colorLerpSpeed);
+        
+        // Цвет бабла
+        if (actionTextBubble != null)
+        {
+            Color targetBubbleColor = progress >= 1.0f ? bubbleActiveColor : bubbleNormalColor;
+            Color currentBubbleColor = actionTextBubble.GetBubbleColor();
+            Color newBubbleColor = Color.Lerp(currentBubbleColor, targetBubbleColor, Time.deltaTime * colorLerpSpeed);
+            actionTextBubble.SetBubbleColor(newBubbleColor);
+        }
         
         // Наклон блока текста в сторону свайпа (фиксированный угол)
         // Не меняем наклон пока текст исчезает

@@ -24,6 +24,9 @@ public class ActionTextBubble : MonoBehaviour
     [Tooltip("Optional: DialogShadow for disabling arrow")]
     public DialogShadow dialogShadow;
     
+    [Tooltip("Image component on the bubble for color control")]
+    public Image bubbleImage;
+    
     [Header("Size Settings")]
     [Tooltip("Padding around text")]
     public Vector2 padding = new Vector2(40f, 30f);
@@ -82,6 +85,12 @@ public class ActionTextBubble : MonoBehaviour
         if (textComponent != null && _textAnimator == null)
         {
             _textAnimator = textComponent.GetComponent<TextAnimator>();
+        }
+        
+        // Auto-get Image from bubbleRect if not assigned
+        if (bubbleImage == null && bubbleRect != null)
+        {
+            bubbleImage = bubbleRect.GetComponent<Image>();
         }
         
         // Auto-disable arrow on DialogShadow
@@ -254,6 +263,25 @@ public class ActionTextBubble : MonoBehaviour
         UpdateTargetSize();
         _currentSizeDelta = _targetSizeDelta;
         ApplySize();
+    }
+    
+    /// <summary>
+    /// Set the bubble fill color via Image component.
+    /// </summary>
+    public void SetBubbleColor(Color color)
+    {
+        if (bubbleImage != null)
+        {
+            bubbleImage.color = color;
+        }
+    }
+    
+    /// <summary>
+    /// Get current bubble color.
+    /// </summary>
+    public Color GetBubbleColor()
+    {
+        return bubbleImage != null ? bubbleImage.color : Color.white;
     }
 }
 
