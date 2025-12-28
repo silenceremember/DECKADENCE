@@ -179,48 +179,31 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         
         Rect rect = _rectTransform.rect;
         
-        // Determine which edge to use based on target position
-        float distToTop = localTarget.y - rect.yMax;
-        float distToBottom = rect.yMin - localTarget.y;
-        float distToLeft = rect.xMin - localTarget.x;
-        float distToRight = localTarget.x - rect.xMax;
+        // Calculate center of rect
+        Vector2 center = rect.center;
         
-        float maxDist = Mathf.Max(distToTop, distToBottom, distToLeft, distToRight);
+        // Direction from center to target
+        Vector2 toTarget = new Vector2(localTarget.x - center.x, localTarget.y - center.y);
         
-        // Calculate perimeter position based on edge and position
-        // New scheme: 0=center bottom, 0.25=center right, 0.5=center top, 0.75=center left
-        // Each edge spans ±0.125 around its center
-        float posOnEdge;
+        // Calculate angle using atan2 (gives smooth continuous angle)
+        // atan2 returns: 0 at right, PI/2 at top, PI/-PI at left, -PI/2 at bottom
+        float angle = Mathf.Atan2(toTarget.y, toTarget.x);
         
-        if (maxDist == distToBottom)
-        {
-            posOnEdge = Mathf.InverseLerp(rect.xMin, rect.xMax, localTarget.x);
-            posOnEdge = Mathf.Clamp(posOnEdge, 0.1f, 0.9f);
-            // Bottom: -0.125 to 0.125 (wrap around), center at 0
-            arrowPerimeter = (posOnEdge - 0.5f) * 0.25f;  // -0.125 to 0.125
-            if (arrowPerimeter < 0) arrowPerimeter += 1f;  // Wrap negative values
-        }
-        else if (maxDist == distToRight)
-        {
-            posOnEdge = Mathf.InverseLerp(rect.yMin, rect.yMax, localTarget.y);
-            posOnEdge = Mathf.Clamp(posOnEdge, 0.1f, 0.9f);
-            // Right: 0.125 to 0.375, center at 0.25
-            arrowPerimeter = 0.25f + (posOnEdge - 0.5f) * 0.25f;
-        }
-        else if (maxDist == distToTop)
-        {
-            posOnEdge = Mathf.InverseLerp(rect.xMin, rect.xMax, localTarget.x);
-            posOnEdge = Mathf.Clamp(posOnEdge, 0.1f, 0.9f);
-            // Top: 0.375 to 0.625, center at 0.5 (reversed direction)
-            arrowPerimeter = 0.5f + (0.5f - posOnEdge) * 0.25f;
-        }
-        else // distToLeft
-        {
-            posOnEdge = Mathf.InverseLerp(rect.yMin, rect.yMax, localTarget.y);
-            posOnEdge = Mathf.Clamp(posOnEdge, 0.1f, 0.9f);
-            // Left: 0.625 to 0.875, center at 0.75 (reversed direction)
-            arrowPerimeter = 0.75f + (0.5f - posOnEdge) * 0.25f;
-        }
+        // Convert angle to our perimeter scheme:
+        // 0 = center bottom (down), 0.25 = center right, 0.5 = center top, 0.75 = center left
+        // atan2: -PI/2 = bottom, 0 = right, PI/2 = top, ±PI = left
+        
+        // Shift and normalize: we want bottom(-PI/2) to map to 0
+        // angle + PI/2 gives: 0 = bottom, PI/2 = right, PI = top, 3PI/2 = left
+        float shiftedAngle = angle + Mathf.PI * 0.5f;
+        if (shiftedAngle < 0) shiftedAngle += Mathf.PI * 2f;
+        
+        // Normalize to 0-1: divide by 2*PI
+        arrowPerimeter = shiftedAngle / (Mathf.PI * 2f);
+        
+        // Clamp away from exact corners to avoid edge cases
+        // Corners are at 0.125, 0.375, 0.625, 0.875
+        // This is optional - the shader handles corners smoothly now
     }
     
     Vector2 CalculateShadowDirection()
