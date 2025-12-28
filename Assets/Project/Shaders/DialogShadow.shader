@@ -271,26 +271,30 @@ Shader "RoyalLeech/UI/DialogShadow"
                 float2 dirUp = float2(0.0, 1.0);
                 float2 dirLeft = float2(-1.0, 0.0);
                 
-                // Corners are at p = 0, 0.25, 0.5, 0.75 (after the +0.125 shift)
-                // Edge centers are at p = 0.125, 0.375, 0.625, 0.875
+                // Diagonal directions for corners (45 degrees)
+                float2 diagDownLeft = normalize(dirDown + dirLeft);   // Corner at p=0
+                float2 diagDownRight = normalize(dirDown + dirRight); // Corner at p=0.25
+                float2 diagUpRight = normalize(dirUp + dirRight);     // Corner at p=0.5
+                float2 diagUpLeft = normalize(dirUp + dirLeft);       // Corner at p=0.75
                 
-                if (p < 0.25) // Bottom edge (with corners at 0 and 0.25)
+                // Corners are at p = 0, 0.25, 0.5, 0.75 (after the +0.125 shift)
+                
+                if (p < 0.25) // Bottom edge
                 {
-                    float t = p / 0.25;  // 0-1 along bottom (left to right)
-                    basePos = float2(t * rectSize.x, 0.0);  // Canvas units
+                    float t = p / 0.25;
+                    basePos = float2(t * rectSize.x, 0.0);
                     
-                    // Interpolate at corners
-                    if (p < cornerSize) // Near left corner (transition from left edge)
+                    if (p < cornerSize) // Near left corner (p=0)
                     {
                         float blend = p / cornerSize;
                         blend = smoothstep(0.0, 1.0, blend);
-                        edgeDir = lerp(dirLeft, dirDown, blend);
+                        edgeDir = lerp(diagDownLeft, dirDown, blend);
                     }
-                    else if (p > 0.25 - cornerSize) // Near right corner
+                    else if (p > 0.25 - cornerSize) // Near right corner (p=0.25)
                     {
                         float blend = (0.25 - p) / cornerSize;
                         blend = smoothstep(0.0, 1.0, blend);
-                        edgeDir = lerp(dirRight, dirDown, blend);
+                        edgeDir = lerp(diagDownRight, dirDown, blend);
                     }
                     else
                     {
@@ -300,19 +304,19 @@ Shader "RoyalLeech/UI/DialogShadow"
                 else if (p < 0.5) // Right edge
                 {
                     float t = (p - 0.25) / 0.25;
-                    basePos = float2(rectSize.x, t * rectSize.y);  // Canvas units
+                    basePos = float2(rectSize.x, t * rectSize.y);
                     
-                    if (p < 0.25 + cornerSize)
+                    if (p < 0.25 + cornerSize) // Near bottom-right corner (p=0.25)
                     {
                         float blend = (p - 0.25) / cornerSize;
                         blend = smoothstep(0.0, 1.0, blend);
-                        edgeDir = lerp(dirDown, dirRight, blend);
+                        edgeDir = lerp(diagDownRight, dirRight, blend);
                     }
-                    else if (p > 0.5 - cornerSize)
+                    else if (p > 0.5 - cornerSize) // Near top-right corner (p=0.5)
                     {
                         float blend = (0.5 - p) / cornerSize;
                         blend = smoothstep(0.0, 1.0, blend);
-                        edgeDir = lerp(dirUp, dirRight, blend);
+                        edgeDir = lerp(diagUpRight, dirRight, blend);
                     }
                     else
                     {
@@ -322,19 +326,19 @@ Shader "RoyalLeech/UI/DialogShadow"
                 else if (p < 0.75) // Top edge
                 {
                     float t = 1.0 - (p - 0.5) / 0.25;
-                    basePos = float2(t * rectSize.x, rectSize.y);  // Canvas units
+                    basePos = float2(t * rectSize.x, rectSize.y);
                     
-                    if (p < 0.5 + cornerSize)
+                    if (p < 0.5 + cornerSize) // Near top-right corner (p=0.5)
                     {
                         float blend = (p - 0.5) / cornerSize;
                         blend = smoothstep(0.0, 1.0, blend);
-                        edgeDir = lerp(dirRight, dirUp, blend);
+                        edgeDir = lerp(diagUpRight, dirUp, blend);
                     }
-                    else if (p > 0.75 - cornerSize)
+                    else if (p > 0.75 - cornerSize) // Near top-left corner (p=0.75)
                     {
                         float blend = (0.75 - p) / cornerSize;
                         blend = smoothstep(0.0, 1.0, blend);
-                        edgeDir = lerp(dirLeft, dirUp, blend);
+                        edgeDir = lerp(diagUpLeft, dirUp, blend);
                     }
                     else
                     {
@@ -344,19 +348,19 @@ Shader "RoyalLeech/UI/DialogShadow"
                 else // Left edge
                 {
                     float t = 1.0 - (p - 0.75) / 0.25;
-                    basePos = float2(0.0, t * rectSize.y);  // Canvas units
+                    basePos = float2(0.0, t * rectSize.y);
                     
-                    if (p < 0.75 + cornerSize)
+                    if (p < 0.75 + cornerSize) // Near top-left corner (p=0.75)
                     {
                         float blend = (p - 0.75) / cornerSize;
                         blend = smoothstep(0.0, 1.0, blend);
-                        edgeDir = lerp(dirUp, dirLeft, blend);
+                        edgeDir = lerp(diagUpLeft, dirLeft, blend);
                     }
-                    else if (p > 1.0 - cornerSize)
+                    else if (p > 1.0 - cornerSize) // Near bottom-left corner (p=1.0/0)
                     {
                         float blend = (1.0 - p) / cornerSize;
                         blend = smoothstep(0.0, 1.0, blend);
-                        edgeDir = lerp(dirDown, dirLeft, blend);
+                        edgeDir = lerp(diagDownLeft, dirLeft, blend);
                     }
                     else
                     {
