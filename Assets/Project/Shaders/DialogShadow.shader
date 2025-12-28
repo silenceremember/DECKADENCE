@@ -14,6 +14,13 @@ Shader "RoyalLeech/UI/DialogShadow"
         _ArrowSize ("Arrow Size", Range(0, 0.3)) = 0.1
         _ArrowWidth ("Arrow Width", Range(0.02, 0.3)) = 0.1
         
+        [Header(Corner Cut)]
+        _CornerCutPixels ("Corner Cut (Screen Pixels)", Float) = 20
+        
+        [Header(Canvas Info)]
+        [HideInInspector] _RectSize ("Rect Size", Vector) = (100, 100, 0, 0)
+        [HideInInspector] _CanvasScale ("Canvas Scale", Float) = 1.0
+        
         [Header(Pixelation)]
         _PixelSize ("Pixel Size", Range(0, 512)) = 0
         
@@ -85,16 +92,18 @@ Shader "RoyalLeech/UI/DialogShadow"
             
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
-            SAMPLER(my_point_clamp_sampler);
             
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float4 _Color;
                 float4 _ShadowColor;
+                float4 _RectSize;
+                float _CanvasScale;
                 float _ArrowEdge;
                 float _ArrowPosition;
                 float _ArrowSize;
                 float _ArrowWidth;
+                float _CornerCutPixels;
                 float _PixelSize;
             CBUFFER_END
             
@@ -123,36 +132,31 @@ Shader "RoyalLeech/UI/DialogShadow"
                 
                 int edgeInt = (int)edge;
                 
-                // Bottom edge: arrow points down
-                if (edgeInt == 0)
+                if (edgeInt == 0) // Bottom
                 {
                     arrowTip = float2(pos, -size);
                     baseLeft = float2(pos - halfWidth, 0.0);
                     baseRight = float2(pos + halfWidth, 0.0);
                 }
-                // Top edge: arrow points up
-                else if (edgeInt == 1)
+                else if (edgeInt == 1) // Top
                 {
                     arrowTip = float2(pos, 1.0 + size);
                     baseLeft = float2(pos - halfWidth, 1.0);
                     baseRight = float2(pos + halfWidth, 1.0);
                 }
-                // Left edge: arrow points left
-                else if (edgeInt == 2)
+                else if (edgeInt == 2) // Left
                 {
                     arrowTip = float2(-size, pos);
                     baseLeft = float2(0.0, pos - halfWidth);
                     baseRight = float2(0.0, pos + halfWidth);
                 }
-                // Right edge: arrow points right
-                else
+                else // Right
                 {
                     arrowTip = float2(1.0 + size, pos);
                     baseLeft = float2(1.0, pos - halfWidth);
                     baseRight = float2(1.0, pos + halfWidth);
                 }
                 
-                // Check if uv is inside triangle using barycentric coordinates
                 float2 v0 = baseRight - arrowTip;
                 float2 v1 = baseLeft - arrowTip;
                 float2 v2 = uv - arrowTip;
@@ -172,6 +176,8 @@ Shader "RoyalLeech/UI/DialogShadow"
             
             half4 frag(Varyings IN) : SV_Target
             {
+                float2 rectSize = _RectSize.xy;
+                
                 // Apply pixelation
                 float2 pixelUV = IN.uv;
                 if (_PixelSize > 0)
@@ -179,7 +185,13 @@ Shader "RoyalLeech/UI/DialogShadow"
                     pixelUV = (floor(IN.uv * _PixelSize) + 0.5) / _PixelSize;
                 }
                 
-                // Check if inside main rectangle (0-1 range)
+                // Convert UV to local position in canvas units
+                float2 localPos = pixelUV * rectSize;
+                
+                // Convert pixel values to canvas units using scale factor
+                float cornerCutCanvas = _CornerCutPixels / max(_CanvasScale, 0.001);
+                
+                // Check if inside main rectangle (UV 0-1 range)
                 float insideRect = step(0.0, pixelUV.x) * step(pixelUV.x, 1.0) * 
                                    step(0.0, pixelUV.y) * step(pixelUV.y, 1.0);
                 
@@ -188,6 +200,24 @@ Shader "RoyalLeech/UI/DialogShadow"
                 
                 // Combine: visible if in rect OR in arrow
                 float visible = max(insideRect, insideArrow);
+                
+                // Apply corner cuts (only to rect, not arrow)
+                if (insideRect > 0.5)
+                {
+                    float distBottom = localPos.y;
+                    float distTop = rectSize.y - localPos.y;
+                    float distLeft = localPos.x;
+                    float distRight = rectSize.x - localPos.x;
+                    
+                    float cornerMask = 1.0;
+                    // Diagonal corner cuts using canvas-converted pixel value
+                    cornerMask *= step(cornerCutCanvas, distLeft + distBottom);
+                    cornerMask *= step(cornerCutCanvas, distRight + distBottom);
+                    cornerMask *= step(cornerCutCanvas, distLeft + distTop);
+                    cornerMask *= step(cornerCutCanvas, distRight + distTop);
+                    
+                    visible *= cornerMask;
+                }
                 
                 // Final alpha
                 float finalAlpha = visible * IN.color.a;

@@ -26,10 +26,10 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     public ArrowEdge arrowEdge = ArrowEdge.Bottom;
     [Range(0f, 1f)]
     public float arrowPosition = 0.5f;
-    [Range(0f, 0.3f)]
-    public float arrowSize = 0.1f;
-    [Range(0.02f, 0.3f)]
-    public float arrowWidth = 0.1f;
+    [Tooltip("Arrow size in pixels (scale-independent)")]
+    public float arrowSizePixels = 30f;
+    [Tooltip("Arrow width in pixels (scale-independent)")]
+    public float arrowWidthPixels = 40f;
     
     [Header("Target (Optional)")]
     [Tooltip("If set, arrow will point towards this transform")]
@@ -42,12 +42,16 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     private Canvas _canvas;
     private Material _materialInstance;
     private RectTransform _rectTransform;
+    private Camera _canvasCamera;
     
     private static readonly int ShadowColorID = Shader.PropertyToID("_ShadowColor");
     private static readonly int ArrowEdgeID = Shader.PropertyToID("_ArrowEdge");
     private static readonly int ArrowPositionID = Shader.PropertyToID("_ArrowPosition");
-    private static readonly int ArrowSizeID = Shader.PropertyToID("_ArrowSize");
-    private static readonly int ArrowWidthID = Shader.PropertyToID("_ArrowWidth");
+    private static readonly int ArrowSizePixelsID = Shader.PropertyToID("_ArrowSizePixels");
+    private static readonly int ArrowWidthPixelsID = Shader.PropertyToID("_ArrowWidthPixels");
+    private static readonly int RectSizeID = Shader.PropertyToID("_RectSize");
+    private static readonly int RectScreenPosID = Shader.PropertyToID("_RectScreenPos");
+    private static readonly int CanvasScaleID = Shader.PropertyToID("_CanvasScale");
     
     void Awake()
     {
@@ -98,10 +102,47 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     private ArrowEdge _lastArrowEdge;
     private float _lastArrowPosition;
     private float _lastArrowSize;
+    private Vector2 _lastRectSize;
     
     void LateUpdate()
     {
         if (_materialInstance == null) return;
+        
+        if (_rectTransform == null)
+            _rectTransform = GetComponent<RectTransform>();
+        
+        if (_canvas == null)
+            _canvas = GetComponentInParent<Canvas>();
+        
+        // Get Canvas scale factor
+        float scaleFactor = _canvas != null ? _canvas.scaleFactor : 1f;
+        
+        Rect rect = _rectTransform.rect;
+        
+        // Pass rect size in CANVAS UNITS (not screen pixels!)
+        _materialInstance.SetVector(RectSizeID, new Vector4(rect.width, rect.height, 0, 0));
+        // Pass scale factor so shader can convert pixel values to canvas units
+        _materialInstance.SetFloat(CanvasScaleID, scaleFactor);
+        
+        // Calculate screen position of rect corner
+        if (_canvasCamera == null && _canvas != null)
+            _canvasCamera = _canvas.worldCamera ?? Camera.main;
+        
+        // Get bottom-left corner in screen pixels
+        Vector3[] corners = new Vector3[4];
+        _rectTransform.GetWorldCorners(corners);
+        // corners[0] = bottom-left
+        Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(_canvasCamera, corners[0]);
+        _materialInstance.SetVector(RectScreenPosID, new Vector4(screenPos.x, screenPos.y, 0, 0));
+        
+        // Rebuild mesh if rect size changed
+        Vector2 currentRectSize = new Vector2(rect.width, rect.height);
+        if (Vector2.Distance(currentRectSize, _lastRectSize) > 0.1f)
+        {
+            _lastRectSize = currentRectSize;
+            if (_graphic != null)
+                _graphic.SetVerticesDirty();
+        }
         
         // Update shadow color
         _materialInstance.SetColor(ShadowColorID, shadowColor);
@@ -112,22 +153,22 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
             UpdateArrowTowardsTarget();
         }
         
-        // Update arrow properties
+        // Update arrow properties - pass pixel values directly (shader works in pixel space)
         _materialInstance.SetFloat(ArrowEdgeID, (float)arrowEdge);
         _materialInstance.SetFloat(ArrowPositionID, arrowPosition);
-        _materialInstance.SetFloat(ArrowSizeID, arrowSize);
-        _materialInstance.SetFloat(ArrowWidthID, arrowWidth);
+        _materialInstance.SetFloat(ArrowSizePixelsID, arrowSizePixels);
+        _materialInstance.SetFloat(ArrowWidthPixelsID, arrowWidthPixels);
         
-        // Check if arrow changed (need to rebuild mesh)
+        // Check if arrow changed (need to rebuild mesh for arrow extension)
         bool arrowChanged = arrowEdge != _lastArrowEdge || 
                            Mathf.Abs(arrowPosition - _lastArrowPosition) > 0.01f ||
-                           Mathf.Abs(arrowSize - _lastArrowSize) > 0.001f;
+                           Mathf.Abs(arrowSizePixels - _lastArrowSize) > 0.1f;
         
         if (arrowChanged)
         {
             _lastArrowEdge = arrowEdge;
             _lastArrowPosition = arrowPosition;
-            _lastArrowSize = arrowSize;
+            _lastArrowSize = arrowSizePixels;
             if (_graphic != null)
                 _graphic.SetVerticesDirty();
         }
@@ -228,8 +269,8 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         
         Rect rect = _rectTransform.rect;
         
-        // Calculate arrow extension in local units
-        float arrowExtension = arrowSize * Mathf.Max(rect.width, rect.height);
+        // Calculate arrow extension in local units (use pixel value directly)
+        float arrowExtension = arrowSizePixels;
         
         // Calculate expanded bounds based on arrow edge
         float expandTop = (arrowEdge == ArrowEdge.Top) ? arrowExtension : 0;
@@ -334,8 +375,7 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
             _materialInstance.SetColor(ShadowColorID, shadowColor);
             _materialInstance.SetFloat(ArrowEdgeID, (float)arrowEdge);
             _materialInstance.SetFloat(ArrowPositionID, arrowPosition);
-            _materialInstance.SetFloat(ArrowSizeID, arrowSize);
-            _materialInstance.SetFloat(ArrowWidthID, arrowWidth);
+            // OnValidate can't easily convert pixels to normalized, just trigger rebuild
         }
     }
 }
