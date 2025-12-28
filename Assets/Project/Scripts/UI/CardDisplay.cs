@@ -110,6 +110,9 @@ public class CardDisplay : MonoBehaviour
     // Idle effect vars
     private float _idleTime = 0f;
     
+    // Initial position from Inspector
+    private Vector2 _initialPosition;
+    
     // Disappear animation tracking
     private Coroutine _disappearCoroutine = null;
     private string _pendingText = null;
@@ -134,6 +137,10 @@ public class CardDisplay : MonoBehaviour
     void Awake()
     {
         _rectTransform = GetComponent<RectTransform>();
+        
+        // Сохраняем начальную позицию из Inspector СРАЗУ ЖЕ
+        _initialPosition = _rectTransform.anchoredPosition;
+        
         if (actionText != null) _textRectTransform = actionText.GetComponent<RectTransform>();
         if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
         
@@ -275,7 +282,7 @@ public class CardDisplay : MonoBehaviour
         {
             _currentVerticalOffset = 0f;
             _currentAngularOffset = 0f;
-            _rectTransform.anchoredPosition = Vector2.zero;
+            _rectTransform.anchoredPosition = _initialPosition;
             _rectTransform.rotation = Quaternion.identity;
             _rectTransform.localScale = Vector3.one;
             canvasGroup.alpha = 1f;
@@ -284,7 +291,7 @@ public class CardDisplay : MonoBehaviour
         {
             _currentVerticalOffset = hiddenY;
             _currentAngularOffset = 5f;
-            _rectTransform.anchoredPosition = new Vector2(0, hiddenY);
+            _rectTransform.anchoredPosition = new Vector2(_initialPosition.x, _initialPosition.y + hiddenY);
             _rectTransform.rotation = Quaternion.Euler(0, 0, _currentAngularOffset);
             canvasGroup.alpha = 1f;
         }
@@ -414,8 +421,8 @@ public class CardDisplay : MonoBehaviour
         float targetX = Mathf.Clamp(scaledDiff, -movementLimit, movementLimit);
 
         // 4. ФИЗИКА ПОЗИЦИИ
-        float smoothX = Mathf.Lerp(_rectTransform.anchoredPosition.x, targetX, Time.deltaTime * 20f);
-        _rectTransform.anchoredPosition = new Vector2(smoothX + _shakeOffset, _currentVerticalOffset);
+        float smoothX = Mathf.Lerp(_rectTransform.anchoredPosition.x, _initialPosition.x + targetX, Time.deltaTime * 20f);
+        _rectTransform.anchoredPosition = new Vector2(smoothX + _shakeOffset, _initialPosition.y + _currentVerticalOffset);
 
         // --- 5. ФИЗИКА ВРАЩЕНИЯ (3D TILT + 2D SWAY + VELOCITY) ---
 
