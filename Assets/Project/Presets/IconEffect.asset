@@ -15,7 +15,17 @@ MonoBehaviour:
   fillWaveStrength: 0.02
   fillWaveSpeed: 3
   meniscusStrength: 0.04
-  bubbleSize: 0.2
+  bubbleSize: 0.15
+  bubbleDensity: 0.2
+  bubbleSpeed: 0.6
+  bubblePixelation: 64
+  bubbleSpeedMinor: 0.5
+  bubbleSpeedNormal: 1
+  bubbleSpeedMajor: 1.5
+  bubbleSizeMinor: 0.7
+  bubbleSizeNormal: 1
+  bubbleSizeMajor: 1.2
+  bubbleFadeOutSpeed: 4
   pixelDensity: 64
   increaseStrength: 0.2
   decreaseStrength: 0.7
@@ -27,10 +37,14 @@ MonoBehaviour:
   decreasePunchScale: 0.1
   minorThreshold: 6
   majorThreshold: 12
+  increaseMinorMultiplier: 0.5
+  increaseMajorMultiplier: 1.5
+  decreaseMinorMultiplier: 0.5
+  decreaseMajorMultiplier: 1.5
   minorMultiplier: 0.75
   majorMultiplier: 1.25
   effectDuration: 0.5
-  effectFadeDuration: 1
+  letterEffectDuration: 0.6
   pulseSpeed: 4
   trailingDelay: 0.8
   trailingDuration: 0.4

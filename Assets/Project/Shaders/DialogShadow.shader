@@ -15,14 +15,33 @@ Shader "RoyalLeech/UI/DialogShadow"
         _ArrowWidthPixels ("Arrow Width (Screen Pixels)", Float) = 40
         
         [Header(Corner Cut)]
-        _CornerCutPixels ("Corner Cut (Screen Pixels)", Float) = 20
+        _CornerCutMinPixels ("Corner Cut Min (Pixels)", Float) = 15
+        _CornerCutMaxPixels ("Corner Cut Max (Pixels)", Float) = 25
+        
+        [Header(Tear Settings)]
+        _TearDepthMinPixels ("Tear Depth Min (Pixels)", Float) = 5
+        _TearDepthMaxPixels ("Tear Depth Max (Pixels)", Float) = 15
+        _TearWidthMinPixels ("Tear Width Min (Pixels)", Float) = 10
+        _TearWidthMaxPixels ("Tear Width Max (Pixels)", Float) = 30
+        _TearSpacingMinPixels ("Tear Spacing Min (Pixels)", Float) = 40
+        _TearSpacingMaxPixels ("Tear Spacing Max (Pixels)", Float) = 80
+        _TearSeed ("Random Seed", Float) = 0
+        
+        [Header(Animation)]
+        _AnimSpeed ("Frames Per Second", Float) = 1.0
+        
+        [Header(Per Edge Tear Intensity)]
+        _TopTear ("Top Edge", Range(0, 1)) = 0.5
+        _BottomTear ("Bottom Edge", Range(0, 1)) = 0.5
+        _LeftTear ("Left Edge", Range(0, 1)) = 0.5
+        _RightTear ("Right Edge", Range(0, 1)) = 0.5
         
         [Header(Canvas Info)]
         [HideInInspector] _RectSize ("Rect Size", Vector) = (100, 100, 0, 0)
         [HideInInspector] _CanvasScale ("Canvas Scale", Float) = 1.0
         
         [Header(Pixelation)]
-        _PixelSize ("Pixel Size", Range(0, 512)) = 0
+        _PixelSizePixels ("Pixel Size (Screen Pixels)", Float) = 0
         
         [Header(Stencil)]
         [HideInInspector] _StencilComp ("Stencil Comparison", Float) = 8
@@ -103,9 +122,116 @@ Shader "RoyalLeech/UI/DialogShadow"
                 float _ArrowPosition;
                 float _ArrowSizePixels;
                 float _ArrowWidthPixels;
-                float _CornerCutPixels;
-                float _PixelSize;
+                float _CornerCutMinPixels;
+                float _CornerCutMaxPixels;
+                float _TearDepthMinPixels;
+                float _TearDepthMaxPixels;
+                float _TearWidthMinPixels;
+                float _TearWidthMaxPixels;
+                float _TearSpacingMinPixels;
+                float _TearSpacingMaxPixels;
+                float _TearSeed;
+                float _AnimSpeed;
+                float _TopTear;
+                float _BottomTear;
+                float _LeftTear;
+                float _RightTear;
+                float _PixelSizePixels;
             CBUFFER_END
+            
+            // Hash function for randomness
+            float Hash(float n)
+            {
+                return frac(sin(n * 127.1) * 43758.5453);
+            }
+            
+            // Check if point is inside a triangular tooth notch at a specific position
+            // toothCenter is the center position of this tooth along the edge (in canvas units)
+            float IsInsideToothNotch(float edgePos, float distFromEdge, float toothCenter, float seed,
+                                      float minWidth, float maxWidth, float minDepth, float maxDepth)
+            {
+                // Random parameters for this tooth based on its center position
+                float r1 = Hash(toothCenter + seed);
+                float r3 = Hash(toothCenter + seed + 200.0);
+                float r4 = Hash(toothCenter + seed + 300.0);
+                float r5 = Hash(toothCenter + seed + 400.0);
+                
+                // Should this tooth exist? (~60% chance)
+                if (r1 < 0.4) return 0.0;
+                
+                // Random width and depth (already in canvas units)
+                float toothWidth = lerp(minWidth, maxWidth, r3);
+                float toothDepth = lerp(minDepth, maxDepth, r4);
+                
+                // Asymmetry - tip offset from center
+                float tipOffset = (r5 - 0.5) * 0.6 * toothWidth;
+                
+                float baseLeft = toothCenter - toothWidth * 0.5;
+                float baseRight = toothCenter + toothWidth * 0.5;
+                float tipX = toothCenter + tipOffset;
+                float tipY = toothDepth;
+                
+                if (edgePos < baseLeft || edgePos > baseRight) return 0.0;
+                
+                float maxDepthAtPos;
+                
+                if (edgePos < tipX)
+                {
+                    float t = (edgePos - baseLeft) / max(tipX - baseLeft, 0.001);
+                    maxDepthAtPos = t * tipY;
+                }
+                else
+                {
+                    float t = (edgePos - tipX) / max(baseRight - tipX, 0.001);
+                    maxDepthAtPos = (1.0 - t) * tipY;
+                }
+                
+                // Use abs(distFromEdge) to cut on BOTH sides of the edge:
+                // - Positive distFromEdge: cuts INTO the rectangle
+                // - Negative distFromEdge: cuts INTO the arrow (mirrored triangle)
+                // This creates a symmetric notch that affects both rect and arrow
+                return step(abs(distFromEdge), maxDepthAtPos);
+            }
+            
+            // Calculate total tear for an edge using spacing-based tooth placement
+            // Teeth appear every spacingMin to spacingMax canvas units
+            float CalculateEdgeTear(float edgePos, float distFromEdge, float seed, float intensity,
+                                    float minWidth, float maxWidth, float minDepth, float maxDepth, 
+                                    float edgeLength, float spacingMin, float spacingMax)
+            {
+                if (intensity < 0.01) return 0.0;
+                
+                float result = 0.0;
+                float currentPos = 0.0;
+                
+                // Maximum 16 teeth to prevent infinite loops
+                for (int i = 0; i < 16; i++)
+                {
+                    // Random spacing for this tooth
+                    float spacingRandom = Hash(float(i) + seed + 5000.0);
+                    float spacing = lerp(spacingMin, spacingMax, spacingRandom);
+                    
+                    // Position this tooth
+                    currentPos += spacing;
+                    
+                    // Stop if we've gone past the edge
+                    if (currentPos > edgeLength) break;
+                    
+                    // Check if point is inside this tooth
+                    result = max(result, IsInsideToothNotch(
+                        edgePos, 
+                        distFromEdge, 
+                        currentPos,
+                        seed,
+                        minWidth,
+                        maxWidth,
+                        minDepth * intensity,
+                        maxDepth * intensity
+                    ));
+                }
+                
+                return result;
+            }
             
             Varyings vert(Attributes IN)
             {
@@ -176,34 +302,50 @@ Shader "RoyalLeech/UI/DialogShadow"
             
             half4 frag(Varyings IN) : SV_Target
             {
-                float2 rectSize = _RectSize.xy;
+                // Stepped time for animation (like CardShadow)
+                float steppedTime = floor(_Time.y * _AnimSpeed);
+                float seed = _TearSeed + steppedTime * 17.31;
                 
-                // Apply pixelation
+                float2 rectSize = _RectSize.xy;
+                float canvasScale = max(_CanvasScale, 0.001);
+                
+                // Convert UV to local position in canvas units FIRST
+                float2 localPos = IN.uv * rectSize;
+                
+                // Apply pixelation in canvas space (uniform square pixels)
+                // _PixelSizePixels is the size of each pixel in SCREEN PIXELS
+                // Convert to canvas units for uniform pixelation across rect+arrow
                 float2 pixelUV = IN.uv;
-                if (_PixelSize > 0)
+                float pixelSizeCanvas = _PixelSizePixels / canvasScale;
+                if (pixelSizeCanvas > 0.001)
                 {
-                    pixelUV = (floor(IN.uv * _PixelSize) + 0.5) / _PixelSize;
+                    // Pixelate in canvas space - works correctly for both rect and arrow
+                    // Pixel size is fixed in screen pixels, converted to canvas units
+                    localPos = (floor(localPos / pixelSizeCanvas) + 0.5) * pixelSizeCanvas;
+                    
+                    // Convert back to UV for compatibility
+                    pixelUV = localPos / rectSize;
                 }
                 
-                // Convert UV to local position in canvas units
-                float2 localPos = pixelUV * rectSize;
-                
                 // Convert pixel values to canvas units using scale factor
-                float cornerCutCanvas = _CornerCutPixels / max(_CanvasScale, 0.001);
+                float cornerCutMinCanvas = _CornerCutMinPixels / canvasScale;
+                float cornerCutMaxCanvas = _CornerCutMaxPixels / canvasScale;
+                float tearDepthMinCanvas = _TearDepthMinPixels / canvasScale;
+                float tearDepthMaxCanvas = _TearDepthMaxPixels / canvasScale;
+                float tearWidthMinCanvas = _TearWidthMinPixels / canvasScale;
+                float tearWidthMaxCanvas = _TearWidthMaxPixels / canvasScale;
+                float tearSpacingMinCanvas = _TearSpacingMinPixels / canvasScale;
+                float tearSpacingMaxCanvas = _TearSpacingMaxPixels / canvasScale;
                 
                 // Convert arrow pixel values to normalized UV space
-                // Arrow size: pixels -> canvas units -> normalized (0-1)
-                float arrowSizeCanvas = _ArrowSizePixels / max(_CanvasScale, 0.001);
-                float arrowWidthCanvas = _ArrowWidthPixels / max(_CanvasScale, 0.001);
+                float arrowSizeCanvas = _ArrowSizePixels / canvasScale;
+                float arrowWidthCanvas = _ArrowWidthPixels / canvasScale;
                 
                 // For arrow size, normalize by the dimension it extends into
-                // Bottom/Top arrows extend in Y, so normalize by height
-                // Left/Right arrows extend in X, so normalize by width
                 int edgeInt = (int)_ArrowEdge;
                 float arrowSizeNorm = (edgeInt == 0 || edgeInt == 1) 
                                      ? arrowSizeCanvas / max(rectSize.y, 1.0)
                                      : arrowSizeCanvas / max(rectSize.x, 1.0);
-                // Arrow width is along the edge
                 float arrowWidthNorm = (edgeInt == 0 || edgeInt == 1) 
                                       ? arrowWidthCanvas / max(rectSize.x, 1.0)
                                       : arrowWidthCanvas / max(rectSize.y, 1.0);
@@ -218,23 +360,96 @@ Shader "RoyalLeech/UI/DialogShadow"
                 // Combine: visible if in rect OR in arrow
                 float visible = max(insideRect, insideArrow);
                 
-                // Apply corner cuts (only to rect, not arrow)
+                // Calculate distances from edges (in canvas units)
+                // For corner cuts, use actual position
+                float distBottom = localPos.y;
+                float distTop = rectSize.y - localPos.y;
+                float distLeft = localPos.x;
+                float distRight = rectSize.x - localPos.x;
+                
+                // Apply randomized corner cuts (only to rect part, arrow keeps its corners)
                 if (insideRect > 0.5)
                 {
-                    float distBottom = localPos.y;
-                    float distTop = rectSize.y - localPos.y;
-                    float distLeft = localPos.x;
-                    float distRight = rectSize.x - localPos.x;
+                    // Random corner cut size for each corner (like CardShadow)
+                    float blCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 500.0));
+                    float brCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 600.0));
+                    float tlCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 700.0));
+                    float trCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 800.0));
                     
                     float cornerMask = 1.0;
-                    // Diagonal corner cuts using canvas-converted pixel value
-                    cornerMask *= step(cornerCutCanvas, distLeft + distBottom);
-                    cornerMask *= step(cornerCutCanvas, distRight + distBottom);
-                    cornerMask *= step(cornerCutCanvas, distLeft + distTop);
-                    cornerMask *= step(cornerCutCanvas, distRight + distTop);
+                    cornerMask *= step(blCut, distLeft + distBottom);
+                    cornerMask *= step(brCut, distRight + distBottom);
+                    cornerMask *= step(tlCut, distLeft + distTop);
+                    cornerMask *= step(trCut, distRight + distTop);
                     
                     visible *= cornerMask;
                 }
+                
+                // Apply tear effects treating rect+arrow as ONE mesh
+                // Don't apply tears on the edge where arrow connects (within arrow width zone)
+                float2 clampedPos = clamp(localPos, float2(0, 0), rectSize);
+                
+                // Calculate normalized position along each edge for arrow zone check
+                float normX = localPos.x / max(rectSize.x, 1.0);  // 0-1 along width
+                float normY = localPos.y / max(rectSize.y, 1.0);  // 0-1 along height
+                
+                // Arrow connection zone (where arrow base connects to rect)
+                float arrowHalfWidthNorm = arrowWidthNorm * 0.5;
+                float arrowZoneLeft = _ArrowPosition - arrowHalfWidthNorm;
+                float arrowZoneRight = _ArrowPosition + arrowHalfWidthNorm;
+                
+                // Check if current pixel is in the arrow connection zone
+                // For horizontal edges (top/bottom): check if X is in arrow zone
+                // For vertical edges (left/right): check if Y is in arrow zone
+                float inArrowZoneX = step(arrowZoneLeft, normX) * step(normX, arrowZoneRight);
+                float inArrowZoneY = step(arrowZoneLeft, normY) * step(normY, arrowZoneRight);
+                
+                // Calculate tears from each edge
+                // Skip tears on the edge where arrow is attached (mask out arrow zone)
+                float tearTop = 0.0;
+                float tearBottom = 0.0;
+                float tearLeft = 0.0;
+                float tearRight = 0.0;
+                
+                // Bottom edge (arrow edge 0)
+                if (edgeInt != 0 || inArrowZoneX < 0.5)
+                {
+                    tearBottom = CalculateEdgeTear(clampedPos.x, distBottom, seed + 1000.0, _BottomTear,
+                                                    tearWidthMinCanvas, tearWidthMaxCanvas,
+                                                    tearDepthMinCanvas, tearDepthMaxCanvas, 
+                                                    rectSize.x, tearSpacingMinCanvas, tearSpacingMaxCanvas);
+                }
+                
+                // Top edge (arrow edge 1)
+                if (edgeInt != 1 || inArrowZoneX < 0.5)
+                {
+                    tearTop = CalculateEdgeTear(clampedPos.x, distTop, seed, _TopTear,
+                                                 tearWidthMinCanvas, tearWidthMaxCanvas,
+                                                 tearDepthMinCanvas, tearDepthMaxCanvas, 
+                                                 rectSize.x, tearSpacingMinCanvas, tearSpacingMaxCanvas);
+                }
+                
+                // Left edge (arrow edge 2)
+                if (edgeInt != 2 || inArrowZoneY < 0.5)
+                {
+                    tearLeft = CalculateEdgeTear(clampedPos.y, distLeft, seed + 2000.0, _LeftTear,
+                                                  tearWidthMinCanvas, tearWidthMaxCanvas,
+                                                  tearDepthMinCanvas, tearDepthMaxCanvas, 
+                                                  rectSize.y, tearSpacingMinCanvas, tearSpacingMaxCanvas);
+                }
+                
+                // Right edge (arrow edge 3)
+                if (edgeInt != 3 || inArrowZoneY < 0.5)
+                {
+                    tearRight = CalculateEdgeTear(clampedPos.y, distRight, seed + 3000.0, _RightTear,
+                                                   tearWidthMinCanvas, tearWidthMaxCanvas,
+                                                   tearDepthMinCanvas, tearDepthMaxCanvas, 
+                                                   rectSize.y, tearSpacingMinCanvas, tearSpacingMaxCanvas);
+                }
+                
+                // Combine tears - if any tear applies, cut the pixel
+                float shouldCut = max(max(tearTop, tearBottom), max(tearLeft, tearRight));
+                visible *= (1.0 - shouldCut);
                 
                 // Final alpha
                 float finalAlpha = visible * IN.color.a;

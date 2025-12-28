@@ -29,29 +29,29 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AnimSpeed: 1
     - _ArrowEdge: 0
     - _ArrowPosition: 0.5
-    - _ArrowSize: 0.1
     - _ArrowSizePixels: 30
-    - _ArrowWidth: 0.077
     - _ArrowWidthPixels: 40
+    - _BottomTear: 0.5
     - _CanvasScale: 1
     - _ColorMask: 15
-    - _CornerCutMaxPixels: 12
-    - _CornerCutMinPixels: 5
-    - _CornerCutPixels: 8.9
+    - _CornerCutPixels: 20
+    - _LeftTear: 0.5
     - _PixelSize: 0
+    - _RightTear: 0.5
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
-    - _TearDepthPixels: 10
+    - _TearDepthMaxPixels: 15
+    - _TearDepthMinPixels: 5
     - _TearSeed: 0
-    - _TeethMaxWidthPixels: 20
-    - _TeethMinWidthPixels: 8
-    - _ToothIntervalPixels: 50
+    - _TearWidthMaxPixels: 30
+    - _TearWidthMinPixels: 10
+    - _TeethCount: 3
+    - _TopTear: 0.5
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _RectSize: {r: 100, g: 100, b: 0, a: 0}
