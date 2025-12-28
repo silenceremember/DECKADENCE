@@ -357,52 +357,65 @@ Shader "RoyalLeech/UI/DialogShadow"
                 // Check if inside arrow (using normalized values)
                 float insideArrow = IsInsideArrow(pixelUV, _ArrowEdge, _ArrowPosition, arrowSizeNorm, arrowWidthNorm);
                 
-                // Combine: visible if in rect OR in arrow
-                float visible = max(insideRect, insideArrow);
-                
                 // Calculate distances from edges (in canvas units)
-                // For corner cuts, use actual position
                 float distBottom = localPos.y;
                 float distTop = rectSize.y - localPos.y;
                 float distLeft = localPos.x;
                 float distRight = rectSize.x - localPos.x;
                 
-                // Apply randomized corner cuts (only to rect part, arrow keeps its corners)
-                if (insideRect > 0.5)
-                {
-                    // Random corner cut size for each corner (like CardShadow)
-                    float blCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 500.0));
-                    float brCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 600.0));
-                    float tlCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 700.0));
-                    float trCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 800.0));
-                    
-                    float cornerMask = 1.0;
-                    cornerMask *= step(blCut, distLeft + distBottom);
-                    cornerMask *= step(brCut, distRight + distBottom);
-                    cornerMask *= step(tlCut, distLeft + distTop);
-                    cornerMask *= step(trCut, distRight + distTop);
-                    
-                    visible *= cornerMask;
-                }
+                // Normalized position for arrow zone checks
+                float normX = pixelUV.x;  // 0-1 along width
+                float normY = pixelUV.y;  // 0-1 along height
                 
-                // Apply tear effects treating rect+arrow as ONE mesh
-                // Don't apply tears on the edge where arrow connects (within arrow width zone)
-                float2 clampedPos = clamp(localPos, float2(0, 0), rectSize);
-                
-                // Calculate normalized position along each edge for arrow zone check
-                float normX = localPos.x / max(rectSize.x, 1.0);  // 0-1 along width
-                float normY = localPos.y / max(rectSize.y, 1.0);  // 0-1 along height
-                
-                // Arrow connection zone (where arrow base connects to rect)
+                // Arrow connection zone
                 float arrowHalfWidthNorm = arrowWidthNorm * 0.5;
                 float arrowZoneLeft = _ArrowPosition - arrowHalfWidthNorm;
                 float arrowZoneRight = _ArrowPosition + arrowHalfWidthNorm;
                 
-                // Check if current pixel is in the arrow connection zone
-                // For horizontal edges (top/bottom): check if X is in arrow zone
-                // For vertical edges (left/right): check if Y is in arrow zone
+                // Check if current pixel is in arrow zone for each relevant edge
                 float inArrowZoneX = step(arrowZoneLeft, normX) * step(normX, arrowZoneRight);
                 float inArrowZoneY = step(arrowZoneLeft, normY) * step(normY, arrowZoneRight);
+                
+                // Random corner cut sizes
+                float blCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 500.0));
+                float brCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 600.0));
+                float tlCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 700.0));
+                float trCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 800.0));
+                
+                // Apply corner cuts, but skip the corner for pixels in arrow connection zone
+                // Same logic as tears - per-pixel skip based on arrow zone
+                float cornerMask = 1.0;
+                
+                // BL corner: skip if arrow on bottom edge AND pixel in arrow zone (near left)
+                // OR if arrow on left edge AND pixel in arrow zone (near bottom)
+                float skipBLPixel = (edgeInt == 0 && inArrowZoneX > 0.5 && normX < 0.5) ||
+                                    (edgeInt == 2 && inArrowZoneY > 0.5 && normY < 0.5) ? 1.0 : 0.0;
+                if (skipBLPixel < 0.5) cornerMask *= step(blCut, distLeft + distBottom);
+                
+                // BR corner: skip if arrow on bottom edge AND pixel in arrow zone (near right)
+                // OR if arrow on right edge AND pixel in arrow zone (near bottom)
+                float skipBRPixel = (edgeInt == 0 && inArrowZoneX > 0.5 && normX > 0.5) ||
+                                    (edgeInt == 3 && inArrowZoneY > 0.5 && normY < 0.5) ? 1.0 : 0.0;
+                if (skipBRPixel < 0.5) cornerMask *= step(brCut, distRight + distBottom);
+                
+                // TL corner: skip if arrow on top edge AND pixel in arrow zone (near left)
+                // OR if arrow on left edge AND pixel in arrow zone (near top)
+                float skipTLPixel = (edgeInt == 1 && inArrowZoneX > 0.5 && normX < 0.5) ||
+                                    (edgeInt == 2 && inArrowZoneY > 0.5 && normY > 0.5) ? 1.0 : 0.0;
+                if (skipTLPixel < 0.5) cornerMask *= step(tlCut, distLeft + distTop);
+                
+                // TR corner: skip if arrow on top edge AND pixel in arrow zone (near right)
+                // OR if arrow on right edge AND pixel in arrow zone (near top)
+                float skipTRPixel = (edgeInt == 1 && inArrowZoneX > 0.5 && normX > 0.5) ||
+                                    (edgeInt == 3 && inArrowZoneY > 0.5 && normY > 0.5) ? 1.0 : 0.0;
+                if (skipTRPixel < 0.5) cornerMask *= step(trCut, distRight + distTop);
+                
+                // Combine: rect with corners + arrow on top
+                float visible = max(insideRect * cornerMask, insideArrow);
+                
+                // Apply tear effects treating rect+arrow as ONE mesh
+                // Don't apply tears on the edge where arrow connects (within arrow width zone)
+                float2 clampedPos = clamp(localPos, float2(0, 0), rectSize);
                 
                 // Calculate tears from each edge
                 // Skip tears on the edge where arrow is attached (mask out arrow zone)
