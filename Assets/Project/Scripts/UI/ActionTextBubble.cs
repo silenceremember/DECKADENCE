@@ -185,8 +185,9 @@ public class ActionTextBubble : MonoBehaviour
         {
             TMP_CharacterInfo charInfo = textInfo.characterInfo[i];
             
-            // Skip invisible characters (spaces, etc)
-            if (!charInfo.isVisible) continue;
+            // В dynamic mode isVisible может быть false, но данные есть
+            // Пропускаем только если нет реальных координат (пробелы)
+            if (charInfo.bottomLeft == Vector3.zero && charInfo.topRight == Vector3.zero) continue;
             
             hasVisibleChar = true;
             
