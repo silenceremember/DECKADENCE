@@ -8,30 +8,34 @@ Shader "RoyalLeech/UI/CardShadow"
         [Header(Shadow Settings)]
         [HideInInspector] _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.5)
         
-        [Header(Tear Settings)]
-        _TearDepth ("Max Tear Depth", Range(0, 0.4)) = 0.15
-        _TearSeed ("Random Seed", Float) = 0
+        [Header(Corner Cut)]
+        _CornerCutMinPixels ("Corner Cut Min (Pixels)", Float) = 15
+        _CornerCutMaxPixels ("Corner Cut Max (Pixels)", Float) = 25
         
-        [Header(Teeth Settings)]
-        _TeethCount ("Max Teeth Per Edge", Range(1, 8)) = 3
-        _TeethMinWidth ("Min Width", Range(0.02, 0.2)) = 0.05
-        _TeethMaxWidth ("Max Width", Range(0.05, 0.4)) = 0.15
+        [Header(Tear Settings)]
+        _TearDepthMinPixels ("Tear Depth Min (Pixels)", Float) = 5
+        _TearDepthMaxPixels ("Tear Depth Max (Pixels)", Float) = 15
+        _TearWidthMinPixels ("Tear Width Min (Pixels)", Float) = 10
+        _TearWidthMaxPixels ("Tear Width Max (Pixels)", Float) = 30
+        _TearSpacingMinPixels ("Tear Spacing Min (Pixels)", Float) = 40
+        _TearSpacingMaxPixels ("Tear Spacing Max (Pixels)", Float) = 80
+        _TearSeed ("Random Seed", Float) = 0
         
         [Header(Animation)]
         _AnimSpeed ("Frames Per Second", Float) = 1.0
         
-        [Header(Per Edge Intensity)]
+        [Header(Per Edge Tear Intensity)]
         _TopTear ("Top Edge", Range(0, 1)) = 0.5
         _BottomTear ("Bottom Edge", Range(0, 1)) = 0.5
         _LeftTear ("Left Edge", Range(0, 1)) = 0.5
         _RightTear ("Right Edge", Range(0, 1)) = 0.5
         
-        [Header(Corner Cut)]
-        _CornerCutMin ("Corner Cut Min", Range(0, 0.2)) = 0.05
-        _CornerCutMax ("Corner Cut Max", Range(0, 0.3)) = 0.12
+        [Header(Canvas Info)]
+        [HideInInspector] _RectSize ("Rect Size", Vector) = (100, 100, 0, 0)
+        [HideInInspector] _CanvasScale ("Canvas Scale", Float) = 1.0
         
         [Header(Pixelation)]
-        _PixelSize ("Pixel Size", Range(0, 512)) = 0
+        _PixelSizePixels ("Pixel Size (Screen Pixels)", Float) = 0
         
         [Header(Stencil)]
         [HideInInspector] _StencilComp ("Stencil Comparison", Float) = 8
@@ -104,58 +108,53 @@ Shader "RoyalLeech/UI/CardShadow"
             
             // Explicit point sampler - NO interpolation for alpha or color
             SAMPLER(my_point_clamp_sampler);
-            #define PIXELATE_SAMPLER SamplerState_Point_Clamp
             
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainTex_ST;
                 float4 _Color;
                 float4 _ShadowColor;
-                float _TearDepth;
+                float4 _RectSize;
+                float _CanvasScale;
+                float _CornerCutMinPixels;
+                float _CornerCutMaxPixels;
+                float _TearDepthMinPixels;
+                float _TearDepthMaxPixels;
+                float _TearWidthMinPixels;
+                float _TearWidthMaxPixels;
+                float _TearSpacingMinPixels;
+                float _TearSpacingMaxPixels;
                 float _TearSeed;
-                float _TeethCount;
-                float _TeethMinWidth;
-                float _TeethMaxWidth;
                 float _AnimSpeed;
                 float _TopTear;
                 float _BottomTear;
                 float _LeftTear;
                 float _RightTear;
-                float _CornerCutMin;
-                float _CornerCutMax;
-                float _PixelSize;
+                float _PixelSizePixels;
             CBUFFER_END
             
-            // Hash functions
+            // Hash function for randomness
             float Hash(float n)
             {
                 return frac(sin(n * 127.1) * 43758.5453);
             }
             
-            float Hash2(float2 p)
+            // Check if point is inside a triangular tooth notch at a specific position
+            // toothCenter is the center position of this tooth along the edge (in canvas units)
+            float IsInsideToothNotch(float edgePos, float distFromEdge, float toothCenter, float seed,
+                                      float minWidth, float maxWidth, float minDepth, float maxDepth)
             {
-                return frac(sin(dot(p, float2(127.1, 311.7))) * 43758.5453);
-            }
-            
-            // Check if point is inside a triangle notch coming from edge
-            float IsInsideToothNotch(float edgePos, float distFromEdge, float toothIndex, float seed,
-                                      float minWidth, float maxWidth, float maxDepth)
-            {
-                // Random parameters for this tooth
-                float r1 = Hash(toothIndex + seed);
-                float r2 = Hash(toothIndex + seed + 100.0);
-                float r3 = Hash(toothIndex + seed + 200.0);
-                float r4 = Hash(toothIndex + seed + 300.0);
-                float r5 = Hash(toothIndex + seed + 400.0);
+                // Random parameters for this tooth based on its center position
+                float r1 = Hash(toothCenter + seed);
+                float r3 = Hash(toothCenter + seed + 200.0);
+                float r4 = Hash(toothCenter + seed + 300.0);
+                float r5 = Hash(toothCenter + seed + 400.0);
                 
                 // Should this tooth exist? (~60% chance)
                 if (r1 < 0.4) return 0.0;
                 
-                // Tooth center position along edge
-                float toothCenter = (toothIndex + 0.5 + (r2 - 0.5) * 0.6) / _TeethCount;
-                
-                // Random width and depth
+                // Random width and depth (already in canvas units)
                 float toothWidth = lerp(minWidth, maxWidth, r3);
-                float toothDepth = maxDepth * (0.4 + r4 * 0.6);
+                float toothDepth = lerp(minDepth, maxDepth, r4);
                 
                 // Asymmetry - tip offset from center
                 float tipOffset = (r5 - 0.5) * 0.6 * toothWidth;
@@ -183,25 +182,40 @@ Shader "RoyalLeech/UI/CardShadow"
                 return step(distFromEdge, maxDepthAtPos);
             }
             
-            // Calculate total tear for an edge
-            float CalculateEdgeTear(float edgePos, float distFromEdge, float seed, float intensity)
+            // Calculate total tear for an edge using spacing-based tooth placement
+            // Teeth appear every spacingMin to spacingMax canvas units
+            float CalculateEdgeTear(float edgePos, float distFromEdge, float seed, float intensity,
+                                    float minWidth, float maxWidth, float minDepth, float maxDepth, 
+                                    float edgeLength, float spacingMin, float spacingMax)
             {
                 if (intensity < 0.01) return 0.0;
                 
                 float result = 0.0;
+                float currentPos = 0.0;
                 
-                for (int i = 0; i < 8; i++)
+                // Maximum 16 teeth to prevent infinite loops
+                for (int i = 0; i < 16; i++)
                 {
-                    if (float(i) >= _TeethCount) break;
+                    // Random spacing for this tooth
+                    float spacingRandom = Hash(float(i) + seed + 5000.0);
+                    float spacing = lerp(spacingMin, spacingMax, spacingRandom);
                     
+                    // Position this tooth
+                    currentPos += spacing;
+                    
+                    // Stop if we've gone past the edge
+                    if (currentPos > edgeLength) break;
+                    
+                    // Check if point is inside this tooth
                     result = max(result, IsInsideToothNotch(
                         edgePos, 
                         distFromEdge, 
-                        float(i), 
+                        currentPos,
                         seed,
-                        _TeethMinWidth,
-                        _TeethMaxWidth,
-                        _TearDepth * intensity
+                        minWidth,
+                        maxWidth,
+                        minDepth * intensity,
+                        maxDepth * intensity
                     ));
                 }
                 
@@ -229,50 +243,89 @@ Shader "RoyalLeech/UI/CardShadow"
                 float steppedTime = floor(_Time.y * _AnimSpeed);
                 float seed = _TearSeed + steppedTime * 17.31;
                 
-                // Apply pixelation to UV
-                float2 pixelUV = IN.uv;
-                half4 texColor;
+                float2 rectSize = _RectSize.xy;
+                float canvasScale = max(_CanvasScale, 0.001);
                 
-                if (_PixelSize > 0)
+                // Convert UV to local position in canvas units FIRST
+                float2 localPos = IN.uv * rectSize;
+                
+                // Apply pixelation in canvas space (uniform square pixels)
+                // _PixelSizePixels is the size of each pixel in SCREEN PIXELS
+                // Convert to canvas units for uniform pixelation
+                float2 pixelUV = IN.uv;
+                float pixelSizeCanvas = _PixelSizePixels / canvasScale;
+                if (pixelSizeCanvas > 0.001)
                 {
-                    // Snap to pixel grid center for crisp edges
-                    pixelUV = (floor(IN.uv * _PixelSize) + 0.5) / _PixelSize;
-                    // Use point sampler - NO interpolation, hard pixel edges, crisp alpha
+                    // Pixelate in canvas space
+                    localPos = (floor(localPos / pixelSizeCanvas) + 0.5) * pixelSizeCanvas;
+                    
+                    // Convert back to UV for compatibility
+                    pixelUV = localPos / rectSize;
+                }
+                
+                // Sample texture
+                half4 texColor;
+                if (_PixelSizePixels > 0)
+                {
                     texColor = SAMPLE_TEXTURE2D(_MainTex, my_point_clamp_sampler, pixelUV);
                 }
                 else
                 {
-                    // Normal sampling when pixelation is off
                     texColor = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, pixelUV);
                 }
                 
-                // Distance from each edge (use pixelated UV for consistent pixel grid)
-                float distTop = 1.0 - pixelUV.y;
-                float distBottom = pixelUV.y;
-                float distLeft = pixelUV.x;
-                float distRight = 1.0 - pixelUV.x;
+                // Convert pixel values to canvas units using scale factor
+                float cornerCutMinCanvas = _CornerCutMinPixels / canvasScale;
+                float cornerCutMaxCanvas = _CornerCutMaxPixels / canvasScale;
+                float tearDepthMinCanvas = _TearDepthMinPixels / canvasScale;
+                float tearDepthMaxCanvas = _TearDepthMaxPixels / canvasScale;
+                float tearWidthMinCanvas = _TearWidthMinPixels / canvasScale;
+                float tearWidthMaxCanvas = _TearWidthMaxPixels / canvasScale;
+                float tearSpacingMinCanvas = _TearSpacingMinPixels / canvasScale;
+                float tearSpacingMaxCanvas = _TearSpacingMaxPixels / canvasScale;
                 
-                // Check each edge for tears (pixelated coordinates)
-                float tearTop = CalculateEdgeTear(pixelUV.x, distTop, seed, _TopTear);
-                float tearBottom = CalculateEdgeTear(pixelUV.x, distBottom, seed + 1000.0, _BottomTear);
-                float tearLeft = CalculateEdgeTear(pixelUV.y, distLeft, seed + 2000.0, _LeftTear);
-                float tearRight = CalculateEdgeTear(pixelUV.y, distRight, seed + 3000.0, _RightTear);
+                // Calculate distances from edges (in canvas units)
+                float distBottom = localPos.y;
+                float distTop = rectSize.y - localPos.y;
+                float distLeft = localPos.x;
+                float distRight = rectSize.x - localPos.x;
                 
-                // Combine tears
-                float shouldCut = max(max(tearTop, tearBottom), max(tearLeft, tearRight));
+                // Random corner cut sizes
+                float blCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 500.0));
+                float brCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 600.0));
+                float tlCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 700.0));
+                float trCut = lerp(cornerCutMinCanvas, cornerCutMaxCanvas, Hash(seed + 800.0));
                 
-                // Corner cut (pixelated coordinates)
+                // Apply corner cuts
                 float cornerMask = 1.0;
-                
-                float tlCut = lerp(_CornerCutMin, _CornerCutMax, Hash(seed + 500.0));
-                float trCut = lerp(_CornerCutMin, _CornerCutMax, Hash(seed + 600.0));
-                float blCut = lerp(_CornerCutMin, _CornerCutMax, Hash(seed + 700.0));
-                float brCut = lerp(_CornerCutMin, _CornerCutMax, Hash(seed + 800.0));
-                
-                cornerMask *= step(tlCut, distLeft + distTop);
-                cornerMask *= step(trCut, distRight + distTop);
                 cornerMask *= step(blCut, distLeft + distBottom);
                 cornerMask *= step(brCut, distRight + distBottom);
+                cornerMask *= step(tlCut, distLeft + distTop);
+                cornerMask *= step(trCut, distRight + distTop);
+                
+                // Calculate tears from each edge (using canvas units)
+                float tearTop = CalculateEdgeTear(localPos.x, distTop, seed, _TopTear,
+                                                  tearWidthMinCanvas, tearWidthMaxCanvas,
+                                                  tearDepthMinCanvas, tearDepthMaxCanvas, 
+                                                  rectSize.x, tearSpacingMinCanvas, tearSpacingMaxCanvas);
+                
+                float tearBottom = CalculateEdgeTear(localPos.x, distBottom, seed + 1000.0, _BottomTear,
+                                                     tearWidthMinCanvas, tearWidthMaxCanvas,
+                                                     tearDepthMinCanvas, tearDepthMaxCanvas, 
+                                                     rectSize.x, tearSpacingMinCanvas, tearSpacingMaxCanvas);
+                
+                float tearLeft = CalculateEdgeTear(localPos.y, distLeft, seed + 2000.0, _LeftTear,
+                                                   tearWidthMinCanvas, tearWidthMaxCanvas,
+                                                   tearDepthMinCanvas, tearDepthMaxCanvas, 
+                                                   rectSize.y, tearSpacingMinCanvas, tearSpacingMaxCanvas);
+                
+                float tearRight = CalculateEdgeTear(localPos.y, distRight, seed + 3000.0, _RightTear,
+                                                    tearWidthMinCanvas, tearWidthMaxCanvas,
+                                                    tearDepthMinCanvas, tearDepthMaxCanvas, 
+                                                    rectSize.y, tearSpacingMinCanvas, tearSpacingMaxCanvas);
+                
+                // Combine tears - if any tear applies, cut the pixel
+                float shouldCut = max(max(tearTop, tearBottom), max(tearLeft, tearRight));
                 
                 // Calculate final alpha with tears and corners
                 float finalAlpha = texColor.a * (1.0 - shouldCut) * cornerMask;

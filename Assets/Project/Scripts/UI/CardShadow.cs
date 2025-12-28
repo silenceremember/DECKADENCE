@@ -33,13 +33,18 @@ public class CardShadow : MonoBehaviour, IMeshModifier
     private Graphic _graphic;
     private Canvas _canvas;
     private Material _materialInstance;
+    private RectTransform _rectTransform;
     private float _lastScale;
+    private Vector2 _lastRectSize;
     
     private static readonly int ShadowColorID = Shader.PropertyToID("_ShadowColor");
+    private static readonly int RectSizeID = Shader.PropertyToID("_RectSize");
+    private static readonly int CanvasScaleID = Shader.PropertyToID("_CanvasScale");
     
     void Awake()
     {
         _graphic = GetComponent<Graphic>();
+        _rectTransform = GetComponent<RectTransform>();
     }
     
     void Start()
@@ -85,11 +90,35 @@ public class CardShadow : MonoBehaviour, IMeshModifier
     
     void LateUpdate()
     {
-        // Update shadow color in material
-        if (_materialInstance != null)
+        if (_materialInstance == null) return;
+        
+        if (_rectTransform == null)
+            _rectTransform = GetComponent<RectTransform>();
+        
+        if (_canvas == null)
+            _canvas = GetComponentInParent<Canvas>();
+        
+        // Get Canvas scale factor
+        float scaleFactor = _canvas != null ? _canvas.scaleFactor : 1f;
+        
+        Rect rect = _rectTransform.rect;
+        
+        // Pass rect size in CANVAS UNITS (not screen pixels!)
+        _materialInstance.SetVector(RectSizeID, new Vector4(rect.width, rect.height, 0, 0));
+        // Pass scale factor so shader can convert pixel values to canvas units
+        _materialInstance.SetFloat(CanvasScaleID, scaleFactor);
+        
+        // Rebuild mesh if rect size changed
+        Vector2 currentRectSize = new Vector2(rect.width, rect.height);
+        if (Vector2.Distance(currentRectSize, _lastRectSize) > 0.1f)
         {
-            _materialInstance.SetColor(ShadowColorID, shadowColor);
+            _lastRectSize = currentRectSize;
+            if (_graphic != null)
+                _graphic.SetVerticesDirty();
         }
+        
+        // Update shadow color in material
+        _materialInstance.SetColor(ShadowColorID, shadowColor);
         
         // Calculate effective intensity with scale influence
         currentEffectiveIntensity = intensity;
