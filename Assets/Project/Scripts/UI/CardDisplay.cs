@@ -128,6 +128,9 @@ public class CardDisplay : MonoBehaviour
     private float[] _pendingFinalFillValues = null;
     private bool[] _pendingIsIncrease = null;
     
+    // RectTransform для анимации контейнера с текстом и баблом
+    private RectTransform _actionContainerTransform;
+    
     // Canvas group for action text opacity control
     private CanvasGroup _actionTextCanvasGroup;
     
@@ -141,7 +144,11 @@ public class CardDisplay : MonoBehaviour
         // Сохраняем начальную позицию из Inspector СРАЗУ ЖЕ
         _initialPosition = _rectTransform.anchoredPosition;
         
-        if (actionText != null) _textRectTransform = actionText.GetComponent<RectTransform>();
+        // Используем родителя actionText для анимации (чтобы bubble тоже анимировался)
+        if (actionText != null && actionText.transform.parent != null)
+        {
+            _actionContainerTransform = actionText.transform.parent.GetComponent<RectTransform>();
+        }
         if (canvasGroup == null) canvasGroup = GetComponent<CanvasGroup>();
         
         // Получаем TextAnimator компоненты
@@ -692,7 +699,8 @@ public class CardDisplay : MonoBehaviour
         
         // Наклон блока текста в сторону свайпа (фиксированный угол)
         // Не меняем наклон пока текст исчезает
-        if (_textRectTransform != null && !_isWaitingForDisappear)
+        // Анимируем контейнер (родитель actionText) чтобы bubble тоже анимировался
+        if (_actionContainerTransform != null && !_isWaitingForDisappear)
         {
             // Фиксированный угол в зависимости от направления
             float targetTilt = isRight ? actionTextTiltAngle : -actionTextTiltAngle;
@@ -704,13 +712,13 @@ public class CardDisplay : MonoBehaviour
             }
             
             Quaternion targetRot = Quaternion.Euler(0f, 0f, -targetTilt);
-            _textRectTransform.localRotation = Quaternion.Slerp(
-                _textRectTransform.localRotation, 
+            _actionContainerTransform.localRotation = Quaternion.Slerp(
+                _actionContainerTransform.localRotation, 
                 targetRot, 
                 Time.deltaTime * actionTextTiltSpeed
             );
             
-            // Масштаб блока текста в зависимости от прогресса
+            // Масштаб контейнера в зависимости от прогресса
             float targetScale = Mathf.Lerp(actionTextScaleMin, actionTextScaleMax, clampedProgress);
             
             // Пульсация при полном выборе
@@ -719,8 +727,8 @@ public class CardDisplay : MonoBehaviour
                 targetScale += Mathf.Sin(Time.time * 8f) * actionTextPulseAmount;
             }
             
-            _textRectTransform.localScale = Vector3.Lerp(
-                _textRectTransform.localScale,
+            _actionContainerTransform.localScale = Vector3.Lerp(
+                _actionContainerTransform.localScale,
                 Vector3.one * targetScale,
                 Time.deltaTime * 10f
             );
