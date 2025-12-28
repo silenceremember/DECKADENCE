@@ -11,8 +11,8 @@ Shader "RoyalLeech/UI/DialogShadow"
         [Header(Arrow Settings)]
         _ArrowEdge ("Arrow Edge (0=Bottom, 1=Top, 2=Left, 3=Right)", Range(0, 3)) = 0
         _ArrowPosition ("Arrow Position Along Edge", Range(0, 1)) = 0.5
-        _ArrowSize ("Arrow Size", Range(0, 0.3)) = 0.1
-        _ArrowWidth ("Arrow Width", Range(0.02, 0.3)) = 0.1
+        _ArrowSizePixels ("Arrow Size (Screen Pixels)", Float) = 30
+        _ArrowWidthPixels ("Arrow Width (Screen Pixels)", Float) = 40
         
         [Header(Corner Cut)]
         _CornerCutPixels ("Corner Cut (Screen Pixels)", Float) = 20
@@ -101,8 +101,8 @@ Shader "RoyalLeech/UI/DialogShadow"
                 float _CanvasScale;
                 float _ArrowEdge;
                 float _ArrowPosition;
-                float _ArrowSize;
-                float _ArrowWidth;
+                float _ArrowSizePixels;
+                float _ArrowWidthPixels;
                 float _CornerCutPixels;
                 float _PixelSize;
             CBUFFER_END
@@ -191,12 +191,29 @@ Shader "RoyalLeech/UI/DialogShadow"
                 // Convert pixel values to canvas units using scale factor
                 float cornerCutCanvas = _CornerCutPixels / max(_CanvasScale, 0.001);
                 
+                // Convert arrow pixel values to normalized UV space
+                // Arrow size: pixels -> canvas units -> normalized (0-1)
+                float arrowSizeCanvas = _ArrowSizePixels / max(_CanvasScale, 0.001);
+                float arrowWidthCanvas = _ArrowWidthPixels / max(_CanvasScale, 0.001);
+                
+                // For arrow size, normalize by the dimension it extends into
+                // Bottom/Top arrows extend in Y, so normalize by height
+                // Left/Right arrows extend in X, so normalize by width
+                int edgeInt = (int)_ArrowEdge;
+                float arrowSizeNorm = (edgeInt == 0 || edgeInt == 1) 
+                                     ? arrowSizeCanvas / max(rectSize.y, 1.0)
+                                     : arrowSizeCanvas / max(rectSize.x, 1.0);
+                // Arrow width is along the edge
+                float arrowWidthNorm = (edgeInt == 0 || edgeInt == 1) 
+                                      ? arrowWidthCanvas / max(rectSize.x, 1.0)
+                                      : arrowWidthCanvas / max(rectSize.y, 1.0);
+                
                 // Check if inside main rectangle (UV 0-1 range)
                 float insideRect = step(0.0, pixelUV.x) * step(pixelUV.x, 1.0) * 
                                    step(0.0, pixelUV.y) * step(pixelUV.y, 1.0);
                 
-                // Check if inside arrow
-                float insideArrow = IsInsideArrow(pixelUV, _ArrowEdge, _ArrowPosition, _ArrowSize, _ArrowWidth);
+                // Check if inside arrow (using normalized values)
+                float insideArrow = IsInsideArrow(pixelUV, _ArrowEdge, _ArrowPosition, arrowSizeNorm, arrowWidthNorm);
                 
                 // Combine: visible if in rect OR in arrow
                 float visible = max(insideRect, insideArrow);
