@@ -18,6 +18,12 @@ public class IconEffectPreset : ScriptableObject
     [Tooltip("0 = smooth, 8-32 = pixelated bubbles")]
     public float bubblePixelation = 0f;
     
+    [Tooltip("How much lighter bubbles appear on fill (0 = invisible, 0.15 = strong)")]
+    [Range(0, 0.3f)] public float bubbleFillContrast = 0.07f;
+    
+    [Tooltip("Darken multiplier for bubbles on background (1 = invisible, 0.5 = strong)")]
+    [Range(0.5f, 1f)] public float bubbleBgContrast = 0.82f;
+    
     [Header("Bubble Tier Modifiers")]
     [Tooltip("Speed multiplier for Minor tier (smaller changes = slower bubbles)")]
     [Range(0.3f, 1f)] public float bubbleSpeedMinor = 0.5f;

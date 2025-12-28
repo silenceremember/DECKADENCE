@@ -23,6 +23,8 @@ Shader "RoyalLeech/UI/LiquidFill"
         _BubbleDensity ("Bubble Density", Range(0, 1)) = 0.4
         _BubbleSpeed ("Bubble Speed", Range(0.1, 2)) = 0.6
         _BubblePixelation ("Bubble Pixelation (0=smooth)", Float) = 0
+        _BubbleFillContrast ("Bubble Fill Contrast (lighten)", Range(0, 0.5)) = 0.07
+        _BubbleBgContrast ("Bubble Bg Contrast (darken)", Range(0.5, 1)) = 0.82
         _SplashIntensity ("Splash", Range(0, 1)) = 0.0
         
         [Header(Pixelation)]
@@ -129,6 +131,8 @@ Shader "RoyalLeech/UI/LiquidFill"
                 float _BubbleDensity;
                 float _BubbleSpeed;
                 float _BubblePixelation;
+                float _BubbleFillContrast;
+                float _BubbleBgContrast;
                 float _SplashIntensity;
                 float _PixelDensity;
                 
@@ -364,8 +368,8 @@ Shader "RoyalLeech/UI/LiquidFill"
                 float bubblesFilled = getBubblesFilled(pixelUV, time, uv);
                 float bubblesBackground = getBubblesBackground(pixelUV, time, uv);
                 // Filled: lighter bubbles. Background: DARKER bubbles (distinct separation)
-                half3 filledBubbleColor = filled.rgb + 0.15;
-                half3 bgBubbleColor = bgColor * 0.65;
+                half3 filledBubbleColor = filled.rgb + _BubbleFillContrast;
+                half3 bgBubbleColor = bgColor * _BubbleBgContrast;
                 filled.rgb = lerp(filled.rgb, filledBubbleColor, bubblesFilled);
                 background.rgb = lerp(background.rgb, bgBubbleColor, bubblesBackground);
                 

@@ -42,6 +42,8 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     float BubbleDensity => effectPreset != null ? effectPreset.bubbleDensity : 0.4f;
     float BubbleSpeed => effectPreset != null ? effectPreset.bubbleSpeed : 0.6f;
     float BubblePixelation => effectPreset != null ? effectPreset.bubblePixelation : 0f;
+    float BubbleFillContrast => effectPreset != null ? effectPreset.bubbleFillContrast : 0.07f;
+    float BubbleBgContrast => effectPreset != null ? effectPreset.bubbleBgContrast : 0.82f;
     
     // Bubble tier multipliers
     float BubbleSpeedMinor => effectPreset != null ? effectPreset.bubbleSpeedMinor : 0.5f;
@@ -144,6 +146,8 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     private static readonly int BubbleDensityID = Shader.PropertyToID("_BubbleDensity");
     private static readonly int BubbleSpeedID = Shader.PropertyToID("_BubbleSpeed");
     private static readonly int BubblePixelationID = Shader.PropertyToID("_BubblePixelation");
+    private static readonly int BubbleFillContrastID = Shader.PropertyToID("_BubbleFillContrast");
+    private static readonly int BubbleBgContrastID = Shader.PropertyToID("_BubbleBgContrast");
     private static readonly int SplashIntensityID = Shader.PropertyToID("_SplashIntensity");
     private static readonly int PixelDensityID = Shader.PropertyToID("_PixelDensity");
     
@@ -532,6 +536,8 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         _materialInstance.SetFloat(BubbleDensityID, BubbleDensity);
         _materialInstance.SetFloat(BubbleSpeedID, BubbleSpeed * _bubbleSpeedMult);
         _materialInstance.SetFloat(BubblePixelationID, BubblePixelation);
+        _materialInstance.SetFloat(BubbleFillContrastID, BubbleFillContrast);
+        _materialInstance.SetFloat(BubbleBgContrastID, BubbleBgContrast);
         _materialInstance.SetFloat(SplashIntensityID, splashIntensity);
         _materialInstance.SetFloat(PixelDensityID, PixelDensity);
         
