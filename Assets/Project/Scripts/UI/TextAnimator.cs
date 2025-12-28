@@ -135,6 +135,11 @@ public class TextAnimator : MonoBehaviour
     private float AppearStagger => preset != null ? preset.appearStagger : 0.03f;
     private float EffectSmoothSpeed => preset != null ? preset.effectSmoothSpeed : 15f;
     private float StateTransitionDuration => preset != null ? preset.stateTransitionDuration : 0.15f;
+    private bool DynamicTextMode => preset != null && preset.dynamicTextMode;
+    
+    // Dynamic text mode fields
+    private int _displayedCharCount = 0;     // Currently displayed character count in TMP
+    private bool _needsMeshCache = false;    // Flag to cache mesh in LateUpdate
     
     // Current disappear mode for active disappearing
     private DisappearMode _currentDisappearMode = DisappearMode.Normal;
@@ -233,6 +238,13 @@ public class TextAnimator : MonoBehaviour
 
     void LateUpdate()
     {
+        // В динамическом режиме кешируем mesh в LateUpdate, когда TMP уже отрендерил текст
+        if (_needsMeshCache && DynamicTextMode)
+        {
+            CacheMeshInfoDeferred();
+            _needsMeshCache = false;
+        }
+        
         if (EnableEffects && _letterData != null && _letterData.Length > 0)
         {
             ApplyMeshChanges();
@@ -247,8 +259,11 @@ public class TextAnimator : MonoBehaviour
         // Текст очистится только через ClearExplosionText()
         if (_isExploding || _explosionCompleteWaitingForClear)
         {
+            Debug.Log($"[TextAnimator.SetText] BLOCKED - text='{text}', isExploding={_isExploding}, waitingForClear={_explosionCompleteWaitingForClear}");
             return;
         }
+        
+        Debug.Log($"[TextAnimator.SetText] CALLED - text='{text}', DynamicTextMode={DynamicTextMode}, Mode={Mode}");
         
         // Сбрасываем флаги при установке нового текста
         _isFastDisappearing = false;
@@ -263,31 +278,45 @@ public class TextAnimator : MonoBehaviour
             _letterData[i] = LetterData.Hidden;
         }
         
-        _textComponent.text = text;
-        _textComponent.maxVisibleCharacters = charCount;
-        _textComponent.ForceMeshUpdate();
-        
-        CacheMeshInfo();
-        
-        // CRITICAL: Сразу применяем alpha=0 ко всему тексту, чтобы избежать 1-кадрового "вспыхивания"
-        // когда Shadow считывает mesh до того как ApplyMeshChanges() отработает
-        if (charCount > 0)
+        // DYNAMIC TEXT MODE: оставляем TMP пустым, текст будет добавляться посимвольно из _textToAnimate
+        if (DynamicTextMode && Mode == AnimationMode.DistanceBased)
         {
-            TMP_TextInfo textInfo = _textComponent.textInfo;
-            if (textInfo != null)
+            Debug.Log($"[TextAnimator.SetText] DYNAMIC MODE - TMP text cleared, _displayedCharCount=0, waiting for Update to add chars");
+            _displayedCharCount = 0;
+            _textComponent.text = "";
+            _textComponent.ForceMeshUpdate();
+            // Не кешируем mesh - он пустой, будем кешировать при добавлении букв
+        }
+        else
+        {
+            // STANDARD MODE: ставим весь текст сразу
+            _displayedCharCount = charCount;
+            _textComponent.text = text;
+            _textComponent.maxVisibleCharacters = charCount;
+            _textComponent.ForceMeshUpdate();
+            
+            CacheMeshInfo();
+            
+            // CRITICAL: Сразу применяем alpha=0 ко всему тексту, чтобы избежать 1-кадрового "вспыхивания"
+            // когда Shadow считывает mesh до того как ApplyMeshChanges() отработает
+            if (charCount > 0)
             {
-                for (int m = 0; m < textInfo.meshInfo.Length; m++)
+                TMP_TextInfo textInfo = _textComponent.textInfo;
+                if (textInfo != null)
                 {
-                    Color32[] colors = textInfo.meshInfo[m].colors32;
-                    if (colors != null)
+                    for (int m = 0; m < textInfo.meshInfo.Length; m++)
                     {
-                        for (int c = 0; c < colors.Length; c++)
+                        Color32[] colors = textInfo.meshInfo[m].colors32;
+                        if (colors != null)
                         {
-                            colors[c].a = 0;
+                            for (int c = 0; c < colors.Length; c++)
+                            {
+                                colors[c].a = 0;
+                            }
                         }
                     }
+                    _textComponent.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
                 }
-                _textComponent.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
             }
         }
         
@@ -326,7 +355,14 @@ public class TextAnimator : MonoBehaviour
     public void SetTargetCharacterCount(int targetCount)
     {
         if (Mode != AnimationMode.DistanceBased) return;
+        int oldTarget = _targetCharCount;
         _targetCharCount = Mathf.Clamp(targetCount, 0, _textToAnimate?.Length ?? 0);
+        
+        // Debug: log when target changes
+        if (DynamicTextMode && oldTarget != _targetCharCount)
+        {
+            Debug.Log($"[TextAnimator.SetTargetCharacterCount] CHANGED: {oldTarget} -> {_targetCharCount}, _textToAnimate='{_textToAnimate}'");
+        }
     }
 
     public void ResetProgress()
@@ -334,8 +370,11 @@ public class TextAnimator : MonoBehaviour
         // Не сбрасываем во время взрыва или ожидания очистки - анимация должна доиграть
         if (_isExploding || _explosionCompleteWaitingForClear)
         {
+            Debug.Log($"[TextAnimator.ResetProgress] BLOCKED - isExploding={_isExploding}, waitingForClear={_explosionCompleteWaitingForClear}");
             return;
         }
+        
+        Debug.Log($"[TextAnimator.ResetProgress] CALLED - DynamicTextMode={DynamicTextMode}, _textToAnimate='{_textToAnimate}', _displayedCharCount={_displayedCharCount}, _targetCharCount={_targetCharCount}");
         
         _currentVisibleCharsFloat = 0f;
         _targetCharCount = 0;
@@ -350,7 +389,18 @@ public class TextAnimator : MonoBehaviour
             }
         }
         
-        if (_textComponent != null)
+        // DYNAMIC TEXT MODE: очищаем TMP и сбрасываем счётчик
+        if (DynamicTextMode && Mode == AnimationMode.DistanceBased)
+        {
+            Debug.Log($"[TextAnimator.ResetProgress] Dynamic mode - clearing TMP text, _displayedCharCount: {_displayedCharCount} -> 0");
+            _displayedCharCount = 0;
+            if (_textComponent != null)
+            {
+                _textComponent.text = "";
+                _textComponent.ForceMeshUpdate();
+            }
+        }
+        else if (_textComponent != null)
         {
             _textComponent.maxVisibleCharacters = 0;
         }
@@ -811,6 +861,7 @@ public class TextAnimator : MonoBehaviour
                     // Обычный disappear (Return/Selected без взрыва) - очищаем сразу
                     _textToAnimate = "";
                     _textComponent.text = "";
+                    _displayedCharCount = 0;
                 }
             }
             return;
@@ -826,44 +877,125 @@ public class TextAnimator : MonoBehaviour
         
         int visibleChars = Mathf.Clamp(Mathf.FloorToInt(_currentVisibleCharsFloat), 0, totalChars);
         
-        for (int i = 0; i < _letterData.Length; i++)
+        // === DYNAMIC TEXT MODE ===
+        // В динамическом режиме используем _textToAnimate для источника текста
+        if (DynamicTextMode)
         {
-            bool isDisappearing = IsDisappearingState(_letterData[i].state);
-            
-            if (i < visibleChars)
+            // Логируем каждые N кадров чтобы не спамить
+            if (Time.frameCount % 30 == 0)
             {
-                if (_letterData[i].state == LetterState.Hidden || isDisappearing)
+                Debug.Log($"[TextAnimator.Update] DYNAMIC - visibleChars={visibleChars}, _displayedCharCount={_displayedCharCount}, _targetCharCount={_targetCharCount}, _textToAnimate='{_textToAnimate}', TMP.text='{_textComponent.text}'");
+            }
+            
+            // Добавляем или убираем буквы в TMP по одной
+            if (visibleChars != _displayedCharCount)
+            {
+                Debug.Log($"[TextAnimator.Update] DYNAMIC - CHANGE DETECTED: visibleChars={visibleChars} vs _displayedCharCount={_displayedCharCount}");
+                
+                if (visibleChars > _displayedCharCount)
                 {
-                    _letterData[i].state = LetterState.Appearing;
-                    _letterData[i].stateTime = 0f;
+                    // ДОБАВЛЯЕМ буквы
+                    string newText = _textToAnimate.Substring(0, visibleChars);
+                    Debug.Log($"[TextAnimator.Update] DYNAMIC - ADDING chars: TMP.text '{_textComponent.text}' -> '{newText}'");
+                    _textComponent.text = newText;
+                    _textComponent.ForceMeshUpdate();
                     
-                    if (i > _lastVisibleChars - 1)
+                    // Инициализируем новые буквы как Appearing
+                    // ВАЖНО: НЕ сбрасываем transitionProgress - он должен остаться 1 (как в стандартном режиме)
+                    // чтобы буква сразу использовала result от CalculateAppear, а не crossfade от нулей
+                    for (int i = _displayedCharCount; i < visibleChars && i < _letterData.Length; i++)
                     {
+                        _letterData[i].state = LetterState.Appearing;
+                        _letterData[i].stateTime = 0f;
+                        // transitionProgress остаётся 1f от Hidden - это правильно!
+                        // currentScale/Alpha остаются 0f от Hidden - это тоже правильно,
+                        // они будут интерполироваться к result через EffectSmoothSpeed
+                        
                         OnCharacterShown?.Invoke(_textToAnimate[i]);
+                    }
+                    
+                    _displayedCharCount = visibleChars;
+                    _needsMeshCache = true;  // Кешируем в LateUpdate когда TMP отрендерит
+                }
+                else if (visibleChars < _displayedCharCount)
+                {
+                    // УБИРАЕМ буквы - запускаем disappear для убираемых
+                    for (int i = visibleChars; i < _displayedCharCount && i < _letterData.Length; i++)
+                    {
+                        if (_letterData[i].state != LetterState.Hidden && !IsDisappearingState(_letterData[i].state))
+                        {
+                            _letterData[i].prevScale = _letterData[i].currentScale;
+                            _letterData[i].prevAlpha = _letterData[i].currentAlpha;
+                            _letterData[i].prevOffset = _letterData[i].currentOffset;
+                            _letterData[i].prevRotation = _letterData[i].currentRotation;
+                            _letterData[i].previousState = _letterData[i].state;
+                            _letterData[i].transitionProgress = 0f;
+                            _letterData[i].state = LetterState.DisappearingNormal;
+                            _letterData[i].stateTime = 0f;
+                        }
+                    }
+                    
+                    // Обновляем TMP текст
+                    string newText = visibleChars > 0 ? _textToAnimate.Substring(0, visibleChars) : "";
+                    _textComponent.text = newText;
+                    _textComponent.ForceMeshUpdate();
+                    _displayedCharCount = visibleChars;
+                    _needsMeshCache = true;  // Кешируем в LateUpdate когда TMP отрендерит
+                }
+            }
+            
+            // Обновляем состояния существующих букв
+            for (int i = 0; i < _displayedCharCount && i < _letterData.Length; i++)
+            {
+                bool isDisappearing = IsDisappearingState(_letterData[i].state);
+                
+                // Переход из Appearing в Idle/Active происходит в UpdateLetterEffects
+                // Здесь только отслеживаем disappear если нужно
+            }
+        }
+        else
+        {
+            // === STANDARD MODE (original behavior) ===
+            for (int i = 0; i < _letterData.Length; i++)
+            {
+                bool isDisappearing = IsDisappearingState(_letterData[i].state);
+                
+                if (i < visibleChars)
+                {
+                    if (_letterData[i].state == LetterState.Hidden || isDisappearing)
+                    {
+                        _letterData[i].state = LetterState.Appearing;
+                        _letterData[i].stateTime = 0f;
+                        
+                        if (i > _lastVisibleChars - 1)
+                        {
+                            OnCharacterShown?.Invoke(_textToAnimate[i]);
+                        }
+                    }
+                }
+                else
+                {
+                    if (_letterData[i].state != LetterState.Hidden && !isDisappearing)
+                    {
+                        // Сохраняем текущие значения для кроссфейда
+                        _letterData[i].prevScale = _letterData[i].currentScale;
+                        _letterData[i].prevAlpha = _letterData[i].currentAlpha;
+                        _letterData[i].prevOffset = _letterData[i].currentOffset;
+                        _letterData[i].prevRotation = _letterData[i].currentRotation;
+                        _letterData[i].previousState = _letterData[i].state;
+                        _letterData[i].transitionProgress = 0f;
+                        
+                        // При обычном свайпе используем Normal режим
+                        _letterData[i].state = LetterState.DisappearingNormal;
+                        _letterData[i].stateTime = 0f;
                     }
                 }
             }
-            else
-            {
-                if (_letterData[i].state != LetterState.Hidden && !isDisappearing)
-                {
-                    // Сохраняем текущие значения для кроссфейда
-                    _letterData[i].prevScale = _letterData[i].currentScale;
-                    _letterData[i].prevAlpha = _letterData[i].currentAlpha;
-                    _letterData[i].prevOffset = _letterData[i].currentOffset;
-                    _letterData[i].prevRotation = _letterData[i].currentRotation;
-                    _letterData[i].previousState = _letterData[i].state;
-                    _letterData[i].transitionProgress = 0f;
-                    
-                    // При обычном свайпе используем Normal режим
-                    _letterData[i].state = LetterState.DisappearingNormal;
-                    _letterData[i].stateTime = 0f;
-                }
-            }
+            
+            _textComponent.maxVisibleCharacters = totalChars;
         }
         
         _lastVisibleChars = visibleChars;
-        _textComponent.maxVisibleCharacters = totalChars;
         
         if (visibleChars >= totalChars && _targetCharCount >= totalChars)
         {
@@ -887,8 +1019,139 @@ public class TextAnimator : MonoBehaviour
         _cachedMeshInfo = new TMP_MeshInfo[textInfo.meshInfo.Length];
         for (int i = 0; i < textInfo.meshInfo.Length; i++)
         {
-            _cachedMeshInfo[i].vertices = (Vector3[])textInfo.meshInfo[i].vertices.Clone();
-            _cachedMeshInfo[i].colors32 = (Color32[])textInfo.meshInfo[i].colors32.Clone();
+            // Пробуем разные источники вершин
+            Vector3[] verts = null;
+            string source = "none";
+            
+            // Вариант 1: textInfo.meshInfo[i].vertices (рабочий буфер TMP)
+            if (textInfo.meshInfo[i].vertices != null && textInfo.meshInfo[i].vertices.Length > 0)
+            {
+                if (textInfo.characterCount > 0)
+                {
+                    var charInfo = textInfo.characterInfo[0];
+                    int idx = charInfo.vertexIndex;
+                    if (idx < textInfo.meshInfo[i].vertices.Length && textInfo.meshInfo[i].vertices[idx] != Vector3.zero)
+                    {
+                        verts = textInfo.meshInfo[i].vertices;
+                        source = "textInfo.vertices";
+                    }
+                }
+            }
+            
+            // Вариант 2: mesh.vertices
+            if (verts == null && textInfo.meshInfo[i].mesh != null)
+            {
+                var meshVerts = textInfo.meshInfo[i].mesh.vertices;
+                if (meshVerts != null && meshVerts.Length > 0 && meshVerts[0] != Vector3.zero)
+                {
+                    verts = meshVerts;
+                    source = "mesh.vertices";
+                }
+            }
+            
+            // Вариант 3: главный меш компонента
+            if (verts == null && _textComponent.mesh != null)
+            {
+                var mainMeshVerts = _textComponent.mesh.vertices;
+                if (mainMeshVerts != null && mainMeshVerts.Length > 0 && mainMeshVerts[0] != Vector3.zero)
+                {
+                    verts = mainMeshVerts;
+                    source = "mainMesh.vertices";
+                }
+            }
+            
+            // Fallback
+            if (verts == null)
+            {
+                verts = textInfo.meshInfo[i].vertices ?? new Vector3[0];
+                source = "fallback(zeros)";
+            }
+            
+            _cachedMeshInfo[i].vertices = (Vector3[])verts.Clone();
+            _cachedMeshInfo[i].colors32 = textInfo.meshInfo[i].colors32 != null 
+                ? (Color32[])textInfo.meshInfo[i].colors32.Clone() 
+                : new Color32[0];
+                
+            // Debug
+            if (DynamicTextMode && i == 0)
+            {
+                Vector3 v0 = verts.Length > 0 ? verts[0] : Vector3.zero;
+                Debug.Log($"[TextAnimator.CacheMeshInfo] source={source}, text='{_textComponent.text}', v0={v0}");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Кеширование вершин в LateUpdate - строим из TMP_CharacterInfo
+    /// </summary>
+    private void CacheMeshInfoDeferred()
+    {
+        if (_textComponent == null) return;
+        
+        TMP_TextInfo textInfo = _textComponent.textInfo;
+        if (textInfo?.meshInfo == null || textInfo.characterCount == 0) return;
+        
+        // Инициализируем кеш - ВАЖНО: размер массива должен совпадать с meshInfo.vertices
+        _cachedMeshInfo = new TMP_MeshInfo[textInfo.meshInfo.Length];
+        for (int i = 0; i < textInfo.meshInfo.Length; i++)
+        {
+            // Используем реальный размер массива вершин из TMP
+            int vertCount = textInfo.meshInfo[i].vertices?.Length ?? 0;
+            if (vertCount == 0) vertCount = textInfo.characterCount * 4 + 4;
+            _cachedMeshInfo[i].vertices = new Vector3[vertCount];
+            _cachedMeshInfo[i].colors32 = new Color32[vertCount];
+        }
+        
+        // Строим вершины из characterInfo - эти данные ВСЕГДА доступны после ForceMeshUpdate
+        int visibleWritten = 0;
+        for (int i = 0; i < textInfo.characterCount; i++)
+        {
+            var charInfo = textInfo.characterInfo[i];
+            
+            // Debug: показать isVisible для первого символа
+            if (i == 0)
+            {
+                Debug.Log($"[CacheMeshInfoDeferred] char[0]='{charInfo.character}', isVisible={charInfo.isVisible}, bottomLeft={charInfo.bottomLeft}");
+            }
+            
+            // Пишем вершины даже для невидимых символов (пробелов) - главное что они есть
+            // На самом деле isVisible=false только для пробелов, но их и не нужно рендерить
+            
+            int matIdx = charInfo.materialReferenceIndex;
+            int vertIdx = charInfo.vertexIndex;
+            
+            if (matIdx >= _cachedMeshInfo.Length) continue;
+            if (vertIdx + 3 > _cachedMeshInfo[matIdx].vertices.Length) continue; // Было >= , исправил на >
+            
+            // charInfo имеет позиции углов символа!
+            // bottomLeft, topLeft, topRight, bottomRight (в порядке вершин TMP)
+            _cachedMeshInfo[matIdx].vertices[vertIdx + 0] = charInfo.bottomLeft;
+            _cachedMeshInfo[matIdx].vertices[vertIdx + 1] = charInfo.topLeft;
+            _cachedMeshInfo[matIdx].vertices[vertIdx + 2] = charInfo.topRight;
+            _cachedMeshInfo[matIdx].vertices[vertIdx + 3] = charInfo.bottomRight;
+            visibleWritten++;
+            
+            // Цвета берём из meshInfo если есть
+            if (textInfo.meshInfo[matIdx].colors32 != null && vertIdx + 3 < textInfo.meshInfo[matIdx].colors32.Length)
+            {
+                _cachedMeshInfo[matIdx].colors32[vertIdx + 0] = textInfo.meshInfo[matIdx].colors32[vertIdx + 0];
+                _cachedMeshInfo[matIdx].colors32[vertIdx + 1] = textInfo.meshInfo[matIdx].colors32[vertIdx + 1];
+                _cachedMeshInfo[matIdx].colors32[vertIdx + 2] = textInfo.meshInfo[matIdx].colors32[vertIdx + 2];
+                _cachedMeshInfo[matIdx].colors32[vertIdx + 3] = textInfo.meshInfo[matIdx].colors32[vertIdx + 3];
+            }
+        }
+        
+        Debug.Log($"[CacheMeshInfoDeferred] Written {visibleWritten} character vertices");
+        
+        // Debug
+        if (textInfo.characterCount > 0)
+        {
+            var charInfo = textInfo.characterInfo[0];
+            int matIdx = charInfo.materialReferenceIndex;
+            int vertIdx = charInfo.vertexIndex;
+            int cacheSize = matIdx < _cachedMeshInfo.Length ? _cachedMeshInfo[matIdx].vertices?.Length ?? 0 : 0;
+            Vector3 cachedV0 = (cacheSize > vertIdx) ? _cachedMeshInfo[matIdx].vertices[vertIdx] : Vector3.zero;
+            Debug.Log($"[TextAnimator.CacheMeshInfoDeferred] text='{_textComponent.text}', charCount={textInfo.characterCount}, vertIdx={vertIdx}, cacheSize={cacheSize}, cachedV0={cachedV0}");
         }
     }
 
@@ -1105,17 +1368,34 @@ public class TextAnimator : MonoBehaviour
 
     private void ApplyMeshChanges()
     {
-        if (_textComponent == null || _letterData == null || _cachedMeshInfo == null) return;
+        if (_textComponent == null || _letterData == null || _cachedMeshInfo == null)
+        {
+            return;
+        }
         
         _textComponent.ForceMeshUpdate();
         TMP_TextInfo textInfo = _textComponent.textInfo;
         
-        if (textInfo == null || textInfo.characterCount == 0) return;
+        if (textInfo == null || textInfo.characterCount == 0)
+        {
+            if (DynamicTextMode && Time.frameCount % 30 == 0)
+            {
+                Debug.Log($"[TextAnimator.ApplyMeshChanges] NO CHARS - textInfo={textInfo != null}, charCount={textInfo?.characterCount ?? 0}");
+            }
+            return;
+        }
+        
+        // Логируем состояние букв для первого символа
+        if (DynamicTextMode && Time.frameCount % 60 == 0 && _letterData.Length > 0)
+        {
+            var letter = _letterData[0];
+            Debug.Log($"[TextAnimator.ApplyMeshChanges] LETTER[0]: state={letter.state}, alpha={letter.currentAlpha:F2}, scale={letter.currentScale:F2}, transitionProgress={letter.transitionProgress:F2}");
+        }
         
         for (int i = 0; i < textInfo.characterCount && i < _letterData.Length; i++)
         {
             TMP_CharacterInfo charInfo = textInfo.characterInfo[i];
-            if (!charInfo.isVisible) continue;
+            // НЕ проверяем isVisible - в dynamic mode он часто False, но у нас есть данные из charInfo
             
             int materialIndex = charInfo.materialReferenceIndex;
             int vertexIndex = charInfo.vertexIndex;
@@ -1154,6 +1434,15 @@ public class TextAnimator : MonoBehaviour
             }
             
             byte alpha = (byte)(letter.currentAlpha * _globalAlpha * 255f);
+            
+            // Debug: log actual alpha byte and vertex positions for first char
+            if (DynamicTextMode && i == 0 && Time.frameCount % 60 == 0)
+            {
+                var srcV0 = sourceVertices[vertexIndex];
+                var dstV0 = destVertices[vertexIndex];
+                Debug.Log($"[TextAnimator.ApplyMeshChanges] CHAR[0]: srcV0={srcV0}, dstV0={dstV0}, center={center}, scale={scale:F2}, alpha byte={alpha}");
+            }
+            
             for (int j = 0; j < 4; j++)
             {
                 Color32 c = destColors[vertexIndex + j];
@@ -1162,12 +1451,15 @@ public class TextAnimator : MonoBehaviour
             }
         }
         
+        // Применяем изменения к mesh
         for (int i = 0; i < textInfo.meshInfo.Length; i++)
         {
             textInfo.meshInfo[i].mesh.vertices = textInfo.meshInfo[i].vertices;
             textInfo.meshInfo[i].mesh.colors32 = textInfo.meshInfo[i].colors32;
-            _textComponent.UpdateGeometry(textInfo.meshInfo[i].mesh, i);
         }
+        
+        // Используем UpdateVertexData вместо UpdateGeometry
+        _textComponent.UpdateVertexData(TMP_VertexDataUpdateFlags.Vertices | TMP_VertexDataUpdateFlags.Colors32);
     }
 
     #endregion

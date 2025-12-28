@@ -41,6 +41,9 @@ public class TextAnimatorPreset : ScriptableObject
     [Tooltip("Скорость интерполяции символов")]
     public float interpolationSpeed = 15f;
     
+    [Tooltip("Динамически добавлять буквы в TMP (true) или показывать из предзаписанного текста (false). При true TMP пересчитывает layout каждый раз, центрируя текст.")]
+    public bool dynamicTextMode = false;
+    
     [Header("=== TIMING ===")]
     [Tooltip("Длительность появления одной буквы")]
     [Range(0.05f, 1f)]

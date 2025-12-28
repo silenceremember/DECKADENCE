@@ -18,6 +18,7 @@ MonoBehaviour:
   delay: 0
   startOnEnable: 0
   interpolationSpeed: 30
+  dynamicTextMode: 1
   appearDuration: 0.15
   appearStagger: 0.03
   effectSmoothSpeed: 12
