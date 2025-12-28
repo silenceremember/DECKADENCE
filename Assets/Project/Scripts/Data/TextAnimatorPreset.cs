@@ -1,5 +1,5 @@
 // TextAnimatorPreset.cs
-// Royal Leech Ultimate Text Animation Constructor
+// DECKADENCE Ultimate Text Animation Constructor
 // ScriptableObject с модульными эффектами и ВСЕМИ настройками
 
 using UnityEngine;

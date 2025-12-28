@@ -1,4 +1,4 @@
-Shader "RoyalLeech/UI/BoilingText"
+Shader "DECKADENCE/UI/BoilingText"
 {
     Properties
     {

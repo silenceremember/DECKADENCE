@@ -1,4 +1,4 @@
-# 🎴 Card Structure — Royal Leech
+# 🎴 Card Structure — DECKADENCE
 
 ## Architecture
 

@@ -1,4 +1,4 @@
-Shader "RoyalLeech/UI/CardShadow"
+Shader "DECKADENCE/UI/CardShadow"
 {
     Properties
     {

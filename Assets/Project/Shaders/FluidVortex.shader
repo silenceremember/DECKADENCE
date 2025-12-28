@@ -1,4 +1,4 @@
-Shader "RoyalLeech/Background/FluidVortex"
+Shader "DECKADENCE/Background/FluidVortex"
 {
     Properties
     {

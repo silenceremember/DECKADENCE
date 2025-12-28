@@ -483,7 +483,7 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
     {
         if (_graphic == null) return;
         
-        if (_graphic.material != null && _graphic.material.shader.name == "RoyalLeech/UI/LiquidFill")
+        if (_graphic.material != null && _graphic.material.shader.name == "DECKADENCE/UI/LiquidFill")
         {
             _materialInstance = new Material(_graphic.material);
             _graphic.material = _materialInstance;
@@ -495,7 +495,7 @@ public class LiquidFillIcon : MonoBehaviour, IMeshModifier
         if (_materialInstance == null)
         {
             if (_graphic != null && _graphic.material != null && 
-                _graphic.material.shader.name == "RoyalLeech/UI/LiquidFill")
+                _graphic.material.shader.name == "DECKADENCE/UI/LiquidFill")
             {
                 CreateMaterialInstance();
             }

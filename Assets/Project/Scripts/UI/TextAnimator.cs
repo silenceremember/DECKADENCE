@@ -1,5 +1,5 @@
 // TextAnimator.cs
-// Royal Leech Ultimate Text Animation Constructor
+// DECKADENCE Ultimate Text Animation Constructor
 // Минимальный компонент - только ссылка на preset + runtime state
 
 using UnityEngine;

@@ -1,4 +1,4 @@
-# Royal Leech — Project Guide
+# DECKADENCE — Project Guide
 
 ## Project Structure
 
@@ -24,7 +24,7 @@ Assets/Project/
 | Type | Convention | Example |
 |------|------------|---------|
 | Scripts | PascalCase, descriptive | `LiquidFillIcon.cs` |
-| Shaders | Path: `RoyalLeech/Category/Name` | `RoyalLeech/UI/LiquidFill` |
+| Shaders | Path: `DECKADENCE/Category/Name` | `DECKADENCE/UI/LiquidFill` |
 | Materials | Match shader name | `LiquidFill.mat` |
 | Sprites | PascalCase, no suffixes | `Clubs.png` |
 | Presets | Descriptive, no "Preset" suffix | `ClubsColor.asset` |

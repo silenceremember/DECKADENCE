@@ -1,5 +1,5 @@
 // LetterEffect.cs
-// Royal Leech Modular Text Effects
+// DECKADENCE Modular Text Effects
 // Модульные эффекты для per-letter анимации
 
 using UnityEngine;

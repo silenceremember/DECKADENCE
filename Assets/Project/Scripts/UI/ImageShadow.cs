@@ -76,7 +76,7 @@ public class ImageShadow : MonoBehaviour, IMeshModifier
     {
         if (_graphic == null) return;
         
-        if (_graphic.material != null && _graphic.material.shader.name == "RoyalLeech/UI/ImageShadow")
+        if (_graphic.material != null && _graphic.material.shader.name == "DECKADENCE/UI/ImageShadow")
         {
             _materialInstance = new Material(_graphic.material);
             _graphic.material = _materialInstance;

@@ -81,7 +81,7 @@ public class CardShadow : MonoBehaviour, IMeshModifier
     {
         if (_graphic == null) return;
         
-        if (_graphic.material != null && _graphic.material.shader.name == "RoyalLeech/UI/CardShadow")
+        if (_graphic.material != null && _graphic.material.shader.name == "DECKADENCE/UI/CardShadow")
         {
             _materialInstance = new Material(_graphic.material);
             _graphic.material = _materialInstance;

@@ -1,4 +1,4 @@
-Shader "RoyalLeech/UI/ImageShadow"
+Shader "DECKADENCE/UI/ImageShadow"
 {
     Properties
     {

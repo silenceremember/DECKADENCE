@@ -1,4 +1,4 @@
-Shader "RoyalLeech/UI/LiquidFill"
+Shader "DECKADENCE/UI/LiquidFill"
 {
     Properties
     {
