@@ -10,22 +10,14 @@ using System.Collections.Generic;
 [ExecuteAlways]
 public class DialogShadow : MonoBehaviour, IMeshModifier
 {
-    public enum ArrowEdge
-    {
-        Bottom = 0,
-        Top = 1,
-        Left = 2,
-        Right = 3
-    }
-    
     [Header("Shadow Settings")]
     public Color shadowColor = new Color(0, 0, 0, 0.5f);
     public float intensity = 15f;
     
     [Header("Arrow Settings")]
-    public ArrowEdge arrowEdge = ArrowEdge.Bottom;
     [Range(0f, 1f)]
-    public float arrowPosition = 0.5f;
+    [Tooltip("Position on perimeter: 0=center bottom, 0.25=center right, 0.5=center top, 0.75=center left")]
+    public float arrowPerimeter = 0f;  // Default: center of bottom edge
     [Tooltip("Arrow size in pixels (scale-independent)")]
     public float arrowSizePixels = 30f;
     [Tooltip("Arrow width in pixels (scale-independent)")]
@@ -45,8 +37,7 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     private Camera _canvasCamera;
     
     private static readonly int ShadowColorID = Shader.PropertyToID("_ShadowColor");
-    private static readonly int ArrowEdgeID = Shader.PropertyToID("_ArrowEdge");
-    private static readonly int ArrowPositionID = Shader.PropertyToID("_ArrowPosition");
+    private static readonly int ArrowPerimeterID = Shader.PropertyToID("_ArrowPerimeter");
     private static readonly int ArrowSizePixelsID = Shader.PropertyToID("_ArrowSizePixels");
     private static readonly int ArrowWidthPixelsID = Shader.PropertyToID("_ArrowWidthPixels");
     private static readonly int RectSizeID = Shader.PropertyToID("_RectSize");
@@ -99,8 +90,7 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         }
     }
     
-    private ArrowEdge _lastArrowEdge;
-    private float _lastArrowPosition;
+    private float _lastArrowPerimeter;
     private float _lastArrowSize;
     private Vector2 _lastRectSize;
     
@@ -131,7 +121,6 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         // Get bottom-left corner in screen pixels
         Vector3[] corners = new Vector3[4];
         _rectTransform.GetWorldCorners(corners);
-        // corners[0] = bottom-left
         Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(_canvasCamera, corners[0]);
         _materialInstance.SetVector(RectScreenPosID, new Vector4(screenPos.x, screenPos.y, 0, 0));
         
@@ -153,21 +142,18 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
             UpdateArrowTowardsTarget();
         }
         
-        // Update arrow properties - pass pixel values directly (shader works in pixel space)
-        _materialInstance.SetFloat(ArrowEdgeID, (float)arrowEdge);
-        _materialInstance.SetFloat(ArrowPositionID, arrowPosition);
+        // Update arrow properties
+        _materialInstance.SetFloat(ArrowPerimeterID, arrowPerimeter);
         _materialInstance.SetFloat(ArrowSizePixelsID, arrowSizePixels);
         _materialInstance.SetFloat(ArrowWidthPixelsID, arrowWidthPixels);
         
         // Check if arrow changed (need to rebuild mesh for arrow extension)
-        bool arrowChanged = arrowEdge != _lastArrowEdge || 
-                           Mathf.Abs(arrowPosition - _lastArrowPosition) > 0.01f ||
+        bool arrowChanged = Mathf.Abs(arrowPerimeter - _lastArrowPerimeter) > 0.01f ||
                            Mathf.Abs(arrowSizePixels - _lastArrowSize) > 0.1f;
         
         if (arrowChanged)
         {
-            _lastArrowEdge = arrowEdge;
-            _lastArrowPosition = arrowPosition;
+            _lastArrowPerimeter = arrowPerimeter;
             _lastArrowSize = arrowSizePixels;
             if (_graphic != null)
                 _graphic.SetVerticesDirty();
@@ -201,28 +187,40 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         
         float maxDist = Mathf.Max(distToTop, distToBottom, distToLeft, distToRight);
         
+        // Calculate perimeter position based on edge and position
+        // New scheme: 0=center bottom, 0.25=center right, 0.5=center top, 0.75=center left
+        // Each edge spans ±0.125 around its center
+        float posOnEdge;
+        
         if (maxDist == distToBottom)
         {
-            arrowEdge = ArrowEdge.Bottom;
-            arrowPosition = Mathf.InverseLerp(rect.xMin, rect.xMax, localTarget.x);
+            posOnEdge = Mathf.InverseLerp(rect.xMin, rect.xMax, localTarget.x);
+            posOnEdge = Mathf.Clamp(posOnEdge, 0.1f, 0.9f);
+            // Bottom: -0.125 to 0.125 (wrap around), center at 0
+            arrowPerimeter = (posOnEdge - 0.5f) * 0.25f;  // -0.125 to 0.125
+            if (arrowPerimeter < 0) arrowPerimeter += 1f;  // Wrap negative values
+        }
+        else if (maxDist == distToRight)
+        {
+            posOnEdge = Mathf.InverseLerp(rect.yMin, rect.yMax, localTarget.y);
+            posOnEdge = Mathf.Clamp(posOnEdge, 0.1f, 0.9f);
+            // Right: 0.125 to 0.375, center at 0.25
+            arrowPerimeter = 0.25f + (posOnEdge - 0.5f) * 0.25f;
         }
         else if (maxDist == distToTop)
         {
-            arrowEdge = ArrowEdge.Top;
-            arrowPosition = Mathf.InverseLerp(rect.xMin, rect.xMax, localTarget.x);
+            posOnEdge = Mathf.InverseLerp(rect.xMin, rect.xMax, localTarget.x);
+            posOnEdge = Mathf.Clamp(posOnEdge, 0.1f, 0.9f);
+            // Top: 0.375 to 0.625, center at 0.5 (reversed direction)
+            arrowPerimeter = 0.5f + (0.5f - posOnEdge) * 0.25f;
         }
-        else if (maxDist == distToLeft)
+        else // distToLeft
         {
-            arrowEdge = ArrowEdge.Left;
-            arrowPosition = Mathf.InverseLerp(rect.yMin, rect.yMax, localTarget.y);
+            posOnEdge = Mathf.InverseLerp(rect.yMin, rect.yMax, localTarget.y);
+            posOnEdge = Mathf.Clamp(posOnEdge, 0.1f, 0.9f);
+            // Left: 0.625 to 0.875, center at 0.75 (reversed direction)
+            arrowPerimeter = 0.75f + (0.5f - posOnEdge) * 0.25f;
         }
-        else
-        {
-            arrowEdge = ArrowEdge.Right;
-            arrowPosition = Mathf.InverseLerp(rect.yMin, rect.yMax, localTarget.y);
-        }
-        
-        arrowPosition = Mathf.Clamp(arrowPosition, 0.1f, 0.9f);
     }
     
     Vector2 CalculateShadowDirection()
@@ -269,14 +267,15 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         
         Rect rect = _rectTransform.rect;
         
-        // Calculate arrow extension in local units (use pixel value directly)
+        // Arrow extension in local units
         float arrowExtension = arrowSizePixels;
         
-        // Calculate expanded bounds based on arrow edge
-        float expandTop = (arrowEdge == ArrowEdge.Top) ? arrowExtension : 0;
-        float expandBottom = (arrowEdge == ArrowEdge.Bottom) ? arrowExtension : 0;
-        float expandLeft = (arrowEdge == ArrowEdge.Left) ? arrowExtension : 0;
-        float expandRight = (arrowEdge == ArrowEdge.Right) ? arrowExtension : 0;
+        // Expand mesh in ALL directions so arrow can be on any edge
+        // This ensures the quad is large enough for the arrow wherever it is
+        float expandTop = arrowExtension;
+        float expandBottom = arrowExtension;
+        float expandLeft = arrowExtension;
+        float expandRight = arrowExtension;
         
         // Calculate expanded rect
         float left = rect.xMin - expandLeft;
@@ -373,9 +372,7 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         if (_materialInstance != null)
         {
             _materialInstance.SetColor(ShadowColorID, shadowColor);
-            _materialInstance.SetFloat(ArrowEdgeID, (float)arrowEdge);
-            _materialInstance.SetFloat(ArrowPositionID, arrowPosition);
-            // OnValidate can't easily convert pixels to normalized, just trigger rebuild
+            _materialInstance.SetFloat(ArrowPerimeterID, arrowPerimeter);
         }
     }
 }

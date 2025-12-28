@@ -9,8 +9,7 @@ Shader "RoyalLeech/UI/DialogShadow"
         [HideInInspector] _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.5)
         
         [Header(Arrow Settings)]
-        _ArrowEdge ("Arrow Edge (0=Bottom, 1=Top, 2=Left, 3=Right)", Range(0, 3)) = 0
-        _ArrowPosition ("Arrow Position Along Edge", Range(0, 1)) = 0.5
+        _ArrowPerimeter ("Arrow Position on Perimeter (0-1)", Range(0, 1)) = 0
         _ArrowSizePixels ("Arrow Size (Screen Pixels)", Float) = 30
         _ArrowWidthPixels ("Arrow Width (Screen Pixels)", Float) = 40
         
@@ -118,8 +117,7 @@ Shader "RoyalLeech/UI/DialogShadow"
                 float4 _ShadowColor;
                 float4 _RectSize;
                 float _CanvasScale;
-                float _ArrowEdge;
-                float _ArrowPosition;
+                float _ArrowPerimeter;
                 float _ArrowSizePixels;
                 float _ArrowWidthPixels;
                 float _CornerCutMinPixels;
@@ -249,38 +247,51 @@ Shader "RoyalLeech/UI/DialogShadow"
             }
             
             // Check if point is inside the arrow triangle
-            float IsInsideArrow(float2 uv, float edge, float pos, float size, float width)
+            // perimeter: 0-1 position around the rectangle perimeter
+            // 0.00-0.25: Bottom edge (left to right)
+            // 0.25-0.50: Right edge (bottom to top)
+            // 0.50-0.75: Top edge (right to left)
+            // 0.75-1.00: Left edge (top to bottom)
+            // size and width are already normalized appropriately for each edge
+            float IsInsideArrow(float2 uv, float perimeter, float size, float width)
             {
+                // Determine which edge and position along that edge
                 float2 arrowTip;
                 float2 baseLeft;
                 float2 baseRight;
                 float halfWidth = width * 0.5;
                 
-                int edgeInt = (int)edge;
+                // Shift perimeter by 0.125 so centers align with round numbers:
+                // 0.0 = center bottom, 0.25 = center right, 0.5 = center top, 0.75 = center left
+                float p = frac(perimeter + 0.125);
                 
-                if (edgeInt == 0) // Bottom
+                if (p < 0.25) // Bottom edge (left to right) - arrow points DOWN
                 {
+                    float pos = p / 0.25;  // 0-1 along bottom
                     arrowTip = float2(pos, -size);
                     baseLeft = float2(pos - halfWidth, 0.0);
                     baseRight = float2(pos + halfWidth, 0.0);
                 }
-                else if (edgeInt == 1) // Top
+                else if (p < 0.5) // Right edge (bottom to top) - arrow points RIGHT
                 {
-                    arrowTip = float2(pos, 1.0 + size);
-                    baseLeft = float2(pos - halfWidth, 1.0);
-                    baseRight = float2(pos + halfWidth, 1.0);
-                }
-                else if (edgeInt == 2) // Left
-                {
-                    arrowTip = float2(-size, pos);
-                    baseLeft = float2(0.0, pos - halfWidth);
-                    baseRight = float2(0.0, pos + halfWidth);
-                }
-                else // Right
-                {
+                    float pos = (p - 0.25) / 0.25;  // 0-1 along right
                     arrowTip = float2(1.0 + size, pos);
                     baseLeft = float2(1.0, pos - halfWidth);
                     baseRight = float2(1.0, pos + halfWidth);
+                }
+                else if (p < 0.75) // Top edge (right to left) - arrow points UP
+                {
+                    float pos = 1.0 - (p - 0.5) / 0.25;  // 1-0 along top (reversed)
+                    arrowTip = float2(pos, 1.0 + size);
+                    baseLeft = float2(pos + halfWidth, 1.0);  // Swapped for correct winding
+                    baseRight = float2(pos - halfWidth, 1.0);
+                }
+                else // Left edge (top to bottom) - arrow points LEFT
+                {
+                    float pos = 1.0 - (p - 0.75) / 0.25;  // 1-0 along left (reversed)
+                    arrowTip = float2(-size, pos);
+                    baseLeft = float2(0.0, pos + halfWidth);  // Swapped for correct winding
+                    baseRight = float2(0.0, pos - halfWidth);
                 }
                 
                 float2 v0 = baseRight - arrowTip;
@@ -337,12 +348,38 @@ Shader "RoyalLeech/UI/DialogShadow"
                 float tearSpacingMinCanvas = _TearSpacingMinPixels / canvasScale;
                 float tearSpacingMaxCanvas = _TearSpacingMaxPixels / canvasScale;
                 
-                // Convert arrow pixel values to normalized UV space
+                // Convert arrow pixel values to canvas units
                 float arrowSizeCanvas = _ArrowSizePixels / canvasScale;
                 float arrowWidthCanvas = _ArrowWidthPixels / canvasScale;
                 
-                // For arrow size, normalize by the dimension it extends into
-                int edgeInt = (int)_ArrowEdge;
+                // Determine which edge based on perimeter position
+                // After +0.125 shift: 0.0 = center bottom, 0.25 = center right, etc.
+                float p = frac(_ArrowPerimeter + 0.125);
+                int edgeInt;
+                float arrowPosOnEdge;  // 0-1 position along that edge
+                
+                if (p < 0.25) 
+                {
+                    edgeInt = 0;  // Bottom
+                    arrowPosOnEdge = p / 0.25;
+                }
+                else if (p < 0.5)
+                {
+                    edgeInt = 3;  // Right
+                    arrowPosOnEdge = (p - 0.25) / 0.25;
+                }
+                else if (p < 0.75)
+                {
+                    edgeInt = 1;  // Top
+                    arrowPosOnEdge = 1.0 - (p - 0.5) / 0.25;  // Reversed
+                }
+                else
+                {
+                    edgeInt = 2;  // Left
+                    arrowPosOnEdge = 1.0 - (p - 0.75) / 0.25;  // Reversed
+                }
+                
+                // Normalize arrow dimensions for UV-space calculations
                 float arrowSizeNorm = (edgeInt == 0 || edgeInt == 1) 
                                      ? arrowSizeCanvas / max(rectSize.y, 1.0)
                                      : arrowSizeCanvas / max(rectSize.x, 1.0);
@@ -354,8 +391,8 @@ Shader "RoyalLeech/UI/DialogShadow"
                 float insideRect = step(0.0, pixelUV.x) * step(pixelUV.x, 1.0) * 
                                    step(0.0, pixelUV.y) * step(pixelUV.y, 1.0);
                 
-                // Check if inside arrow (using normalized values)
-                float insideArrow = IsInsideArrow(pixelUV, _ArrowEdge, _ArrowPosition, arrowSizeNorm, arrowWidthNorm);
+                // Check if inside arrow (using perimeter position)
+                float insideArrow = IsInsideArrow(pixelUV, _ArrowPerimeter, arrowSizeNorm, arrowWidthNorm);
                 
                 // Calculate distances from edges (in canvas units)
                 float distBottom = localPos.y;
@@ -367,10 +404,10 @@ Shader "RoyalLeech/UI/DialogShadow"
                 float normX = pixelUV.x;  // 0-1 along width
                 float normY = pixelUV.y;  // 0-1 along height
                 
-                // Arrow connection zone
+                // Arrow connection zone (using calculated position on edge)
                 float arrowHalfWidthNorm = arrowWidthNorm * 0.5;
-                float arrowZoneLeft = _ArrowPosition - arrowHalfWidthNorm;
-                float arrowZoneRight = _ArrowPosition + arrowHalfWidthNorm;
+                float arrowZoneLeft = arrowPosOnEdge - arrowHalfWidthNorm;
+                float arrowZoneRight = arrowPosOnEdge + arrowHalfWidthNorm;
                 
                 // Check if current pixel is in arrow zone for each relevant edge
                 float inArrowZoneX = step(arrowZoneLeft, normX) * step(normX, arrowZoneRight);
