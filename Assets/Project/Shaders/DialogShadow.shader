@@ -625,7 +625,12 @@ Shader "RoyalLeech/UI/DialogShadow"
                 }
                 
                 // Combine tears - if any tear applies, cut the pixel
+                // BUT never cut the arrow itself!
                 float shouldCut = max(max(tearTop, tearBottom), max(tearLeft, tearRight));
+                if (insideArrow > 0.5)
+                {
+                    shouldCut = 0.0;  // Protect arrow from ALL tears
+                }
                 visible *= (1.0 - shouldCut);
                 
                 // Final alpha
