@@ -247,56 +247,140 @@ Shader "RoyalLeech/UI/DialogShadow"
             }
             
             // Check if point is inside the arrow triangle
-            // perimeter: 0-1 position around the rectangle perimeter
-            // 0.00-0.25: Bottom edge (left to right)
-            // 0.25-0.50: Right edge (bottom to top)
-            // 0.50-0.75: Top edge (right to left)
-            // 0.75-1.00: Left edge (top to bottom)
-            // size and width are already normalized appropriately for each edge
-            float IsInsideArrow(float2 uv, float perimeter, float size, float width)
+            // Works in CANVAS UNITS for fixed pixel size (like tears and corners)
+            // localPos: position in canvas units
+            // rectSize: rectangle size in canvas units
+            // size, width: arrow dimensions in canvas units
+            // Arrow rotates ONLY at corners, stays perpendicular on edges
+            float IsInsideArrowCanvas(float2 localPos, float perimeter, float2 rectSize, float size, float width)
             {
-                // Determine which edge and position along that edge
-                float2 arrowTip;
-                float2 baseLeft;
-                float2 baseRight;
-                float halfWidth = width * 0.5;
-                
-                // Shift perimeter by 0.125 so centers align with round numbers:
-                // 0.0 = center bottom, 0.25 = center right, 0.5 = center top, 0.75 = center left
+                // Shift perimeter for position calculation
+                // So that 0 = center of bottom edge, 0.25 = center of right edge, etc.
                 float p = frac(perimeter + 0.125);
                 
-                if (p < 0.25) // Bottom edge (left to right) - arrow points DOWN
+                // Define corner transition zone (how much of the edge is "corner")
+                float cornerSize = 0.03;  // Small zone at each corner
+                
+                // Calculate base position IN CANVAS UNITS and edge-perpendicular direction
+                float2 basePos;
+                float2 edgeDir;  // Direction perpendicular to edge (outward)
+                
+                // Edge directions: down, right, up, left
+                float2 dirDown = float2(0.0, -1.0);
+                float2 dirRight = float2(1.0, 0.0);
+                float2 dirUp = float2(0.0, 1.0);
+                float2 dirLeft = float2(-1.0, 0.0);
+                
+                // Corners are at p = 0, 0.25, 0.5, 0.75 (after the +0.125 shift)
+                // Edge centers are at p = 0.125, 0.375, 0.625, 0.875
+                
+                if (p < 0.25) // Bottom edge (with corners at 0 and 0.25)
                 {
-                    float pos = p / 0.25;  // 0-1 along bottom
-                    arrowTip = float2(pos, -size);
-                    baseLeft = float2(pos - halfWidth, 0.0);
-                    baseRight = float2(pos + halfWidth, 0.0);
+                    float t = p / 0.25;  // 0-1 along bottom (left to right)
+                    basePos = float2(t * rectSize.x, 0.0);  // Canvas units
+                    
+                    // Interpolate at corners
+                    if (p < cornerSize) // Near left corner (transition from left edge)
+                    {
+                        float blend = p / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(dirLeft, dirDown, blend);
+                    }
+                    else if (p > 0.25 - cornerSize) // Near right corner
+                    {
+                        float blend = (0.25 - p) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(dirRight, dirDown, blend);
+                    }
+                    else
+                    {
+                        edgeDir = dirDown;
+                    }
                 }
-                else if (p < 0.5) // Right edge (bottom to top) - arrow points RIGHT
+                else if (p < 0.5) // Right edge
                 {
-                    float pos = (p - 0.25) / 0.25;  // 0-1 along right
-                    arrowTip = float2(1.0 + size, pos);
-                    baseLeft = float2(1.0, pos - halfWidth);
-                    baseRight = float2(1.0, pos + halfWidth);
+                    float t = (p - 0.25) / 0.25;
+                    basePos = float2(rectSize.x, t * rectSize.y);  // Canvas units
+                    
+                    if (p < 0.25 + cornerSize)
+                    {
+                        float blend = (p - 0.25) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(dirDown, dirRight, blend);
+                    }
+                    else if (p > 0.5 - cornerSize)
+                    {
+                        float blend = (0.5 - p) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(dirUp, dirRight, blend);
+                    }
+                    else
+                    {
+                        edgeDir = dirRight;
+                    }
                 }
-                else if (p < 0.75) // Top edge (right to left) - arrow points UP
+                else if (p < 0.75) // Top edge
                 {
-                    float pos = 1.0 - (p - 0.5) / 0.25;  // 1-0 along top (reversed)
-                    arrowTip = float2(pos, 1.0 + size);
-                    baseLeft = float2(pos + halfWidth, 1.0);  // Swapped for correct winding
-                    baseRight = float2(pos - halfWidth, 1.0);
+                    float t = 1.0 - (p - 0.5) / 0.25;
+                    basePos = float2(t * rectSize.x, rectSize.y);  // Canvas units
+                    
+                    if (p < 0.5 + cornerSize)
+                    {
+                        float blend = (p - 0.5) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(dirRight, dirUp, blend);
+                    }
+                    else if (p > 0.75 - cornerSize)
+                    {
+                        float blend = (0.75 - p) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(dirLeft, dirUp, blend);
+                    }
+                    else
+                    {
+                        edgeDir = dirUp;
+                    }
                 }
-                else // Left edge (top to bottom) - arrow points LEFT
+                else // Left edge
                 {
-                    float pos = 1.0 - (p - 0.75) / 0.25;  // 1-0 along left (reversed)
-                    arrowTip = float2(-size, pos);
-                    baseLeft = float2(0.0, pos + halfWidth);  // Swapped for correct winding
-                    baseRight = float2(0.0, pos - halfWidth);
+                    float t = 1.0 - (p - 0.75) / 0.25;
+                    basePos = float2(0.0, t * rectSize.y);  // Canvas units
+                    
+                    if (p < 0.75 + cornerSize)
+                    {
+                        float blend = (p - 0.75) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(dirUp, dirLeft, blend);
+                    }
+                    else if (p > 1.0 - cornerSize)
+                    {
+                        float blend = (1.0 - p) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(dirDown, dirLeft, blend);
+                    }
+                    else
+                    {
+                        edgeDir = dirLeft;
+                    }
                 }
                 
+                // Normalize direction (in case lerp denormalized it)
+                float2 dir = normalize(edgeDir);
+                
+                // Arrow tip extends outward from base position (in canvas units)
+                float2 arrowTip = basePos + dir * size;
+                
+                // Calculate perpendicular direction for arrow width
+                float2 perp = float2(-dir.y, dir.x);
+                
+                float halfWidth = width * 0.5;
+                float2 baseLeft = basePos - perp * halfWidth;
+                float2 baseRight = basePos + perp * halfWidth;
+                
+                // Triangle point-in-triangle test (all in canvas units)
                 float2 v0 = baseRight - arrowTip;
                 float2 v1 = baseLeft - arrowTip;
-                float2 v2 = uv - arrowTip;
+                float2 v2 = localPos - arrowTip;  // Use localPos (canvas units)
                 
                 float dot00 = dot(v0, v0);
                 float dot01 = dot(v0, v1);
@@ -304,7 +388,7 @@ Shader "RoyalLeech/UI/DialogShadow"
                 float dot11 = dot(v1, v1);
                 float dot12 = dot(v1, v2);
                 
-                float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+                float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01 + 0.0001);
                 float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
                 float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
                 
@@ -379,20 +463,15 @@ Shader "RoyalLeech/UI/DialogShadow"
                     arrowPosOnEdge = 1.0 - (p - 0.75) / 0.25;  // Reversed
                 }
                 
-                // Normalize arrow dimensions for UV-space calculations
-                float arrowSizeNorm = (edgeInt == 0 || edgeInt == 1) 
-                                     ? arrowSizeCanvas / max(rectSize.y, 1.0)
-                                     : arrowSizeCanvas / max(rectSize.x, 1.0);
-                float arrowWidthNorm = (edgeInt == 0 || edgeInt == 1) 
-                                      ? arrowWidthCanvas / max(rectSize.x, 1.0)
-                                      : arrowWidthCanvas / max(rectSize.y, 1.0);
+                // Arrow dimensions are already in canvas units (arrowSizeCanvas, arrowWidthCanvas)
+                // No normalization needed - arrow size is fixed in pixels like tears and corners
                 
                 // Check if inside main rectangle (UV 0-1 range)
                 float insideRect = step(0.0, pixelUV.x) * step(pixelUV.x, 1.0) * 
                                    step(0.0, pixelUV.y) * step(pixelUV.y, 1.0);
                 
-                // Check if inside arrow (using perimeter position)
-                float insideArrow = IsInsideArrow(pixelUV, _ArrowPerimeter, arrowSizeNorm, arrowWidthNorm);
+                // Check if inside arrow (using canvas units for fixed pixel size)
+                float insideArrow = IsInsideArrowCanvas(localPos, _ArrowPerimeter, rectSize, arrowSizeCanvas, arrowWidthCanvas);
                 
                 // Calculate distances from edges (in canvas units)
                 float distBottom = localPos.y;
@@ -405,6 +484,8 @@ Shader "RoyalLeech/UI/DialogShadow"
                 float normY = pixelUV.y;  // 0-1 along height
                 
                 // Arrow connection zone (using calculated position on edge)
+                // Normalize arrow width for zone calculations (need normalized for UV-based checks)
+                float arrowWidthNorm = arrowWidthCanvas / max((edgeInt == 0 || edgeInt == 1) ? rectSize.x : rectSize.y, 1.0);
                 float arrowHalfWidthNorm = arrowWidthNorm * 0.5;
                 float arrowZoneLeft = arrowPosOnEdge - arrowHalfWidthNorm;
                 float arrowZoneRight = arrowPosOnEdge + arrowHalfWidthNorm;
