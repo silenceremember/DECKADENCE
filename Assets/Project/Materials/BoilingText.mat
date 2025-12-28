@@ -40,6 +40,7 @@ Material:
     - _BurnAmount: -1
     - _BurnNoiseScale: 20
     - _BurnSpeed: 2
+    - _CanvasScale: 1
     - _ColorMask: 15
     - _Dilate: -0.138
     - _DistortAmount: 0.02
@@ -58,6 +59,7 @@ Material:
     - _OutlineWidth: 0.45
     - _PixelDensity: 299
     - _PixelSize: 300
+    - _PixelSizePixels: 2.95
     - _Pixels: 600
     - _ShadowDilate: 0.1
     - _ShadowPixelShiftX: 3

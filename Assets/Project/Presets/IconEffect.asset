@@ -16,9 +16,11 @@ MonoBehaviour:
   fillWaveSpeed: 3
   meniscusStrength: 0.04
   bubbleSize: 0.15
-  bubbleDensity: 0.2
+  bubbleDensity: 0.1
   bubbleSpeed: 0.6
   bubblePixelation: 64
+  bubbleFillContrast: 0.05
+  bubbleBgContrast: 0.5
   bubbleSpeedMinor: 0.5
   bubbleSpeedNormal: 1
   bubbleSpeedMajor: 1.5
