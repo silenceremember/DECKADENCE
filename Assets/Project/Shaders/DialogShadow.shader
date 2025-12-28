@@ -9,6 +9,7 @@ Shader "DECKADENCE/UI/DialogShadow"
         [HideInInspector] _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.5)
         
         [Header(Arrow Settings)]
+        [Toggle] _ShowArrow ("Show Arrow", Float) = 1
         _ArrowPerimeter ("Arrow Position on Perimeter (0-1)", Range(0, 1)) = 0
         _ArrowSizePixels ("Arrow Size (Screen Pixels)", Float) = 30
         _ArrowWidthPixels ("Arrow Width (Screen Pixels)", Float) = 40
@@ -117,6 +118,7 @@ Shader "DECKADENCE/UI/DialogShadow"
                 float4 _ShadowColor;
                 float4 _RectSize;
                 float _CanvasScale;
+                float _ShowArrow;
                 float _ArrowPerimeter;
                 float _ArrowSizePixels;
                 float _ArrowWidthPixels;
@@ -517,7 +519,8 @@ Shader "DECKADENCE/UI/DialogShadow"
                                    step(0.0, pixelUV.y) * step(pixelUV.y, 1.0);
                 
                 // Check if inside arrow (using canvas units for fixed pixel size)
-                float insideArrow = IsInsideArrowCanvas(localPos, _ArrowPerimeter, rectSize, arrowSizeCanvas, arrowWidthCanvas);
+                // Only calculate arrow if showArrow is enabled
+                float insideArrow = _ShowArrow > 0.5 ? IsInsideArrowCanvas(localPos, _ArrowPerimeter, rectSize, arrowSizeCanvas, arrowWidthCanvas) : 0.0;
                 
                 // Calculate distances from edges (in canvas units)
                 float distBottom = localPos.y;

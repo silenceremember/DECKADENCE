@@ -15,6 +15,8 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     public float intensity = 15f;
     
     [Header("Arrow Settings")]
+    [Tooltip("Enable or disable the arrow")]
+    public bool showArrow = true;
     [Range(0f, 1f)]
     [Tooltip("Position on perimeter: 0=center bottom, 0.25=center right, 0.5=center top, 0.75=center left")]
     public float arrowPerimeter = 0f;  // Default: center of bottom edge
@@ -40,6 +42,7 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     private static readonly int ArrowPerimeterID = Shader.PropertyToID("_ArrowPerimeter");
     private static readonly int ArrowSizePixelsID = Shader.PropertyToID("_ArrowSizePixels");
     private static readonly int ArrowWidthPixelsID = Shader.PropertyToID("_ArrowWidthPixels");
+    private static readonly int ShowArrowID = Shader.PropertyToID("_ShowArrow");
     private static readonly int RectSizeID = Shader.PropertyToID("_RectSize");
     private static readonly int RectScreenPosID = Shader.PropertyToID("_RectScreenPos");
     private static readonly int CanvasScaleID = Shader.PropertyToID("_CanvasScale");
@@ -143,6 +146,7 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         }
         
         // Update arrow properties
+        _materialInstance.SetFloat(ShowArrowID, showArrow ? 1f : 0f);
         _materialInstance.SetFloat(ArrowPerimeterID, arrowPerimeter);
         _materialInstance.SetFloat(ArrowSizePixelsID, arrowSizePixels);
         _materialInstance.SetFloat(ArrowWidthPixelsID, arrowWidthPixels);
