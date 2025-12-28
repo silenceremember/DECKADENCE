@@ -377,14 +377,25 @@ Shader "RoyalLeech/UI/DialogShadow"
                 // Calculate perpendicular direction for arrow width
                 float2 perp = float2(-dir.y, dir.x);
                 
-                float halfWidth = width * 0.5;
+                // Compensate width for diagonal arrows (at corners)
+                // When rotated 45°, the perpendicular extends diagonally and gets clipped
+                // Increase width by sqrt(2) ≈ 1.414 to maintain visual width
+                float diagonalFactor = abs(dir.x * dir.y) * 2.0;  // 0 on edges, 1 at 45°
+                float widthCompensation = 1.0 + diagonalFactor * 0.414;  // 1.0 to 1.414
+                
+                float halfWidth = width * 0.5 * widthCompensation;
                 float2 baseLeft = basePos - perp * halfWidth;
                 float2 baseRight = basePos + perp * halfWidth;
                 
+                // Clamp base vertices to rectangle bounds
+                // This ensures the arrow connects to the rect even at corners
+                float2 baseLeftClamped = clamp(baseLeft, float2(0, 0), rectSize);
+                float2 baseRightClamped = clamp(baseRight, float2(0, 0), rectSize);
+                
                 // Triangle point-in-triangle test (all in canvas units)
-                float2 v0 = baseRight - arrowTip;
-                float2 v1 = baseLeft - arrowTip;
-                float2 v2 = localPos - arrowTip;  // Use localPos (canvas units)
+                float2 v0 = baseRightClamped - arrowTip;
+                float2 v1 = baseLeftClamped - arrowTip;
+                float2 v2 = localPos - arrowTip;
                 
                 float dot00 = dot(v0, v0);
                 float dot01 = dot(v0, v1);
@@ -396,7 +407,38 @@ Shader "RoyalLeech/UI/DialogShadow"
                 float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
                 float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
                 
-                return (u >= 0.0) && (v >= 0.0) && (u + v <= 1.0) ? 1.0 : 0.0;
+                float inTriangle = (u >= 0.0) && (v >= 0.0) && (u + v <= 1.0) ? 1.0 : 0.0;
+                
+                // Additional check: fill the wedge between clamped and unclamped bases
+                // This fills the corner area when arrow is rotated
+                float inCornerFill = 0.0;
+                
+                // Check if we need corner fill (base vertices were clamped)
+                float2 clampDiff = abs(baseLeft - baseLeftClamped) + abs(baseRight - baseRightClamped);
+                if (clampDiff.x + clampDiff.y > 0.01)
+                {
+                    // IMPORTANT: Corner fill only inside the rectangle bounds!
+                    bool insideRectBounds = localPos.x >= 0.0 && localPos.x <= rectSize.x &&
+                                            localPos.y >= 0.0 && localPos.y <= rectSize.y;
+                    
+                    if (insideRectBounds)
+                    {
+                        // Check distance from corner point
+                        float distFromCorner = length(localPos - basePos);
+                        if (distFromCorner < halfWidth * 1.5)
+                        {
+                            // Check if within the angular spread
+                            float2 toPoint = localPos - basePos;
+                            float perpProj = abs(dot(toPoint, perp));
+                            if (perpProj < halfWidth)
+                            {
+                                inCornerFill = 1.0;
+                            }
+                        }
+                    }
+                }
+                
+                return max(inTriangle, inCornerFill);
             }
             
             half4 frag(Varyings IN) : SV_Target
