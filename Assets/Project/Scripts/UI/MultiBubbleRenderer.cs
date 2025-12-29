@@ -128,12 +128,17 @@ public class MultiBubbleRenderer : MonoBehaviour, IMeshModifier
     
     void Start()
     {
-        CreateMaterialInstance();
         _canvas = GetComponentInParent<Canvas>();
+        CreateMaterialInstance();
     }
     
     void OnEnable()
     {
+        if (_graphic == null)
+            _graphic = GetComponent<Graphic>();
+        
+        CreateMaterialInstance();
+        
         if (_graphic != null)
             _graphic.SetVerticesDirty();
     }
@@ -157,12 +162,23 @@ public class MultiBubbleRenderer : MonoBehaviour, IMeshModifier
     
     void CreateMaterialInstance()
     {
-        if (_graphic == null) return;
-        
-        if (_graphic.material != null && _graphic.material.shader.name == "DECKADENCE/UI/MultiBubble")
+        if (_graphic == null) 
         {
-            _materialInstance = new Material(_graphic.material);
-            _graphic.material = _materialInstance;
+            _graphic = GetComponent<Graphic>();
+            if (_graphic == null) return;
+        }
+        
+        // Already have instance
+        if (_materialInstance != null) return;
+        
+        // Check if material uses our shader
+        if (_graphic.material != null && _graphic.material.shader != null)
+        {
+            if (_graphic.material.shader.name == "DECKADENCE/UI/MultiBubble")
+            {
+                _materialInstance = new Material(_graphic.material);
+                _graphic.material = _materialInstance;
+            }
         }
     }
     

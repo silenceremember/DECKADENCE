@@ -285,60 +285,196 @@ Shader "DECKADENCE/UI/MultiBubble"
                 return result;
             }
             
-            // Check if inside arrow triangle
-            float IsInsideArrowCanvas(float2 localPos, float arrowPerimeter, float2 rectSize, 
-                                       float arrowSize, float arrowWidth)
+            // Check if inside arrow triangle - FULL VERSION with corner handling
+            // Works in CANVAS UNITS for fixed pixel size
+            // Arrow rotates smoothly at corners, stays perpendicular on edges
+            // Base vertices are clamped to rect bounds to prevent levitation
+            float IsInsideArrowCanvas(float2 localPos, float perimeter, float2 rectSize, float size, float width)
             {
-                float p = frac(arrowPerimeter + 0.125);
-                int edge;
-                float posOnEdge;
+                // Shift perimeter for position calculation
+                float p = frac(perimeter + 0.125);
                 
-                if (p < 0.25) { edge = 0; posOnEdge = p / 0.25; }
-                else if (p < 0.5) { edge = 3; posOnEdge = (p - 0.25) / 0.25; }
-                else if (p < 0.75) { edge = 1; posOnEdge = 1.0 - (p - 0.5) / 0.25; }
-                else { edge = 2; posOnEdge = 1.0 - (p - 0.75) / 0.25; }
+                // Define corner transition zone
+                float cornerSize = 0.03;
                 
-                float2 tipPos, baseCenter;
-                float2 dir, perp;
+                // Calculate base position and edge-perpendicular direction
+                float2 basePos;
+                float2 edgeDir;
                 
-                if (edge == 0) // Bottom
+                // Edge directions
+                float2 dirDown = float2(0.0, -1.0);
+                float2 dirRight = float2(1.0, 0.0);
+                float2 dirUp = float2(0.0, 1.0);
+                float2 dirLeft = float2(-1.0, 0.0);
+                
+                // Diagonal directions for corners (45 degrees)
+                float2 diagDownLeft = normalize(dirDown + dirLeft);
+                float2 diagDownRight = normalize(dirDown + dirRight);
+                float2 diagUpRight = normalize(dirUp + dirRight);
+                float2 diagUpLeft = normalize(dirUp + dirLeft);
+                
+                if (p < 0.25) // Bottom edge
                 {
-                    baseCenter = float2(posOnEdge * rectSize.x, 0);
-                    tipPos = baseCenter + float2(0, -arrowSize);
-                    dir = float2(0, -1);
-                    perp = float2(1, 0);
+                    float t = p / 0.25;
+                    basePos = float2(t * rectSize.x, 0.0);
+                    
+                    if (p < cornerSize)
+                    {
+                        float blend = p / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(diagDownLeft, dirDown, blend);
+                    }
+                    else if (p > 0.25 - cornerSize)
+                    {
+                        float blend = (0.25 - p) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(diagDownRight, dirDown, blend);
+                    }
+                    else
+                    {
+                        edgeDir = dirDown;
+                    }
                 }
-                else if (edge == 1) // Top
+                else if (p < 0.5) // Right edge
                 {
-                    baseCenter = float2(posOnEdge * rectSize.x, rectSize.y);
-                    tipPos = baseCenter + float2(0, arrowSize);
-                    dir = float2(0, 1);
-                    perp = float2(1, 0);
+                    float t = (p - 0.25) / 0.25;
+                    basePos = float2(rectSize.x, t * rectSize.y);
+                    
+                    if (p < 0.25 + cornerSize)
+                    {
+                        float blend = (p - 0.25) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(diagDownRight, dirRight, blend);
+                    }
+                    else if (p > 0.5 - cornerSize)
+                    {
+                        float blend = (0.5 - p) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(diagUpRight, dirRight, blend);
+                    }
+                    else
+                    {
+                        edgeDir = dirRight;
+                    }
                 }
-                else if (edge == 2) // Left
+                else if (p < 0.75) // Top edge
                 {
-                    baseCenter = float2(0, posOnEdge * rectSize.y);
-                    tipPos = baseCenter + float2(-arrowSize, 0);
-                    dir = float2(-1, 0);
-                    perp = float2(0, 1);
+                    float t = 1.0 - (p - 0.5) / 0.25;
+                    basePos = float2(t * rectSize.x, rectSize.y);
+                    
+                    if (p < 0.5 + cornerSize)
+                    {
+                        float blend = (p - 0.5) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(diagUpRight, dirUp, blend);
+                    }
+                    else if (p > 0.75 - cornerSize)
+                    {
+                        float blend = (0.75 - p) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(diagUpLeft, dirUp, blend);
+                    }
+                    else
+                    {
+                        edgeDir = dirUp;
+                    }
                 }
-                else // Right
+                else // Left edge
                 {
-                    baseCenter = float2(rectSize.x, posOnEdge * rectSize.y);
-                    tipPos = baseCenter + float2(arrowSize, 0);
-                    dir = float2(1, 0);
-                    perp = float2(0, 1);
+                    float t = 1.0 - (p - 0.75) / 0.25;
+                    basePos = float2(0.0, t * rectSize.y);
+                    
+                    if (p < 0.75 + cornerSize)
+                    {
+                        float blend = (p - 0.75) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(diagUpLeft, dirLeft, blend);
+                    }
+                    else if (p > 1.0 - cornerSize)
+                    {
+                        float blend = (1.0 - p) / cornerSize;
+                        blend = smoothstep(0.0, 1.0, blend);
+                        edgeDir = lerp(diagDownLeft, dirLeft, blend);
+                    }
+                    else
+                    {
+                        edgeDir = dirLeft;
+                    }
                 }
                 
-                float2 toPoint = localPos - tipPos;
-                float alongArrow = dot(toPoint, -dir);
+                // Normalize direction
+                float2 dir = normalize(edgeDir);
                 
-                if (alongArrow < 0 || alongArrow > arrowSize) return 0.0;
+                // Arrow tip extends outward from base position
+                float2 arrowTip = basePos + dir * size;
                 
-                float widthAtPoint = (alongArrow / arrowSize) * arrowWidth * 0.5;
-                float perpDist = abs(dot(toPoint, perp));
+                // Calculate perpendicular direction for arrow width
+                float2 perp = float2(-dir.y, dir.x);
                 
-                return step(perpDist, widthAtPoint);
+                // Compensate width for diagonal arrows
+                float diagonalFactor = abs(dir.x * dir.y) * 2.0;
+                float widthCompensation = 1.0 + diagonalFactor * 0.414;
+                
+                float halfWidth = width * 0.5 * widthCompensation;
+                float2 baseLeft = basePos - perp * halfWidth;
+                float2 baseRight = basePos + perp * halfWidth;
+                
+                // Clamp base vertices to rectangle bounds
+                float2 baseLeftClamped = clamp(baseLeft, float2(0, 0), rectSize);
+                float2 baseRightClamped = clamp(baseRight, float2(0, 0), rectSize);
+                
+                // Triangle point-in-triangle test
+                float2 v0 = baseRightClamped - arrowTip;
+                float2 v1 = baseLeftClamped - arrowTip;
+                float2 v2 = localPos - arrowTip;
+                
+                float dot00 = dot(v0, v0);
+                float dot01 = dot(v0, v1);
+                float dot02 = dot(v0, v2);
+                float dot11 = dot(v1, v1);
+                float dot12 = dot(v1, v2);
+                
+                float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01 + 0.0001);
+                float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+                float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+                
+                float inTriangle = (u >= 0.0) && (v >= 0.0) && (u + v <= 1.0) ? 1.0 : 0.0;
+                
+                // Corner fill: fill the wedge between clamped and unclamped bases
+                // ONLY fill pixels that are inside the rect AND in front of the arrow base
+                float inCornerFill = 0.0;
+                float2 clampDiff = abs(baseLeft - baseLeftClamped) + abs(baseRight - baseRightClamped);
+                if (clampDiff.x + clampDiff.y > 0.01)
+                {
+                    bool insideRectBounds = localPos.x >= 0.0 && localPos.x <= rectSize.x &&
+                                            localPos.y >= 0.0 && localPos.y <= rectSize.y;
+                    
+                    if (insideRectBounds)
+                    {
+                        float2 toPoint = localPos - basePos;
+                        
+                        // Check if point is in front of the base (not behind, which would be outside rect)
+                        // For corner arrows, we need to ensure we're filling INSIDE the rect
+                        float alongDir = dot(toPoint, dir);
+                        
+                        // Only fill if:
+                        // 1. Point is BEHIND the arrow direction (alongDir <= 0, meaning inside rect)
+                        // 2. Point is within the arrow width zone
+                        // 3. Point is close enough to the corner
+                        if (alongDir <= 0.0)
+                        {
+                            float perpProj = abs(dot(toPoint, perp));
+                            float distFromBase = length(toPoint);
+                            
+                            if (perpProj < halfWidth && distFromBase < halfWidth * 1.5)
+                            {
+                                inCornerFill = 1.0;
+                            }
+                        }
+                    }
+                }
+                
+                return max(inTriangle, inCornerFill);
             }
             
             // ==========================================
@@ -507,8 +643,12 @@ Shader "DECKADENCE/UI/MultiBubble"
                 float arrowSizeCanvas = arrowSize / canvasScale;
                 float arrowWidthCanvas = arrowWidth / canvasScale;
                 
-                // Inside rect check
+                // Normalized UV
                 float2 uv = localPos / layerSize;
+                float normX = uv.x;
+                float normY = uv.y;
+                
+                // Inside rect check
                 float insideRect = step(0.0, uv.x) * step(uv.x, 1.0) * 
                                    step(0.0, uv.y) * step(uv.y, 1.0);
                 
@@ -518,42 +658,121 @@ Shader "DECKADENCE/UI/MultiBubble"
                 float distLeft = localPos.x;
                 float distRight = layerSize.x - localPos.x;
                 
+                // Arrow setup
+                float insideArrow = 0.0;
+                int edgeInt = 0;
+                float arrowPosOnEdge = 0.0;
+                float inArrowZoneX = 0.0;
+                float inArrowZoneY = 0.0;
+                
+                if (showArrow > 0.5)
+                {
+                    insideArrow = IsInsideArrowCanvas(localPos, _ArrowPerimeter, layerSize, arrowSizeCanvas, arrowWidthCanvas);
+                    
+                    // Determine arrow edge and position
+                    float p = frac(_ArrowPerimeter + 0.125);
+                    
+                    if (p < 0.25) 
+                    {
+                        edgeInt = 0;  // Bottom
+                        arrowPosOnEdge = p / 0.25;
+                    }
+                    else if (p < 0.5)
+                    {
+                        edgeInt = 3;  // Right
+                        arrowPosOnEdge = (p - 0.25) / 0.25;
+                    }
+                    else if (p < 0.75)
+                    {
+                        edgeInt = 1;  // Top
+                        arrowPosOnEdge = 1.0 - (p - 0.5) / 0.25;
+                    }
+                    else
+                    {
+                        edgeInt = 2;  // Left
+                        arrowPosOnEdge = 1.0 - (p - 0.75) / 0.25;
+                    }
+                    
+                    // Calculate arrow zone
+                    float arrowWidthNorm = arrowWidthCanvas / max((edgeInt == 0 || edgeInt == 1) ? layerSize.x : layerSize.y, 1.0);
+                    float arrowHalfWidthNorm = arrowWidthNorm * 0.5;
+                    float arrowZoneLeft = arrowPosOnEdge - arrowHalfWidthNorm;
+                    float arrowZoneRight = arrowPosOnEdge + arrowHalfWidthNorm;
+                    
+                    inArrowZoneX = step(arrowZoneLeft, normX) * step(normX, arrowZoneRight);
+                    inArrowZoneY = step(arrowZoneLeft, normY) * step(normY, arrowZoneRight);
+                }
+                
                 // Corner cuts
                 float blCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 500.0));
                 float brCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 600.0));
                 float tlCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 700.0));
                 float trCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 800.0));
                 
+                // Apply corner cuts, but skip where arrow connects
                 float cornerMask = 1.0;
-                cornerMask *= step(blCut, distLeft + distBottom);
-                cornerMask *= step(brCut, distRight + distBottom);
-                cornerMask *= step(tlCut, distLeft + distTop);
-                cornerMask *= step(trCut, distRight + distTop);
                 
-                // Arrow
-                float insideArrow = 0.0;
-                if (showArrow > 0.5)
-                {
-                    insideArrow = IsInsideArrowCanvas(localPos, _ArrowPerimeter, layerSize, arrowSizeCanvas, arrowWidthCanvas);
-                }
+                // BL corner
+                float skipBLPixel = (edgeInt == 0 && inArrowZoneX > 0.5 && normX < 0.5) ||
+                                    (edgeInt == 2 && inArrowZoneY > 0.5 && normY < 0.5) ? 1.0 : 0.0;
+                if (skipBLPixel < 0.5) cornerMask *= step(blCut, distLeft + distBottom);
+                
+                // BR corner
+                float skipBRPixel = (edgeInt == 0 && inArrowZoneX > 0.5 && normX > 0.5) ||
+                                    (edgeInt == 3 && inArrowZoneY > 0.5 && normY < 0.5) ? 1.0 : 0.0;
+                if (skipBRPixel < 0.5) cornerMask *= step(brCut, distRight + distBottom);
+                
+                // TL corner
+                float skipTLPixel = (edgeInt == 1 && inArrowZoneX > 0.5 && normX < 0.5) ||
+                                    (edgeInt == 2 && inArrowZoneY > 0.5 && normY > 0.5) ? 1.0 : 0.0;
+                if (skipTLPixel < 0.5) cornerMask *= step(tlCut, distLeft + distTop);
+                
+                // TR corner
+                float skipTRPixel = (edgeInt == 1 && inArrowZoneX > 0.5 && normX > 0.5) ||
+                                    (edgeInt == 3 && inArrowZoneY > 0.5 && normY > 0.5) ? 1.0 : 0.0;
+                if (skipTRPixel < 0.5) cornerMask *= step(trCut, distRight + distTop);
                 
                 float visible = max(insideRect * cornerMask, insideArrow);
                 
-                // Tears
+                // Tears - skip on edge where arrow is attached
                 float2 clampedPos = clamp(localPos, float2(0, 0), layerSize);
                 
-                float tearTop = CalculateEdgeTear(clampedPos.x, distTop, seed, tearIntensity.x,
-                                                   tearWidthMin, tearWidthMax, tearDepthMin, tearDepthMax,
-                                                   layerSize.x, tearSpacingMin, tearSpacingMax);
-                float tearBottom = CalculateEdgeTear(clampedPos.x, distBottom, seed + 1000.0, tearIntensity.y,
-                                                      tearWidthMin, tearWidthMax, tearDepthMin, tearDepthMax,
-                                                      layerSize.x, tearSpacingMin, tearSpacingMax);
-                float tearLeft = CalculateEdgeTear(clampedPos.y, distLeft, seed + 2000.0, tearIntensity.z,
+                float tearTop = 0.0;
+                float tearBottom = 0.0;
+                float tearLeft = 0.0;
+                float tearRight = 0.0;
+                
+                // Bottom edge (arrow edge 0)
+                if (edgeInt != 0 || inArrowZoneX < 0.5)
+                {
+                    tearBottom = CalculateEdgeTear(clampedPos.x, distBottom, seed + 1000.0, tearIntensity.y,
                                                     tearWidthMin, tearWidthMax, tearDepthMin, tearDepthMax,
-                                                    layerSize.y, tearSpacingMin, tearSpacingMax);
-                float tearRight = CalculateEdgeTear(clampedPos.y, distRight, seed + 3000.0, tearIntensity.w,
-                                                     tearWidthMin, tearWidthMax, tearDepthMin, tearDepthMax,
-                                                     layerSize.y, tearSpacingMin, tearSpacingMax);
+                                                    layerSize.x, tearSpacingMin, tearSpacingMax);
+                }
+                
+                // Top edge (arrow edge 1)
+                if (edgeInt != 1 || inArrowZoneX < 0.5)
+                {
+                    tearTop = CalculateEdgeTear(clampedPos.x, distTop, seed, tearIntensity.x,
+                                                 tearWidthMin, tearWidthMax, tearDepthMin, tearDepthMax,
+                                                 layerSize.x, tearSpacingMin, tearSpacingMax);
+                }
+                
+                // Left edge (arrow edge 2)
+                if (edgeInt != 2 || inArrowZoneY < 0.5)
+                {
+                    tearLeft = CalculateEdgeTear(clampedPos.y, distLeft, seed + 2000.0, tearIntensity.z,
+                                                  tearWidthMin, tearWidthMax, tearDepthMin, tearDepthMax,
+                                                  layerSize.y, tearSpacingMin, tearSpacingMax);
+                }
+                
+                // Right edge (arrow edge 3)
+                if (edgeInt != 3 || inArrowZoneY < 0.5)
+                {
+                    tearRight = CalculateEdgeTear(clampedPos.y, distRight, seed + 3000.0, tearIntensity.w,
+                                                   tearWidthMin, tearWidthMax, tearDepthMin, tearDepthMax,
+                                                   layerSize.y, tearSpacingMin, tearSpacingMax);
+                }
                 
                 float shouldCut = max(max(tearTop, tearBottom), max(tearLeft, tearRight));
                 if (insideArrow > 0.5) shouldCut = 0.0; // Protect arrow

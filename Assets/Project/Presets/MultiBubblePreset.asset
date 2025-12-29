@@ -13,33 +13,33 @@ MonoBehaviour:
   m_Name: MultiBubblePreset
   m_EditorClassIdentifier: Assembly-CSharp::MultiBubblePreset
   layers:
-  - enabled: 0
+  - enabled: 1
     offset: 0
-    cutoutNextLayer: 0
+    cutoutNextLayer: 1
     cutoutPadding: 0
-    fillColor: {r: 0, g: 0, b: 0, a: 0}
-    showArrow: 0
-    arrowSize: 0
-    arrowWidth: 0
-    showBorder: 0
-    borderColor: {r: 0, g: 0, b: 0, a: 0}
+    fillColor: {r: 0.2924528, g: 0.2924528, b: 0.2924528, a: 1}
+    showArrow: 1
+    arrowSize: 30
+    arrowWidth: 40
+    showBorder: 1
+    borderColor: {r: 1, g: 1, b: 1, a: 1}
     borderThickness: 0
     borderOffset: 0
     borderStyle: 0
     dashLength: 0
     dashGap: 0
-    shadowColor: {r: 0, g: 0, b: 0, a: 0}
-    shadowIntensity: 0
+    shadowColor: {r: 0, g: 0, b: 0, a: 0.5019608}
+    shadowIntensity: 1
     showSecondShadow: 0
-    secondShadowColor: {r: 0, g: 0, b: 0, a: 0}
+    secondShadowColor: {r: 0, g: 0, b: 0, a: 1}
     secondShadowIntensity: 0
     showInnerShadow: 0
     innerShadowIntensity: 0
     innerShadowColor: {r: 0, g: 0, b: 0, a: 0}
-    topTear: 0
-    bottomTear: 0
-    leftTear: 0
-    rightTear: 0
+    topTear: 1
+    bottomTear: 1
+    leftTear: 1
+    rightTear: 1
   textNormalColor: {r: 0, g: 0, b: 0, a: 1}
   textActiveColor: {r: 0.36, g: 0.25, b: 0.22, a: 1}
   cornerCutMin: 15
