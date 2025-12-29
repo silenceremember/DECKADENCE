@@ -6,7 +6,9 @@ Shader "DECKADENCE/UI/DialogShadow"
         _Color ("Fill Color", Color) = (1,1,1,1)
         
         [Header(Shadow Settings)]
-        [HideInInspector] _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.5)
+        [HideInInspector] _ShadowColor ("Primary Shadow Color", Color) = (0, 0, 0, 0.5)
+        [HideInInspector] _ShowSecondShadow ("Show Second Shadow", Float) = 1
+        [HideInInspector] _SecondShadowColor ("Secondary Shadow Color", Color) = (0, 0, 0, 0.3)
         
         [Header(Arrow Settings)]
         [Toggle] _ShowArrow ("Show Arrow", Float) = 1
@@ -128,6 +130,8 @@ Shader "DECKADENCE/UI/DialogShadow"
                 float4 _MainTex_ST;
                 float4 _Color;
                 float4 _ShadowColor;
+                float _ShowSecondShadow;
+                float4 _SecondShadowColor;
                 float4 _RectSize;
                 float _CanvasScale;
                 float _ShowArrow;
@@ -715,8 +719,18 @@ Shader "DECKADENCE/UI/DialogShadow"
                 float finalAlpha = visible * IN.color.a;
                 
                 // Shadow or main rendering
-                if (IN.isShadow > 0.5)
+                // isShadow: 0 = main, 1 = primary shadow, 2 = secondary shadow
+                if (IN.isShadow > 1.5)
                 {
+                    // Secondary shadow (closer, less opacity)
+                    half4 result;
+                    result.rgb = _SecondShadowColor.rgb;
+                    result.a = finalAlpha * _SecondShadowColor.a;
+                    return result;
+                }
+                else if (IN.isShadow > 0.5)
+                {
+                    // Primary shadow (further, more opacity)
                     half4 result;
                     result.rgb = _ShadowColor.rgb;
                     result.a = finalAlpha * _ShadowColor.a;

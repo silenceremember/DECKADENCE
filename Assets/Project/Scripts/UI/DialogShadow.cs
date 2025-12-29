@@ -10,9 +10,16 @@ using System.Collections.Generic;
 [ExecuteAlways]
 public class DialogShadow : MonoBehaviour, IMeshModifier
 {
-    [Header("Shadow Settings")]
+    [Header("Primary Shadow")]
     public Color shadowColor = new Color(0, 0, 0, 0.5f);
     public float intensity = 15f;
+    
+    [Header("Secondary Shadow (Volume)")]
+    [Tooltip("Enable second shadow layer for added depth")]
+    public bool showSecondShadow = true;
+    public Color secondShadowColor = new Color(0, 0, 0, 0.3f);
+    [Tooltip("Intensity multiplier relative to primary shadow (0.3 = 30% of primary offset)")]
+    public float secondShadowIntensityMultiplier = 0.4f;
     
     [Header("Arrow Settings")]
     [Tooltip("Enable or disable the arrow")]
@@ -51,6 +58,7 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     
     [Header("Debug")]
     [SerializeField] private Vector2 currentShadowOffset;
+    [SerializeField] private Vector2 currentSecondShadowOffset;
     
     private Graphic _graphic;
     private Canvas _canvas;
@@ -59,6 +67,8 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     private Camera _canvasCamera;
     
     private static readonly int ShadowColorID = Shader.PropertyToID("_ShadowColor");
+    private static readonly int ShowSecondShadowID = Shader.PropertyToID("_ShowSecondShadow");
+    private static readonly int SecondShadowColorID = Shader.PropertyToID("_SecondShadowColor");
     private static readonly int ArrowPerimeterID = Shader.PropertyToID("_ArrowPerimeter");
     private static readonly int ArrowSizePixelsID = Shader.PropertyToID("_ArrowSizePixels");
     private static readonly int ArrowWidthPixelsID = Shader.PropertyToID("_ArrowWidthPixels");
@@ -164,8 +174,10 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
                 _graphic.SetVerticesDirty();
         }
         
-        // Update shadow color
+        // Update shadow colors
         _materialInstance.SetColor(ShadowColorID, shadowColor);
+        _materialInstance.SetFloat(ShowSecondShadowID, showSecondShadow ? 1f : 0f);
+        _materialInstance.SetColor(SecondShadowColorID, secondShadowColor);
         
         // Auto-position arrow towards target
         if (arrowTarget != null)
@@ -212,11 +224,16 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
                 _graphic.SetVerticesDirty();
         }
         
-        // Update shadow offset
-        Vector2 newOffset = CalculateShadowDirection() * intensity;
-        if (Vector2.Distance(newOffset, currentShadowOffset) > 0.1f)
+        // Update shadow offsets
+        Vector2 shadowDir = CalculateShadowDirection();
+        Vector2 newOffset = shadowDir * intensity;
+        Vector2 newSecondOffset = shadowDir * intensity * secondShadowIntensityMultiplier;
+        
+        if (Vector2.Distance(newOffset, currentShadowOffset) > 0.1f ||
+            Vector2.Distance(newSecondOffset, currentSecondShadowOffset) > 0.1f)
         {
             currentShadowOffset = newOffset;
+            currentSecondShadowOffset = newSecondOffset;
             if (_graphic != null)
                 _graphic.SetVerticesDirty();
         }
@@ -328,53 +345,91 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         vh.Clear();
         
         // Build expanded quad with proper UVs
-        // Shadow vertices first
-        Vector3 offset = new Vector3(currentShadowOffset.x, currentShadowOffset.y, 0);
+        
+        // Calculate shadow offsets in local space
+        Vector3 primaryOffset = new Vector3(currentShadowOffset.x, currentShadowOffset.y, 0);
+        Vector3 secondOffset = new Vector3(currentSecondShadowOffset.x, currentSecondShadowOffset.y, 0);
         if (_canvas != null)
         {
-            offset /= _canvas.scaleFactor;
+            primaryOffset /= _canvas.scaleFactor;
+            secondOffset /= _canvas.scaleFactor;
         }
-        offset = transform.InverseTransformVector(offset);
+        primaryOffset = transform.InverseTransformVector(primaryOffset);
+        secondOffset = transform.InverseTransformVector(secondOffset);
         
         Color32 color32 = _graphic != null ? _graphic.color : Color.white;
         
-        // Shadow quad (4 vertices)
         UIVertex vert = UIVertex.simpleVert;
         vert.color = color32;
         
+        // Primary shadow quad (4 vertices) - rendered first (behind)
         // Bottom-left
-        vert.position = new Vector3(left, bottom, 0) + offset;
+        vert.position = new Vector3(left, bottom, 0) + primaryOffset;
         vert.uv0 = new Vector2(uvLeft, uvBottom);
-        vert.uv1 = new Vector2(1, 0); // Shadow flag
+        vert.uv1 = new Vector2(1, 0); // Shadow flag = 1 (primary shadow)
         vh.AddVert(vert);
         
         // Top-left
-        vert.position = new Vector3(left, top, 0) + offset;
+        vert.position = new Vector3(left, top, 0) + primaryOffset;
         vert.uv0 = new Vector2(uvLeft, uvTop);
         vert.uv1 = new Vector2(1, 0);
         vh.AddVert(vert);
         
         // Top-right
-        vert.position = new Vector3(right, top, 0) + offset;
+        vert.position = new Vector3(right, top, 0) + primaryOffset;
         vert.uv0 = new Vector2(uvRight, uvTop);
         vert.uv1 = new Vector2(1, 0);
         vh.AddVert(vert);
         
         // Bottom-right
-        vert.position = new Vector3(right, bottom, 0) + offset;
+        vert.position = new Vector3(right, bottom, 0) + primaryOffset;
         vert.uv0 = new Vector2(uvRight, uvBottom);
         vert.uv1 = new Vector2(1, 0);
         vh.AddVert(vert);
         
-        // Shadow triangles
+        // Primary shadow triangles
         vh.AddTriangle(0, 1, 2);
         vh.AddTriangle(2, 3, 0);
         
+        // Secondary shadow quad (4 vertices) - rendered between primary shadow and main
+        if (showSecondShadow)
+        {
+            // Bottom-left
+            vert.position = new Vector3(left, bottom, 0) + secondOffset;
+            vert.uv0 = new Vector2(uvLeft, uvBottom);
+            vert.uv1 = new Vector2(2, 0); // Shadow flag = 2 (secondary shadow)
+            vh.AddVert(vert);
+            
+            // Top-left
+            vert.position = new Vector3(left, top, 0) + secondOffset;
+            vert.uv0 = new Vector2(uvLeft, uvTop);
+            vert.uv1 = new Vector2(2, 0);
+            vh.AddVert(vert);
+            
+            // Top-right
+            vert.position = new Vector3(right, top, 0) + secondOffset;
+            vert.uv0 = new Vector2(uvRight, uvTop);
+            vert.uv1 = new Vector2(2, 0);
+            vh.AddVert(vert);
+            
+            // Bottom-right
+            vert.position = new Vector3(right, bottom, 0) + secondOffset;
+            vert.uv0 = new Vector2(uvRight, uvBottom);
+            vert.uv1 = new Vector2(2, 0);
+            vh.AddVert(vert);
+            
+            // Secondary shadow triangles
+            vh.AddTriangle(4, 5, 6);
+            vh.AddTriangle(6, 7, 4);
+        }
+        
         // Main quad (4 vertices)
+        int mainStartIdx = showSecondShadow ? 8 : 4;
+        
         // Bottom-left
         vert.position = new Vector3(left, bottom, 0);
         vert.uv0 = new Vector2(uvLeft, uvBottom);
-        vert.uv1 = new Vector2(0, 0); // Main flag
+        vert.uv1 = new Vector2(0, 0); // Main flag = 0
         vh.AddVert(vert);
         
         // Top-left
@@ -396,8 +451,8 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         vh.AddVert(vert);
         
         // Main triangles
-        vh.AddTriangle(4, 5, 6);
-        vh.AddTriangle(6, 7, 4);
+        vh.AddTriangle(mainStartIdx, mainStartIdx + 1, mainStartIdx + 2);
+        vh.AddTriangle(mainStartIdx + 2, mainStartIdx + 3, mainStartIdx);
     }
     
     void OnValidate()
