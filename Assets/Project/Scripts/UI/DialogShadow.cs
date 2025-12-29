@@ -25,6 +25,16 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     [Tooltip("Arrow width in pixels (scale-independent)")]
     public float arrowWidthPixels = 40f;
     
+    [Header("Inner Border")]
+    [Tooltip("Show decorative inner border")]
+    public bool showBorder = false;
+    [Tooltip("Border thickness in pixels")]
+    public float borderThicknessPixels = 3f;
+    [Tooltip("Border offset from edge in pixels")]
+    public float borderOffsetPixels = 8f;
+    [Tooltip("Border color")]
+    public Color borderColor = new Color(0f, 1f, 0.82f, 0.8f);  // Mint green
+    
     [Header("Target (Optional)")]
     [Tooltip("If set, arrow will point towards this transform")]
     public Transform arrowTarget;
@@ -46,6 +56,10 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     private static readonly int RectSizeID = Shader.PropertyToID("_RectSize");
     private static readonly int RectScreenPosID = Shader.PropertyToID("_RectScreenPos");
     private static readonly int CanvasScaleID = Shader.PropertyToID("_CanvasScale");
+    private static readonly int ShowBorderID = Shader.PropertyToID("_ShowBorder");
+    private static readonly int BorderThicknessPixelsID = Shader.PropertyToID("_BorderThicknessPixels");
+    private static readonly int BorderOffsetPixelsID = Shader.PropertyToID("_BorderOffsetPixels");
+    private static readonly int BorderColorID = Shader.PropertyToID("_BorderColor");
     
     void Awake()
     {
@@ -150,6 +164,12 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         _materialInstance.SetFloat(ArrowPerimeterID, arrowPerimeter);
         _materialInstance.SetFloat(ArrowSizePixelsID, arrowSizePixels);
         _materialInstance.SetFloat(ArrowWidthPixelsID, arrowWidthPixels);
+        
+        // Update border properties
+        _materialInstance.SetFloat(ShowBorderID, showBorder ? 1f : 0f);
+        _materialInstance.SetFloat(BorderThicknessPixelsID, borderThicknessPixels);
+        _materialInstance.SetFloat(BorderOffsetPixelsID, borderOffsetPixels);
+        _materialInstance.SetColor(BorderColorID, borderColor);
         
         // Check if arrow changed (need to rebuild mesh for arrow extension)
         bool arrowChanged = Mathf.Abs(arrowPerimeter - _lastArrowPerimeter) > 0.01f ||
@@ -360,6 +380,30 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         {
             _materialInstance.SetColor(ShadowColorID, shadowColor);
             _materialInstance.SetFloat(ArrowPerimeterID, arrowPerimeter);
+            _materialInstance.SetFloat(ShowBorderID, showBorder ? 1f : 0f);
+            _materialInstance.SetFloat(BorderThicknessPixelsID, borderThicknessPixels);
+            _materialInstance.SetFloat(BorderOffsetPixelsID, borderOffsetPixels);
+            _materialInstance.SetColor(BorderColorID, borderColor);
         }
+    }
+    
+    /// <summary>
+    /// Set border visibility.
+    /// </summary>
+    public void SetBorderVisible(bool visible)
+    {
+        showBorder = visible;
+        if (_materialInstance != null)
+            _materialInstance.SetFloat(ShowBorderID, visible ? 1f : 0f);
+    }
+    
+    /// <summary>
+    /// Set border color at runtime.
+    /// </summary>
+    public void SetBorderColor(Color color)
+    {
+        borderColor = color;
+        if (_materialInstance != null)
+            _materialInstance.SetColor(BorderColorID, color);
     }
 }

@@ -43,6 +43,12 @@ Shader "DECKADENCE/UI/DialogShadow"
         [Header(Pixelation)]
         _PixelSizePixels ("Pixel Size (Screen Pixels)", Float) = 0
         
+        [Header(Inner Border)]
+        [Toggle] _ShowBorder ("Show Border", Float) = 0
+        _BorderThicknessPixels ("Border Thickness (Pixels)", Float) = 3
+        _BorderOffsetPixels ("Border Offset from Edge (Pixels)", Float) = 8
+        _BorderColor ("Border Color", Color) = (0, 1, 0.82, 0.8)
+        
         [Header(Stencil)]
         [HideInInspector] _StencilComp ("Stencil Comparison", Float) = 8
         [HideInInspector] _Stencil ("Stencil ID", Float) = 0
@@ -137,6 +143,10 @@ Shader "DECKADENCE/UI/DialogShadow"
                 float _LeftTear;
                 float _RightTear;
                 float _PixelSizePixels;
+                float _ShowBorder;
+                float _BorderThicknessPixels;
+                float _BorderOffsetPixels;
+                float4 _BorderColor;
             CBUFFER_END
             
             // Hash function for randomness
@@ -636,6 +646,61 @@ Shader "DECKADENCE/UI/DialogShadow"
                 }
                 visible *= (1.0 - shouldCut);
                 
+                // Inner border calculation - follows the contour of the card
+                float borderThicknessCanvas = _BorderThicknessPixels / canvasScale;
+                float borderOffsetCanvas = _BorderOffsetPixels / canvasScale;
+                
+                float inBorder = 0.0;
+                if (_ShowBorder > 0.5 && visible > 0.5 && IN.isShadow < 0.5)
+                {
+                    // Only draw border inside the main rect (not on arrow)
+                    if (insideRect > 0.5 && insideArrow < 0.5)
+                    {
+                        // Find minimum distance to any edge (this gives us a contour-following distance)
+                        float minDistToEdge = min(min(distBottom, distTop), min(distLeft, distRight));
+                        
+                        // For corners, we need to consider diagonal distance
+                        // Bottom-left corner
+                        float cornerDistBL = distLeft + distBottom;
+                        float inBLCornerZone = step(cornerDistBL, blCut * 2.0);
+                        float blCornerDist = cornerDistBL - blCut;
+                        
+                        // Bottom-right corner
+                        float cornerDistBR = distRight + distBottom;
+                        float inBRCornerZone = step(cornerDistBR, brCut * 2.0);
+                        float brCornerDist = cornerDistBR - brCut;
+                        
+                        // Top-left corner
+                        float cornerDistTL = distLeft + distTop;
+                        float inTLCornerZone = step(cornerDistTL, tlCut * 2.0);
+                        float tlCornerDist = cornerDistTL - tlCut;
+                        
+                        // Top-right corner
+                        float cornerDistTR = distRight + distTop;
+                        float inTRCornerZone = step(cornerDistTR, trCut * 2.0);
+                        float trCornerDist = cornerDistTR - trCut;
+                        
+                        // Use corner distance if in corner zone, otherwise use edge distance
+                        float effectiveDist = minDistToEdge;
+                        
+                        // Blend to corner distance when in corner zones
+                        if (inBLCornerZone > 0.5 && cornerMask > 0.5) effectiveDist = min(effectiveDist, blCornerDist * 0.707);
+                        if (inBRCornerZone > 0.5 && cornerMask > 0.5) effectiveDist = min(effectiveDist, brCornerDist * 0.707);
+                        if (inTLCornerZone > 0.5 && cornerMask > 0.5) effectiveDist = min(effectiveDist, tlCornerDist * 0.707);
+                        if (inTRCornerZone > 0.5 && cornerMask > 0.5) effectiveDist = min(effectiveDist, trCornerDist * 0.707);
+                        
+                        // Border is drawn between offset and offset+thickness from edge
+                        float borderStart = borderOffsetCanvas;
+                        float borderEnd = borderOffsetCanvas + borderThicknessCanvas;
+                        
+                        inBorder = step(borderStart, effectiveDist) * step(effectiveDist, borderEnd);
+                        
+                        // Don't draw border where the card is cut (corners or tears)
+                        inBorder *= cornerMask;
+                        inBorder *= (1.0 - shouldCut);
+                    }
+                }
+                
                 // Final alpha
                 float finalAlpha = visible * IN.color.a;
                 
@@ -650,7 +715,10 @@ Shader "DECKADENCE/UI/DialogShadow"
                 else
                 {
                     half4 color;
-                    color.rgb = IN.color.rgb;
+                    // Blend border color if in border zone
+                    float3 baseColor = IN.color.rgb;
+                    float3 finalColor = lerp(baseColor, _BorderColor.rgb, inBorder * _BorderColor.a);
+                    color.rgb = finalColor;
                     color.a = finalAlpha;
                     return color;
                 }
