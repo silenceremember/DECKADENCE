@@ -37,8 +37,11 @@ public class TextAnimatorPreset : ScriptableObject
     [Tooltip("Автостарт при активации")]
     public bool startOnEnable = false;
     
-    [Tooltip("Печатать из центра: каждая новая буква появляется так, чтобы видимый текст был центрирован")]
+    [Tooltip("Печатать из центра: каждая новая буква появляется так, чтобы видимый текст был центрирован по горизонтали")]
     public bool centerOutAppear = false;
+    
+    [Tooltip("Вертикальное центрирование: видимые строки центрируются по вертикали относительно полного текста")]
+    public bool centerOutAppearVertical = false;
     
     [Header("=== DISTANCE-BASED SETTINGS ===")]
     [Tooltip("Скорость интерполяции символов")]

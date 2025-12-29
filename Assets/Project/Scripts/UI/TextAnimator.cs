@@ -136,6 +136,7 @@ public class TextAnimator : MonoBehaviour
     private float EffectSmoothSpeed => preset != null ? preset.effectSmoothSpeed : 15f;
     private float StateTransitionDuration => preset != null ? preset.stateTransitionDuration : 0.15f;
     private bool CenterOutAppear => preset != null && preset.centerOutAppear;
+    private bool CenterOutAppearVertical => preset != null && preset.centerOutAppearVertical;
     
     // Current disappear mode for active disappearing
     private DisappearMode _currentDisappearMode = DisappearMode.Normal;
@@ -1164,11 +1165,15 @@ public class TextAnimator : MonoBehaviour
         // Если centerOutAppear включен, вычисляем смещение:
         // центр видимых букв должен быть в 0 (центре исходного текста)
         float centerOutOffsetX = 0f;
-        if (CenterOutAppear)
+        float centerOutOffsetY = 0f;
+        
+        if (CenterOutAppear || CenterOutAppearVertical)
         {
             // Находим границы видимых букв (alpha > 0)
             float leftMost = float.MaxValue;
             float rightMost = float.MinValue;
+            float topMost = float.MinValue;
+            float bottomMost = float.MaxValue;
             bool hasVisibleLetters = false;
             
             for (int i = 0; i < textInfo.characterCount && i < _letterData.Length; i++)
@@ -1184,12 +1189,15 @@ public class TextAnimator : MonoBehaviour
                 Vector3[] srcVerts = _cachedMeshInfo[matIdx].vertices;
                 if (vertIdx + 3 >= srcVerts.Length) continue;
                 
-                // Находим левую и правую границы буквы (в оригинальных позициях)
+                // Находим границы буквы (в оригинальных позициях)
                 for (int j = 0; j < 4; j++)
                 {
                     float x = srcVerts[vertIdx + j].x;
+                    float y = srcVerts[vertIdx + j].y;
                     if (x < leftMost) leftMost = x;
                     if (x > rightMost) rightMost = x;
+                    if (y > topMost) topMost = y;
+                    if (y < bottomMost) bottomMost = y;
                 }
                 hasVisibleLetters = true;
             }
@@ -1199,6 +1207,9 @@ public class TextAnimator : MonoBehaviour
                 // Центр полного текста (все буквы)
                 float fullLeft = float.MaxValue;
                 float fullRight = float.MinValue;
+                float fullTop = float.MinValue;
+                float fullBottom = float.MaxValue;
+                
                 for (int i = 0; i < textInfo.characterCount && i < _letterData.Length; i++)
                 {
                     TMP_CharacterInfo charInfo = textInfo.characterInfo[i];
@@ -1214,16 +1225,29 @@ public class TextAnimator : MonoBehaviour
                     for (int j = 0; j < 4; j++)
                     {
                         float x = srcVerts[vertIdx + j].x;
+                        float y = srcVerts[vertIdx + j].y;
                         if (x < fullLeft) fullLeft = x;
                         if (x > fullRight) fullRight = x;
+                        if (y > fullTop) fullTop = y;
+                        if (y < fullBottom) fullBottom = y;
                     }
                 }
                 
-                float fullCenterX = (fullLeft + fullRight) * 0.5f;
-                float visibleCenterX = (leftMost + rightMost) * 0.5f;
+                // Горизонтальное смещение
+                if (CenterOutAppear)
+                {
+                    float fullCenterX = (fullLeft + fullRight) * 0.5f;
+                    float visibleCenterX = (leftMost + rightMost) * 0.5f;
+                    centerOutOffsetX = fullCenterX - visibleCenterX;
+                }
                 
-                // Смещаем видимые буквы так, чтобы их центр совпадал с центром полного текста
-                centerOutOffsetX = fullCenterX - visibleCenterX;
+                // Вертикальное смещение
+                if (CenterOutAppearVertical)
+                {
+                    float fullCenterY = (fullTop + fullBottom) * 0.5f;
+                    float visibleCenterY = (topMost + bottomMost) * 0.5f;
+                    centerOutOffsetY = fullCenterY - visibleCenterY;
+                }
             }
         }
         
@@ -1251,9 +1275,10 @@ public class TextAnimator : MonoBehaviour
             float scale = letter.currentScale;
             float rotation = letter.currentRotation * Mathf.Deg2Rad;
             
-            // Добавляем centerOutOffsetX к offset только для видимых букв
+            // Добавляем centerOutOffset к offset только для видимых букв
             float extraOffsetX = (letter.currentAlpha > 0.01f) ? centerOutOffsetX : 0f;
-            Vector3 offset = new Vector3(letter.currentOffset.x + extraOffsetX, letter.currentOffset.y, 0f);
+            float extraOffsetY = (letter.currentAlpha > 0.01f) ? centerOutOffsetY : 0f;
+            Vector3 offset = new Vector3(letter.currentOffset.x + extraOffsetX, letter.currentOffset.y + extraOffsetY, 0f);
             
             float cos = Mathf.Cos(rotation);
             float sin = Mathf.Sin(rotation);

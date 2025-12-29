@@ -695,13 +695,11 @@ public class CardDisplay : MonoBehaviour
             _debugLoggedReady = false;
         }
         
-        // Прозрачность блока текста через CanvasGroup (0 -> 50)
-        // Не меняем пока ждём disappear анимацию
+        // Прозрачность блока текста - всегда полностью видимый
+        // (убрали зависимость от расстояния до центра)
         if (!_isWaitingForDisappear && _actionTextCanvasGroup != null)
         {
-            float targetAlpha = Mathf.Clamp01(absDiff / actionTextFadeDistance);
-            // Резкое изменение alpha (без интерполяции)
-            _actionTextCanvasGroup.alpha = targetAlpha;
+            _actionTextCanvasGroup.alpha = 1f;
         }
         
         // Плавный переход цвета текста И бабла
