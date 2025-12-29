@@ -1,0 +1,54 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 099d3a404be3a644886a5d7e9e05c735, type: 3}
+  m_Name: MultiBubblePreset
+  m_EditorClassIdentifier: Assembly-CSharp::MultiBubblePreset
+  layers:
+  - enabled: 0
+    offset: 0
+    cutoutNextLayer: 0
+    cutoutPadding: 0
+    fillColor: {r: 0, g: 0, b: 0, a: 0}
+    showArrow: 0
+    arrowSize: 0
+    arrowWidth: 0
+    showBorder: 0
+    borderColor: {r: 0, g: 0, b: 0, a: 0}
+    borderThickness: 0
+    borderOffset: 0
+    borderStyle: 0
+    dashLength: 0
+    dashGap: 0
+    shadowColor: {r: 0, g: 0, b: 0, a: 0}
+    shadowIntensity: 0
+    showSecondShadow: 0
+    secondShadowColor: {r: 0, g: 0, b: 0, a: 0}
+    secondShadowIntensity: 0
+    showInnerShadow: 0
+    innerShadowIntensity: 0
+    innerShadowColor: {r: 0, g: 0, b: 0, a: 0}
+    topTear: 0
+    bottomTear: 0
+    leftTear: 0
+    rightTear: 0
+  textNormalColor: {r: 0, g: 0, b: 0, a: 1}
+  textActiveColor: {r: 0.36, g: 0.25, b: 0.22, a: 1}
+  cornerCutMin: 15
+  cornerCutMax: 25
+  tearDepthMin: 5
+  tearDepthMax: 15
+  tearWidthMin: 10
+  tearWidthMax: 30
+  tearSpacingMin: 40
+  tearSpacingMax: 80
+  animationFPS: 1
+  tearSeed: 0

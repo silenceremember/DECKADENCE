@@ -12,23 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd32ad554734cc145a1c09848e6facec, type: 3}
   m_Name: Player
   m_EditorClassIdentifier: Assembly-CSharp::DialogBubblePreset
-  presetName: Default
-  fillColor: {r: 0.15, g: 0.12, b: 0.1, a: 0.95}
-  showBorder: 1
-  borderColor: {r: 0.95, g: 0.9, b: 0.82, a: 0.9}
-  borderThickness: 2
-  borderOffset: 6
+  fillColor: {r: 0.4245283, g: 0.4245283, b: 0.4245283, a: 1}
+  activeColor: {r: 0.4245283, g: 0.4245283, b: 0.4245283, a: 1}
+  textNormalColor: {r: 1, g: 1, b: 1, a: 1}
+  textActiveColor: {r: 1, g: 0.9780377, b: 0, a: 1}
+  showBorder: 0
+  borderColor: {r: 0.6886792, g: 0.6886792, b: 0.6886792, a: 1}
+  borderThickness: 10
+  borderOffset: 0
   borderStyle: 0
   dashLength: 8
   dashGap: 4
   secondBorderOffset: 4
-  showInnerShadow: 0
-  innerShadowIntensity: 15
+  showInnerShadow: 1
+  innerShadowIntensity: 7.5
   innerShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  shadowIntensity: 15
-  showSecondShadow: 1
-  secondShadowColor: {r: 0, g: 0, b: 0, a: 0.3}
+  shadowIntensity: 1
+  showSecondShadow: 0
+  secondShadowColor: {r: 0.3207547, g: 0.3207547, b: 0.3207547, a: 1}
+  secondShadowIntensity: 0.3
   topTear: 0
   bottomTear: 0
   leftTear: 0
