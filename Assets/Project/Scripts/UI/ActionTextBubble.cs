@@ -15,14 +15,14 @@ using TMPro;
 public class ActionTextBubble : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("The bubble background RectTransform (with DialogShadow)")]
+    [Tooltip("The bubble background RectTransform (with MultiBubbleRenderer)")]
     public RectTransform bubbleRect;
     
     [Tooltip("The text component inside the bubble")]
     public TextMeshProUGUI textComponent;
     
-    [Tooltip("Optional: DialogShadow for disabling arrow")]
-    public DialogShadow dialogShadow;
+    [Tooltip("Optional: MultiBubbleRenderer for preset-based rendering")]
+    public MultiBubbleRenderer bubbleRenderer;
     
     [Tooltip("Image component on the bubble for color control")]
     public Image bubbleImage;
@@ -93,10 +93,10 @@ public class ActionTextBubble : MonoBehaviour
             bubbleImage = bubbleRect.GetComponent<Image>();
         }
         
-        // Auto-disable arrow on DialogShadow
-        if (dialogShadow != null)
+        // Auto-get MultiBubbleRenderer from bubbleRect if not assigned
+        if (bubbleRenderer == null && bubbleRect != null)
         {
-            dialogShadow.showArrow = false;
+            bubbleRenderer = bubbleRect.GetComponent<MultiBubbleRenderer>();
         }
     }
     

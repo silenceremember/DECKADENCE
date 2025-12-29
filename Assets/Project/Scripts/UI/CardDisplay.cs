@@ -695,21 +695,25 @@ public class CardDisplay : MonoBehaviour
         // Плавный переход цвета текста И бабла
         float colorLerpSpeed = actionTextColorTransitionTime > 0 ? 1f / actionTextColorTransitionTime : 100f;
         
-        // Цвет текста и бабла - берём из SO пресета
-        if (actionTextBubble != null && actionTextBubble.dialogShadow != null && 
-            actionTextBubble.dialogShadow.bubblePreset != null)
+        // Цвет текста и бабла - берём из MultiBubblePreset
+        if (actionTextBubble != null && actionTextBubble.bubbleRenderer != null && 
+            actionTextBubble.bubbleRenderer.preset != null)
         {
-            var preset = actionTextBubble.dialogShadow.bubblePreset;
+            var preset = actionTextBubble.bubbleRenderer.preset;
             
-            // Text color
+            // Text color from preset
             Color targetTextColor = progress >= 1.0f ? preset.textActiveColor : preset.textNormalColor;
             actionText.color = Color.Lerp(actionText.color, targetTextColor, Time.deltaTime * colorLerpSpeed);
             
-            // Bubble color
-            Color targetBubbleColor = progress >= 1.0f ? preset.activeColor : preset.fillColor;
-            Color currentBubbleColor = actionTextBubble.GetBubbleColor();
-            Color newBubbleColor = Color.Lerp(currentBubbleColor, targetBubbleColor, Time.deltaTime * colorLerpSpeed);
-            actionTextBubble.SetBubbleColor(newBubbleColor);
+            // Bubble color - get from front layer of preset
+            var frontLayer = preset.GetFrontLayer();
+            if (frontLayer != null)
+            {
+                Color targetBubbleColor = progress >= 1.0f ? frontLayer.activeColor : frontLayer.fillColor;
+                Color currentBubbleColor = actionTextBubble.GetBubbleColor();
+                Color newBubbleColor = Color.Lerp(currentBubbleColor, targetBubbleColor, Time.deltaTime * colorLerpSpeed);
+                actionTextBubble.SetBubbleColor(newBubbleColor);
+            }
         }
         
         // Наклон блока текста в сторону свайпа (фиксированный угол)

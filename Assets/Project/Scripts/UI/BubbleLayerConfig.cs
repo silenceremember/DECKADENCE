@@ -24,6 +24,9 @@ public class BubbleLayerConfig
     [Tooltip("Fill color of this layer")]
     public Color fillColor = new Color(0.15f, 0.12f, 0.1f, 0.95f);
     
+    [Tooltip("Active/selected state color")]
+    public Color activeColor = new Color(1f, 0.97f, 0.88f, 0.95f);
+    
     [Header("Arrow")]
     [Tooltip("Show arrow on this layer")]
     public bool showArrow = false;
