@@ -866,7 +866,8 @@ Shader "DECKADENCE/UI/MultiBubble"
                 }
                 else // Fill (quadType == 0)
                 {
-                    float3 color = layer.fillColor.rgb;
+                    // Multiply layer fill color with vertex color (from Image.color)
+                    float3 color = layer.fillColor.rgb * IN.color.rgb;
                     
                     // Border
                     if (layer.showBorder > 0.5)
