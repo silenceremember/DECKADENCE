@@ -700,8 +700,8 @@ public class CardDisplay : MonoBehaviour
         if (!_isWaitingForDisappear && _actionTextCanvasGroup != null)
         {
             float targetAlpha = Mathf.Clamp01(absDiff / actionTextFadeDistance);
-            // Плавная интерполяция alpha
-            _actionTextCanvasGroup.alpha = Mathf.Lerp(_actionTextCanvasGroup.alpha, targetAlpha, Time.deltaTime * 12f);
+            // Резкое изменение alpha (без интерполяции)
+            _actionTextCanvasGroup.alpha = targetAlpha;
         }
         
         // Плавный переход цвета текста И бабла
@@ -1004,35 +1004,28 @@ public class CardDisplay : MonoBehaviour
     {
         _isWaitingForDisappear = true;
         
-        // Получаем длительность анимации из preset
-        float waitTime = 0.15f; // fallback
+        // Получаем длительность анимации из preset (только если есть эффекты)
+        float waitTime = 0f;
         if (actionAnimator != null && actionAnimator.preset != null)
         {
-            waitTime = actionAnimator.preset.disappearReturnDuration * 1.2f + 0.03f;
-        }
-        
-        // Плавно гасим текст
-        float fadeOutTime = 0.1f;
-        float elapsed = 0f;
-        float startAlpha = _actionTextCanvasGroup != null ? _actionTextCanvasGroup.alpha : 1f;
-        
-        while (elapsed < fadeOutTime)
-        {
-            elapsed += Time.deltaTime;
-            if (_actionTextCanvasGroup != null)
+            bool hasEffects = actionAnimator.preset.HasDisappearEffects(DisappearMode.Return);
+            if (hasEffects)
             {
-                _actionTextCanvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, elapsed / fadeOutTime);
+                waitTime = actionAnimator.preset.disappearReturnDuration + 0.02f;
             }
-            yield return null;
         }
         
+        // Мгновенно скрываем CanvasGroup
         if (_actionTextCanvasGroup != null)
         {
             _actionTextCanvasGroup.alpha = 0f;
         }
         
-        // Ждём завершения disappear анимации
-        yield return new WaitForSeconds(Mathf.Max(0f, waitTime - fadeOutTime));
+        // Ждём завершения disappear анимации (если есть эффекты)
+        if (waitTime > 0f)
+        {
+            yield return new WaitForSeconds(waitTime);
+        }
         
         if (actionAnimator != null)
         {
@@ -1040,43 +1033,34 @@ public class CardDisplay : MonoBehaviour
             actionAnimator.ResetProgress();
         }
         
-        // alpha остаётся 0 так как текст пустой
-        
         _isWaitingForDisappear = false;
         _disappearCoroutine = null;
     }
     
     IEnumerator WaitForDisappearAndChangeText()
     {
-        // Получаем длительность анимации из preset
-        float waitTime = 0.15f; // fallback
+        // Получаем длительность анимации из preset (только если есть эффекты)
+        float waitTime = 0f;
         if (actionAnimator != null && actionAnimator.preset != null)
         {
-            waitTime = actionAnimator.preset.disappearReturnDuration * 1.2f + 0.03f;
-        }
-        
-        // Плавно гасим текст
-        float fadeTime = 0.1f;
-        float elapsed = 0f;
-        float startAlpha = _actionTextCanvasGroup != null ? _actionTextCanvasGroup.alpha : 1f;
-        
-        while (elapsed < fadeTime)
-        {
-            elapsed += Time.deltaTime;
-            if (_actionTextCanvasGroup != null)
+            bool hasEffects = actionAnimator.preset.HasDisappearEffects(DisappearMode.Return);
+            if (hasEffects)
             {
-                _actionTextCanvasGroup.alpha = Mathf.Lerp(startAlpha, 0f, elapsed / fadeTime);
+                waitTime = actionAnimator.preset.disappearReturnDuration + 0.02f;
             }
-            yield return null;
         }
         
+        // Мгновенно скрываем CanvasGroup
         if (_actionTextCanvasGroup != null)
         {
             _actionTextCanvasGroup.alpha = 0f;
         }
         
-        // Ждём завершения disappear анимации
-        yield return new WaitForSeconds(Mathf.Max(0f, waitTime - fadeTime));
+        // Ждём завершения disappear анимации (если есть эффекты)
+        if (waitTime > 0f)
+        {
+            yield return new WaitForSeconds(waitTime);
+        }
         
         // Устанавливаем новый текст
         if (actionAnimator != null && !string.IsNullOrEmpty(_pendingText))
@@ -1085,18 +1069,7 @@ public class CardDisplay : MonoBehaviour
             actionAnimator.ResetProgress();
         }
         
-        // Плавно показываем новый текст
-        elapsed = 0f;
-        while (elapsed < fadeTime)
-        {
-            elapsed += Time.deltaTime;
-            if (_actionTextCanvasGroup != null)
-            {
-                _actionTextCanvasGroup.alpha = Mathf.Lerp(0f, 1f, elapsed / fadeTime);
-            }
-            yield return null;
-        }
-        
+        // Мгновенно показываем новый текст
         if (_actionTextCanvasGroup != null)
         {
             _actionTextCanvasGroup.alpha = 1f;

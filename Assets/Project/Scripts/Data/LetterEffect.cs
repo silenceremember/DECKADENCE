@@ -270,6 +270,19 @@ public class StateEffects
     public LetterEffect[] effects = new LetterEffect[0];
     
     /// <summary>
+    /// Проверяет, есть ли активные эффекты в этом состоянии.
+    /// </summary>
+    public bool HasEffects()
+    {
+        if (effects == null || effects.Length == 0) return false;
+        foreach (var effect in effects)
+        {
+            if (effect != null && effect.type != EffectType.None) return true;
+        }
+        return false;
+    }
+    
+    /// <summary>
     /// Вычислить комбинированный результат всех эффектов.
     /// </summary>
     public EffectResult Calculate(float time, int charIndex, float stateProgress, float intensity = 1f)

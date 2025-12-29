@@ -103,6 +103,24 @@ public class TextAnimatorPreset : ScriptableObject
     public LetterExplosionPreset explosionPreset;
     
     /// <summary>
+    /// Есть ли эффекты появления.
+    /// </summary>
+    public bool HasAppearEffects => appearEffects?.HasEffects() ?? false;
+    
+    /// <summary>
+    /// Есть ли эффекты исчезновения для указанного режима.
+    /// </summary>
+    public bool HasDisappearEffects(DisappearMode mode)
+    {
+        switch (mode)
+        {
+            case DisappearMode.Return: return disappearReturnEffects?.HasEffects() ?? false;
+            case DisappearMode.Selected: return disappearSelectedEffects?.HasEffects() ?? false;
+            default: return disappearNormalEffects?.HasEffects() ?? false;
+        }
+    }
+    
+    /// <summary>
     /// Вычислить эффекты для появления.
     /// </summary>
     public EffectResult CalculateAppear(float time, int charIndex, float stateProgress)

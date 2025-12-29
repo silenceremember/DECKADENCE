@@ -835,8 +835,25 @@ public class TextAnimator : MonoBehaviour
             {
                 if (_letterData[i].state == LetterState.Hidden || isDisappearing)
                 {
-                    _letterData[i].state = LetterState.Appearing;
-                    _letterData[i].stateTime = 0f;
+                    // Если есть эффекты появления - анимируем через Appearing
+                    // Иначе - мгновенно показываем в Idle/Active
+                    bool hasAppear = preset?.HasAppearEffects ?? false;
+                    if (hasAppear)
+                    {
+                        _letterData[i].state = LetterState.Appearing;
+                        _letterData[i].stateTime = 0f;
+                    }
+                    else
+                    {
+                        // Мгновенное появление - сразу в нужное состояние
+                        _letterData[i].state = progress > 0.01f ? LetterState.Active : LetterState.Idle;
+                        _letterData[i].stateTime = 0f;
+                        _letterData[i].currentScale = 1f;
+                        _letterData[i].currentAlpha = 1f;
+                        _letterData[i].currentOffset = Vector2.zero;
+                        _letterData[i].currentRotation = 0f;
+                        _letterData[i].transitionProgress = 1f;
+                    }
                     
                     if (i > _lastVisibleChars - 1)
                     {
@@ -944,28 +961,37 @@ public class TextAnimator : MonoBehaviour
                 case LetterState.DisappearingReturn:
                 case LetterState.DisappearingSelected:
                     DisappearMode mode = GetDisappearModeFromState(letter.state);
-                    float disappearDuration = preset.GetDisappearDuration(mode);
-                    float disappearT = Mathf.Clamp01(letter.stateTime / disappearDuration);
-                    result = preset.CalculateDisappear(_animationTime, i, disappearT, mode);
+                    bool hasDisappearEffects = preset?.HasDisappearEffects(mode) ?? false;
                     
-                    // ОБЯЗАТЕЛЬНО применяем fade alpha на основе прогресса disappear
-                    // Если effects содержит Fade - оно применится через CalculateDisappear
-                    // Но мы всё равно умножаем на (1 - disappearT) чтобы гарантировать исчезновение
-                    result.alpha *= (1f - disappearT);
-                    result.scale *= Mathf.Lerp(1f, 0f, disappearT * disappearT); // scale тоже уменьшается
-                    
-                    // Для Selected и Return disappear: сохраняем позиции из предыдущего состояния
-                    // Буквы должны исчезать "на месте", а не выстраиваться в линию
-                    if (letter.state == LetterState.DisappearingSelected || 
-                        letter.state == LetterState.DisappearingReturn)
+                    if (hasDisappearEffects)
                     {
-                        // Добавляем сохранённые смещения к результату disappear
-                        result.offset += letter.prevOffset;
-                        result.rotation += letter.prevRotation;
+                        // Есть эффекты - анимируем
+                        float disappearDuration = preset.GetDisappearDuration(mode);
+                        float disappearT = Mathf.Clamp01(letter.stateTime / disappearDuration);
+                        result = preset.CalculateDisappear(_animationTime, i, disappearT, mode);
+                        
+                        // Применяем fade alpha на основе прогресса
+                        result.alpha *= (1f - disappearT);
+                        result.scale *= Mathf.Lerp(1f, 0f, disappearT * disappearT);
+                        
+                        // Для Selected и Return: сохраняем позиции из предыдущего состояния
+                        if (letter.state == LetterState.DisappearingSelected || 
+                            letter.state == LetterState.DisappearingReturn)
+                        {
+                            result.offset += letter.prevOffset;
+                            result.rotation += letter.prevRotation;
+                        }
+                        
+                        if (disappearT >= 1f)
+                        {
+                            newState = LetterState.Hidden;
+                        }
                     }
-                    
-                    if (disappearT >= 1f)
+                    else
                     {
+                        // Нет эффектов - мгновенное исчезновение
+                        result.alpha = 0f;
+                        result.scale = 0f;
                         newState = LetterState.Hidden;
                     }
                     break;
@@ -1077,29 +1103,50 @@ public class TextAnimator : MonoBehaviour
             Vector2 targetOffset = Vector2.Lerp(letter.prevOffset, result.offset, smoothT);
             float targetRotation = Mathf.Lerp(letter.prevRotation, result.rotation, smoothT);
             
-            // Для быстрых режимов (Return/Selected/Exploding) используем более быструю интерполяцию
-            // Для Exploding - прямое применение без сглаживания для точного следования траектории
+            // Определяем, нужна ли интерполяция (используем ТЕКУЩЕЕ состояние после newState)
             bool isExploding = letter.state == LetterState.Exploding;
             bool isFastDisappear = letter.state == LetterState.DisappearingReturn || 
                                    letter.state == LetterState.DisappearingSelected;
+            bool currentIsDisappearing = IsDisappearingState(letter.state);
             
-            if (isExploding)
+            // Проверяем, есть ли эффекты для текущего состояния
+            bool hasStateEffects = false;
+            if (preset != null)
             {
-                // Прямое применение значений для точного следования траектории Bezier
+                if (letter.state == LetterState.Appearing)
+                    hasStateEffects = preset.HasAppearEffects;
+                else if (currentIsDisappearing)
+                    hasStateEffects = preset.HasDisappearEffects(GetDisappearModeFromState(letter.state));
+                else if (letter.state == LetterState.Idle || letter.state == LetterState.Active || letter.state == LetterState.Selected)
+                    hasStateEffects = (preset.idleEffects?.HasEffects() ?? false) || 
+                                      (preset.activeEffects?.HasEffects() ?? false) ||
+                                      (preset.selectedEffects?.HasEffects() ?? false);
+            }
+            
+            // Если нет эффектов или Exploding - прямое применение без интерполяции
+            if (isExploding || (!hasStateEffects && (letter.state == LetterState.Hidden || currentIsDisappearing)))
+            {
                 letter.currentScale = result.scale;
                 letter.currentAlpha = result.alpha;
                 letter.currentOffset = result.offset;
                 letter.currentRotation = result.rotation;
             }
-            else
+            else if (hasStateEffects)
             {
+                // Есть эффекты - используем интерполяцию
                 float effectiveSmooth = isFastDisappear ? 50f : EffectSmoothSpeed;
-                
-                // Дополнительная интерполяция для сглаживания резких изменений в самих эффектах
                 letter.currentScale = Mathf.Lerp(letter.currentScale, targetScale, dt * effectiveSmooth);
                 letter.currentAlpha = Mathf.Lerp(letter.currentAlpha, targetAlpha, dt * effectiveSmooth);
                 letter.currentOffset = Vector2.Lerp(letter.currentOffset, targetOffset, dt * effectiveSmooth);
                 letter.currentRotation = Mathf.Lerp(letter.currentRotation, targetRotation, dt * effectiveSmooth);
+            }
+            else
+            {
+                // Нет специальных эффектов, но это Idle/Active/Selected - применяем быструю интерполяцию
+                letter.currentScale = Mathf.Lerp(letter.currentScale, result.scale, dt * 30f);
+                letter.currentAlpha = Mathf.Lerp(letter.currentAlpha, result.alpha, dt * 30f);
+                letter.currentOffset = Vector2.Lerp(letter.currentOffset, result.offset, dt * 30f);
+                letter.currentRotation = Mathf.Lerp(letter.currentRotation, result.rotation, dt * 30f);
             }
         }
     }
