@@ -17,39 +17,15 @@ MonoBehaviour:
   charactersPerSecond: 30
   delay: 0
   startOnEnable: 0
-  interpolationSpeed: 30
+  centerOutAppear: 1
+  centerOutAppearVertical: 1
+  interpolationSpeed: 300
   appearDuration: 0.15
   appearStagger: 0.03
   effectSmoothSpeed: 12
   stateTransitionDuration: 0.12
   appearEffects:
-    effects:
-    - type: 3
-      waveAmplitude: 4
-      waveSpeedMin: 1
-      waveSpeedMax: 2.5
-      pulseAmplitude: 0.1
-      pulseSpeed: 6
-      bounceOvershoot: 1.35
-      fadeFrom: 0
-      fadeTo: 1
-      slideDirection: 0
-      slideDistance: 20
-      jitterIntensity: 2
-      jitterSpeed: 30
-    - type: 5
-      waveAmplitude: 4
-      waveSpeedMin: 1
-      waveSpeedMax: 2.5
-      pulseAmplitude: 0.1
-      pulseSpeed: 6
-      bounceOvershoot: 1.2
-      fadeFrom: 0
-      fadeTo: 1
-      slideDirection: 0
-      slideDistance: 25
-      jitterIntensity: 2
-      jitterSpeed: 30
+    effects: []
   idleEffects:
     effects:
     - type: 1
@@ -122,33 +98,7 @@ MonoBehaviour:
       jitterIntensity: 2
       jitterSpeed: 30
   disappearNormalEffects:
-    effects:
-    - type: 3
-      waveAmplitude: 4
-      waveSpeedMin: 1
-      waveSpeedMax: 2.5
-      pulseAmplitude: 0.1
-      pulseSpeed: 6
-      bounceOvershoot: 0.5
-      fadeFrom: 1
-      fadeTo: 0
-      slideDirection: 1
-      slideDistance: 15
-      jitterIntensity: 2
-      jitterSpeed: 30
-    - type: 5
-      waveAmplitude: 4
-      waveSpeedMin: 1
-      waveSpeedMax: 2.5
-      pulseAmplitude: 0.1
-      pulseSpeed: 6
-      bounceOvershoot: 1.2
-      fadeFrom: 1
-      fadeTo: 0
-      slideDirection: 1
-      slideDistance: 12
-      jitterIntensity: 2
-      jitterSpeed: 30
+    effects: []
   disappearNormalDuration: 0.15
   disappearReturnEffects:
     effects:
