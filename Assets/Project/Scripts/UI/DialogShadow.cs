@@ -4,57 +4,34 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Dialog box shadow with dynamic arrow positioning.
-/// Controls arrow position via shader properties.
+/// Styling controlled via DialogBubblePreset ScriptableObject.
 /// </summary>
 [RequireComponent(typeof(Graphic))]
 [ExecuteAlways]
 public class DialogShadow : MonoBehaviour, IMeshModifier
 {
-    [Header("Primary Shadow")]
-    public Color shadowColor = new Color(0, 0, 0, 0.5f);
-    public float intensity = 15f;
-    
-    [Header("Secondary Shadow (Volume)")]
-    [Tooltip("Enable second shadow layer for added depth")]
-    public bool showSecondShadow = true;
-    public Color secondShadowColor = new Color(0, 0, 0, 0.3f);
-    [Tooltip("Intensity multiplier relative to primary shadow (0.3 = 30% of primary offset)")]
-    public float secondShadowIntensityMultiplier = 0.4f;
+    [Header("Preset")]
+    [Tooltip("Visual style preset (controls colors, border, shadows)")]
+    public DialogBubblePreset bubblePreset;
     
     [Header("Arrow Settings")]
     [Tooltip("Enable or disable the arrow")]
     public bool showArrow = true;
     [Range(0f, 1f)]
     [Tooltip("Position on perimeter: 0=center bottom, 0.25=center right, 0.5=center top, 0.75=center left")]
-    public float arrowPerimeter = 0f;  // Default: center of bottom edge
+    public float arrowPerimeter = 0f;
     [Tooltip("Arrow size in pixels (scale-independent)")]
     public float arrowSizePixels = 30f;
     [Tooltip("Arrow width in pixels (scale-independent)")]
     public float arrowWidthPixels = 40f;
     
-    [Header("Inner Border")]
-    [Tooltip("Show decorative inner border")]
-    public bool showBorder = false;
-    [Tooltip("Border thickness in pixels")]
-    public float borderThicknessPixels = 3f;
-    [Tooltip("Border offset from edge in pixels")]
-    public float borderOffsetPixels = 8f;
-    [Tooltip("Border color")]
-    public Color borderColor = new Color(0f, 1f, 0.82f, 0.8f);  // Mint green
-    
-    [Header("Inner Shadow")]
-    [Tooltip("Show inner shadow cast from frame edges")]
-    public bool showInnerShadow = false;
-    [Tooltip("Raised = border pushed forward, Recessed = frame above content")]
-    public bool borderShadowRaised = true;
-    [Tooltip("Shadow intensity (same formula as main shadow)")]
-    public float borderShadowIntensity = 15f;
-    [Tooltip("Shadow color")]
-    public Color innerShadowColor = new Color(0f, 0f, 0f, 0.5f);
-    
     [Header("Target (Optional)")]
     [Tooltip("If set, arrow will point towards this transform")]
     public Transform arrowTarget;
+    
+    [Header("Runtime Overrides")]
+    [Tooltip("Raised = border pushed forward, Recessed = frame above content")]
+    public bool borderShadowRaised = true;
     
     [Header("Debug")]
     [SerializeField] private Vector2 currentShadowOffset;
@@ -80,6 +57,10 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     private static readonly int BorderThicknessPixelsID = Shader.PropertyToID("_BorderThicknessPixels");
     private static readonly int BorderOffsetPixelsID = Shader.PropertyToID("_BorderOffsetPixels");
     private static readonly int BorderColorID = Shader.PropertyToID("_BorderColor");
+    private static readonly int BorderStyleID = Shader.PropertyToID("_BorderStyle");
+    private static readonly int BorderDashLengthID = Shader.PropertyToID("_BorderDashLength");
+    private static readonly int BorderDashGapID = Shader.PropertyToID("_BorderDashGap");
+    private static readonly int BorderSecondOffsetID = Shader.PropertyToID("_BorderSecondOffset");
     private static readonly int ShowInnerShadowID = Shader.PropertyToID("_ShowInnerShadow");
     private static readonly int BorderShadowIntensityID = Shader.PropertyToID("_BorderShadowIntensity");
     private static readonly int InnerShadowColorID = Shader.PropertyToID("_InnerShadowColor");
@@ -134,10 +115,12 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     private float _lastArrowPerimeter;
     private float _lastArrowSize;
     private Vector2 _lastRectSize;
+    private bool _lastShowSecondShadow;
     
     void LateUpdate()
     {
         if (_materialInstance == null) return;
+        if (bubblePreset == null) return;  // Need preset for styling
         
         if (_rectTransform == null)
             _rectTransform = GetComponent<RectTransform>();
@@ -174,10 +157,21 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
                 _graphic.SetVerticesDirty();
         }
         
-        // Update shadow colors
-        _materialInstance.SetColor(ShadowColorID, shadowColor);
-        _materialInstance.SetFloat(ShowSecondShadowID, showSecondShadow ? 1f : 0f);
-        _materialInstance.SetColor(SecondShadowColorID, secondShadowColor);
+        // === Read ALL styling from bubblePreset ===
+        // NOTE: fillColor/activeColor are handled by CardDisplay for animation
+        
+        // Shadow colors
+        _materialInstance.SetColor(ShadowColorID, bubblePreset.shadowColor);
+        _materialInstance.SetFloat(ShowSecondShadowID, bubblePreset.showSecondShadow ? 1f : 0f);
+        _materialInstance.SetColor(SecondShadowColorID, bubblePreset.secondShadowColor);
+        
+        // Rebuild mesh if showSecondShadow changed (mesh controls second shadow rendering)
+        if (bubblePreset.showSecondShadow != _lastShowSecondShadow)
+        {
+            _lastShowSecondShadow = bubblePreset.showSecondShadow;
+            if (_graphic != null)
+                _graphic.SetVerticesDirty();
+        }
         
         // Auto-position arrow towards target
         if (arrowTarget != null)
@@ -185,32 +179,34 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
             UpdateArrowTowardsTarget();
         }
         
-        // Update arrow properties
+        // Arrow properties (local to instance)
         _materialInstance.SetFloat(ShowArrowID, showArrow ? 1f : 0f);
         _materialInstance.SetFloat(ArrowPerimeterID, arrowPerimeter);
         _materialInstance.SetFloat(ArrowSizePixelsID, arrowSizePixels);
         _materialInstance.SetFloat(ArrowWidthPixelsID, arrowWidthPixels);
         
-        // Update border properties
-        _materialInstance.SetFloat(ShowBorderID, showBorder ? 1f : 0f);
-        _materialInstance.SetFloat(BorderThicknessPixelsID, borderThicknessPixels);
-        _materialInstance.SetFloat(BorderOffsetPixelsID, borderOffsetPixels);
-        _materialInstance.SetColor(BorderColorID, borderColor);
+        // Border properties from preset
+        _materialInstance.SetFloat(ShowBorderID, bubblePreset.showBorder ? 1f : 0f);
+        _materialInstance.SetFloat(BorderThicknessPixelsID, bubblePreset.borderThickness);
+        _materialInstance.SetFloat(BorderOffsetPixelsID, bubblePreset.borderOffset);
+        _materialInstance.SetColor(BorderColorID, bubblePreset.borderColor);
         
-        // Update inner shadow properties
-        _materialInstance.SetFloat(ShowInnerShadowID, showInnerShadow ? 1f : 0f);
-        _materialInstance.SetFloat(BorderShadowIntensityID, borderShadowIntensity);
-        _materialInstance.SetColor(InnerShadowColorID, innerShadowColor);
+        // Border style from preset
+        _materialInstance.SetFloat(BorderStyleID, bubblePreset.borderStyle);
+        _materialInstance.SetFloat(BorderDashLengthID, bubblePreset.dashLength);
+        _materialInstance.SetFloat(BorderDashGapID, bubblePreset.dashGap);
+        _materialInstance.SetFloat(BorderSecondOffsetID, bubblePreset.secondBorderOffset);
         
-        // Pass light direction from ShadowLightSource, scaled by borderShadowIntensity
-        // Uses same formula as main shadow: offset = direction * intensity
+        // Inner shadow from preset
+        _materialInstance.SetFloat(ShowInnerShadowID, bubblePreset.showInnerShadow ? 1f : 0f);
+        _materialInstance.SetFloat(BorderShadowIntensityID, bubblePreset.innerShadowIntensity);
+        _materialInstance.SetColor(InnerShadowColorID, bubblePreset.innerShadowColor);
+        
+        // Light direction for inner shadow
         Vector2 lightDir = CalculateShadowDirection();
-        // Invert for border shadow direction based on raised/recessed mode
-        // Raised = shadow on opposite side of light (like embossed)
-        // Recessed = shadow on same side as light (like inset/frame above)
         float invert = borderShadowRaised ? -1f : 1f;
-        // Pass direction * borderShadowIntensity (same formula as main shadow)
-        _materialInstance.SetVector(LightDirectionID, new Vector4(lightDir.x * invert * borderShadowIntensity, lightDir.y * invert * borderShadowIntensity, 0, 0));
+        float innerShadowIntensity = bubblePreset.innerShadowIntensity;
+        _materialInstance.SetVector(LightDirectionID, new Vector4(lightDir.x * invert * innerShadowIntensity, lightDir.y * invert * innerShadowIntensity, 0, 0));
         
         // Check if arrow changed (need to rebuild mesh for arrow extension)
         bool arrowChanged = Mathf.Abs(arrowPerimeter - _lastArrowPerimeter) > 0.01f ||
@@ -224,10 +220,10 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
                 _graphic.SetVerticesDirty();
         }
         
-        // Update shadow offsets
+        // Update shadow offsets using preset intensities
         Vector2 shadowDir = CalculateShadowDirection();
-        Vector2 newOffset = shadowDir * intensity;
-        Vector2 newSecondOffset = shadowDir * intensity * secondShadowIntensityMultiplier;
+        Vector2 newOffset = shadowDir * bubblePreset.shadowIntensity;
+        Vector2 newSecondOffset = shadowDir * bubblePreset.secondShadowIntensity;
         
         if (Vector2.Distance(newOffset, currentShadowOffset) > 0.1f ||
             Vector2.Distance(newSecondOffset, currentSecondShadowOffset) > 0.1f)
@@ -392,7 +388,8 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         vh.AddTriangle(2, 3, 0);
         
         // Secondary shadow quad (4 vertices) - rendered between primary shadow and main
-        if (showSecondShadow)
+        bool useSecondShadow = bubblePreset != null && bubblePreset.showSecondShadow;
+        if (useSecondShadow)
         {
             // Bottom-left
             vert.position = new Vector3(left, bottom, 0) + secondOffset;
@@ -424,7 +421,7 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         }
         
         // Main quad (4 vertices)
-        int mainStartIdx = showSecondShadow ? 8 : 4;
+        int mainStartIdx = useSecondShadow ? 8 : 4;
         
         // Bottom-left
         vert.position = new Vector3(left, bottom, 0);
@@ -455,42 +452,29 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         vh.AddTriangle(mainStartIdx + 2, mainStartIdx + 3, mainStartIdx);
     }
     
+    private DialogBubblePreset _lastPreset;
+    
     void OnValidate()
     {
         if (_graphic != null)
             _graphic.SetVerticesDirty();
-            
-        if (_materialInstance != null)
-        {
-            _materialInstance.SetColor(ShadowColorID, shadowColor);
-            _materialInstance.SetFloat(ArrowPerimeterID, arrowPerimeter);
-            _materialInstance.SetFloat(ShowBorderID, showBorder ? 1f : 0f);
-            _materialInstance.SetFloat(BorderThicknessPixelsID, borderThicknessPixels);
-            _materialInstance.SetFloat(BorderOffsetPixelsID, borderOffsetPixels);
-            _materialInstance.SetColor(BorderColorID, borderColor);
-            _materialInstance.SetFloat(ShowInnerShadowID, showInnerShadow ? 1f : 0f);
-            _materialInstance.SetFloat(BorderShadowIntensityID, borderShadowIntensity);
-            _materialInstance.SetColor(InnerShadowColorID, innerShadowColor);
-        }
     }
     
     /// <summary>
-    /// Set border visibility.
+    /// Set the bubble preset at runtime.
     /// </summary>
-    public void SetBorderVisible(bool visible)
+    public void SetPreset(DialogBubblePreset preset)
     {
-        showBorder = visible;
-        if (_materialInstance != null)
-            _materialInstance.SetFloat(ShowBorderID, visible ? 1f : 0f);
+        bubblePreset = preset;
+        if (_graphic != null)
+            _graphic.SetVerticesDirty();
     }
     
     /// <summary>
-    /// Set border color at runtime.
+    /// Get the current preset.
     /// </summary>
-    public void SetBorderColor(Color color)
+    public DialogBubblePreset GetCurrentPreset()
     {
-        borderColor = color;
-        if (_materialInstance != null)
-            _materialInstance.SetColor(BorderColorID, color);
+        return bubblePreset;
     }
 }

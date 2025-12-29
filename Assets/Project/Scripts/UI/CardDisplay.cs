@@ -58,10 +58,6 @@ public class CardDisplay : MonoBehaviour
     public Color textNormalColor = Color.black;
     [Tooltip("Цвет текста в активном состоянии (progress >= 1)")]
     public Color textActiveColor = new Color(0.36f, 0.25f, 0.22f); // #5D4037
-    [Tooltip("Цвет фона бабла в нормальном состоянии")]
-    public Color bubbleNormalColor = Color.white;
-    [Tooltip("Цвет фона бабла в активном состоянии")]
-    public Color bubbleActiveColor = new Color(1f, 0.97f, 0.88f); // #FFF8E1 кремовый
     
     [Header("Настройки Typewriter для ActionText")]
     [Tooltip("Расстояние от центра, когда начинает показываться первый символ")]
@@ -709,10 +705,12 @@ public class CardDisplay : MonoBehaviour
         Color targetTextColor = progress >= 1.0f ? textActiveColor : textNormalColor;
         actionText.color = Color.Lerp(actionText.color, targetTextColor, Time.deltaTime * colorLerpSpeed);
         
-        // Цвет бабла
-        if (actionTextBubble != null)
+        // Цвет бабла - берём из SO пресета
+        if (actionTextBubble != null && actionTextBubble.dialogShadow != null && 
+            actionTextBubble.dialogShadow.bubblePreset != null)
         {
-            Color targetBubbleColor = progress >= 1.0f ? bubbleActiveColor : bubbleNormalColor;
+            var preset = actionTextBubble.dialogShadow.bubblePreset;
+            Color targetBubbleColor = progress >= 1.0f ? preset.activeColor : preset.fillColor;
             Color currentBubbleColor = actionTextBubble.GetBubbleColor();
             Color newBubbleColor = Color.Lerp(currentBubbleColor, targetBubbleColor, Time.deltaTime * colorLerpSpeed);
             actionTextBubble.SetBubbleColor(newBubbleColor);

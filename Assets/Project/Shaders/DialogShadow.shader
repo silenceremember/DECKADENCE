@@ -51,6 +51,12 @@ Shader "DECKADENCE/UI/DialogShadow"
         _BorderOffsetPixels ("Border Offset from Edge (Pixels)", Float) = 8
         _BorderColor ("Border Color", Color) = (0, 1, 0.82, 0.8)
         
+        [Header(Border Style)]
+        _BorderStyle ("Border Style (0=solid, 1=dashed, 2=double, 3=corners)", Float) = 0
+        _BorderDashLength ("Dash Length (Pixels)", Float) = 8
+        _BorderDashGap ("Dash Gap (Pixels)", Float) = 4
+        _BorderSecondOffset ("Second Border Offset (for double style)", Float) = 4
+        
         [Header(Inner Shadow)]
         [Toggle] _ShowInnerShadow ("Show Inner Shadow", Float) = 0
         _BorderShadowIntensity ("Border Shadow Intensity", Float) = 15
@@ -157,6 +163,10 @@ Shader "DECKADENCE/UI/DialogShadow"
                 float _BorderThicknessPixels;
                 float _BorderOffsetPixels;
                 float4 _BorderColor;
+                float _BorderStyle;
+                float _BorderDashLength;
+                float _BorderDashGap;
+                float _BorderSecondOffset;
                 float _ShowInnerShadow;
                 float _BorderShadowIntensity;
                 float4 _InnerShadowColor;
@@ -663,8 +673,15 @@ Shader "DECKADENCE/UI/DialogShadow"
                 // Inner border calculation - follows the contour of the card
                 float borderThicknessCanvas = _BorderThicknessPixels / canvasScale;
                 float borderOffsetCanvas = _BorderOffsetPixels / canvasScale;
+                float borderSecondOffsetCanvas = _BorderSecondOffset / canvasScale;
+                float borderDashLengthCanvas = _BorderDashLength / canvasScale;
+                float borderDashGapCanvas = _BorderDashGap / canvasScale;
                 
                 float inBorder = 0.0;
+                float inSecondBorder = 0.0;
+                float effectiveDist = 0.0;
+                float perimeterPos = 0.0;  // Position along perimeter for dash pattern
+                
                 if (_ShowBorder > 0.5 && visible > 0.5 && IN.isShadow < 0.5)
                 {
                     // Only draw border inside the main rect (not on arrow)
@@ -672,6 +689,18 @@ Shader "DECKADENCE/UI/DialogShadow"
                     {
                         // Find minimum distance to any edge (this gives us a contour-following distance)
                         float minDistToEdge = min(min(distBottom, distTop), min(distLeft, distRight));
+                        
+                        // Calculate which edge we're closest to for perimeter position
+                        // Used for dashed pattern
+                        if (distBottom <= minDistToEdge) {
+                            perimeterPos = localPos.x;
+                        } else if (distRight <= minDistToEdge) {
+                            perimeterPos = rectSize.x + localPos.y;
+                        } else if (distTop <= minDistToEdge) {
+                            perimeterPos = rectSize.x + rectSize.y + (rectSize.x - localPos.x);
+                        } else {
+                            perimeterPos = 2.0 * rectSize.x + rectSize.y + (rectSize.y - localPos.y);
+                        }
                         
                         // For corners, we need to consider diagonal distance
                         // Bottom-left corner
@@ -695,7 +724,7 @@ Shader "DECKADENCE/UI/DialogShadow"
                         float trCornerDist = cornerDistTR - trCut;
                         
                         // Use corner distance if in corner zone, otherwise use edge distance
-                        float effectiveDist = minDistToEdge;
+                        effectiveDist = minDistToEdge;
                         
                         // Blend to corner distance when in corner zones
                         if (inBLCornerZone > 0.5 && cornerMask > 0.5) effectiveDist = min(effectiveDist, blCornerDist * 0.707);
@@ -707,7 +736,48 @@ Shader "DECKADENCE/UI/DialogShadow"
                         float borderStart = borderOffsetCanvas;
                         float borderEnd = borderOffsetCanvas + borderThicknessCanvas;
                         
-                        inBorder = step(borderStart, effectiveDist) * step(effectiveDist, borderEnd);
+                        // Calculate base border mask
+                        float baseBorder = step(borderStart, effectiveDist) * step(effectiveDist, borderEnd);
+                        
+                        // Apply border style
+                        int borderStyle = (int)_BorderStyle;
+                        
+                        if (borderStyle == 0)
+                        {
+                            // Style 0: Solid border
+                            inBorder = baseBorder;
+                        }
+                        else if (borderStyle == 1)
+                        {
+                            // Style 1: Dashed border
+                            float dashCycle = borderDashLengthCanvas + borderDashGapCanvas;
+                            float dashPos = fmod(perimeterPos, dashCycle);
+                            float isDash = step(dashPos, borderDashLengthCanvas);
+                            inBorder = baseBorder * isDash;
+                        }
+                        else if (borderStyle == 2)
+                        {
+                            // Style 2: Double border (two parallel lines)
+                            float secondBorderStart = borderOffsetCanvas + borderThicknessCanvas + borderSecondOffsetCanvas;
+                            float secondBorderEnd = secondBorderStart + borderThicknessCanvas;
+                            inSecondBorder = step(secondBorderStart, effectiveDist) * step(effectiveDist, secondBorderEnd);
+                            inBorder = baseBorder + inSecondBorder;
+                            inBorder = saturate(inBorder);
+                        }
+                        else if (borderStyle == 3)
+                        {
+                            // Style 3: Corners only (L-shaped accents at each corner)
+                            float cornerSize = 30.0 / canvasScale;  // Size of corner L
+                            float inCornerZone = 0.0;
+                            
+                            // Check if near any corner
+                            if (localPos.x < cornerSize && localPos.y < cornerSize) inCornerZone = 1.0;  // BL
+                            if (localPos.x > rectSize.x - cornerSize && localPos.y < cornerSize) inCornerZone = 1.0;  // BR
+                            if (localPos.x < cornerSize && localPos.y > rectSize.y - cornerSize) inCornerZone = 1.0;  // TL
+                            if (localPos.x > rectSize.x - cornerSize && localPos.y > rectSize.y - cornerSize) inCornerZone = 1.0;  // TR
+                            
+                            inBorder = baseBorder * inCornerZone;
+                        }
                         
                         // Don't draw border where the card is cut (corners or tears)
                         inBorder *= cornerMask;

@@ -283,32 +283,6 @@ public class ActionTextBubble : MonoBehaviour
     {
         return bubbleImage != null ? bubbleImage.color : Color.white;
     }
-    
-    /// <summary>
-    /// Set border visibility on the dialog shadow.
-    /// </summary>
-    public void SetBorderVisible(bool visible)
-    {
-        if (dialogShadow != null)
-        {
-            dialogShadow.SetBorderVisible(visible);
-        }
-    }
-    
-    /// <summary>
-    /// Set border color on the dialog shadow.
-    /// </summary>
-    public void SetBorderColor(Color color)
-    {
-        if (dialogShadow != null)
-        {
-            dialogShadow.SetBorderColor(color);
-        }
-    }
 }
-
-
-
-
 
 
