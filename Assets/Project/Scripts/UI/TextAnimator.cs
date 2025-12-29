@@ -135,6 +135,7 @@ public class TextAnimator : MonoBehaviour
     private float AppearStagger => preset != null ? preset.appearStagger : 0.03f;
     private float EffectSmoothSpeed => preset != null ? preset.effectSmoothSpeed : 15f;
     private float StateTransitionDuration => preset != null ? preset.stateTransitionDuration : 0.15f;
+    private bool CenterOutAppear => preset != null && preset.centerOutAppear;
     
     // Current disappear mode for active disappearing
     private DisappearMode _currentDisappearMode = DisappearMode.Normal;
@@ -1112,6 +1113,73 @@ public class TextAnimator : MonoBehaviour
         
         if (textInfo == null || textInfo.characterCount == 0) return;
         
+        // === CENTER-OUT APPEAR OFFSET CALCULATION ===
+        // Если centerOutAppear включен, вычисляем смещение:
+        // центр видимых букв должен быть в 0 (центре исходного текста)
+        float centerOutOffsetX = 0f;
+        if (CenterOutAppear)
+        {
+            // Находим границы видимых букв (alpha > 0)
+            float leftMost = float.MaxValue;
+            float rightMost = float.MinValue;
+            bool hasVisibleLetters = false;
+            
+            for (int i = 0; i < textInfo.characterCount && i < _letterData.Length; i++)
+            {
+                TMP_CharacterInfo charInfo = textInfo.characterInfo[i];
+                if (!charInfo.isVisible) continue;
+                if (_letterData[i].currentAlpha <= 0.01f) continue; // Буква скрыта
+                
+                int matIdx = charInfo.materialReferenceIndex;
+                int vertIdx = charInfo.vertexIndex;
+                if (matIdx >= _cachedMeshInfo.Length) continue;
+                
+                Vector3[] srcVerts = _cachedMeshInfo[matIdx].vertices;
+                if (vertIdx + 3 >= srcVerts.Length) continue;
+                
+                // Находим левую и правую границы буквы (в оригинальных позициях)
+                for (int j = 0; j < 4; j++)
+                {
+                    float x = srcVerts[vertIdx + j].x;
+                    if (x < leftMost) leftMost = x;
+                    if (x > rightMost) rightMost = x;
+                }
+                hasVisibleLetters = true;
+            }
+            
+            if (hasVisibleLetters)
+            {
+                // Центр полного текста (все буквы)
+                float fullLeft = float.MaxValue;
+                float fullRight = float.MinValue;
+                for (int i = 0; i < textInfo.characterCount && i < _letterData.Length; i++)
+                {
+                    TMP_CharacterInfo charInfo = textInfo.characterInfo[i];
+                    if (!charInfo.isVisible) continue;
+                    
+                    int matIdx = charInfo.materialReferenceIndex;
+                    int vertIdx = charInfo.vertexIndex;
+                    if (matIdx >= _cachedMeshInfo.Length) continue;
+                    
+                    Vector3[] srcVerts = _cachedMeshInfo[matIdx].vertices;
+                    if (vertIdx + 3 >= srcVerts.Length) continue;
+                    
+                    for (int j = 0; j < 4; j++)
+                    {
+                        float x = srcVerts[vertIdx + j].x;
+                        if (x < fullLeft) fullLeft = x;
+                        if (x > fullRight) fullRight = x;
+                    }
+                }
+                
+                float fullCenterX = (fullLeft + fullRight) * 0.5f;
+                float visibleCenterX = (leftMost + rightMost) * 0.5f;
+                
+                // Смещаем видимые буквы так, чтобы их центр совпадал с центром полного текста
+                centerOutOffsetX = fullCenterX - visibleCenterX;
+            }
+        }
+        
         for (int i = 0; i < textInfo.characterCount && i < _letterData.Length; i++)
         {
             TMP_CharacterInfo charInfo = textInfo.characterInfo[i];
@@ -1135,7 +1203,10 @@ public class TextAnimator : MonoBehaviour
             
             float scale = letter.currentScale;
             float rotation = letter.currentRotation * Mathf.Deg2Rad;
-            Vector3 offset = new Vector3(letter.currentOffset.x, letter.currentOffset.y, 0f);
+            
+            // Добавляем centerOutOffsetX к offset только для видимых букв
+            float extraOffsetX = (letter.currentAlpha > 0.01f) ? centerOutOffsetX : 0f;
+            Vector3 offset = new Vector3(letter.currentOffset.x + extraOffsetX, letter.currentOffset.y, 0f);
             
             float cos = Mathf.Cos(rotation);
             float sin = Mathf.Sin(rotation);
