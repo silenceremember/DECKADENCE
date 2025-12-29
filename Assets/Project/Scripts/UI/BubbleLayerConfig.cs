@@ -1,6 +1,16 @@
 using UnityEngine;
 
 /// <summary>
+/// Offset mode for bubble layers.
+/// </summary>
+public enum BubbleOffsetMode
+{
+    Uniform,   // Single value for all edges
+    XY,        // Separate X and Y offsets
+    PerEdge    // Individual offset per edge (left, right, top, bottom)
+}
+
+/// <summary>
 /// Configuration for a single bubble layer.
 /// Each layer is a complete bubble with its own fill, border, shadows, tears, and arrow.
 /// </summary>
@@ -11,8 +21,48 @@ public class BubbleLayerConfig
     [Tooltip("Enable this layer")]
     public bool enabled = true;
     
-    [Tooltip("Offset from base rect in pixels (positive = larger bubble)")]
+    [Tooltip("How to specify offset")]
+    public BubbleOffsetMode offsetMode = BubbleOffsetMode.Uniform;
+    
+    [Tooltip("Uniform offset from base rect in pixels (positive = larger bubble)")]
     public float offset = 0f;
+    
+    [Tooltip("X offset (left/right simultaneously)")]
+    public float offsetX = 0f;
+    
+    [Tooltip("Y offset (top/bottom simultaneously)")]
+    public float offsetY = 0f;
+    
+    [Tooltip("Left edge offset in pixels")]
+    public float offsetLeft = 0f;
+    
+    [Tooltip("Right edge offset in pixels")]
+    public float offsetRight = 0f;
+    
+    [Tooltip("Top edge offset in pixels")]
+    public float offsetTop = 0f;
+    
+    [Tooltip("Bottom edge offset in pixels")]
+    public float offsetBottom = 0f;
+    
+    /// <summary>
+    /// Get the effective offset for each edge based on the offset mode.
+    /// Returns Vector4(left, right, top, bottom)
+    /// </summary>
+    public Vector4 GetEdgeOffsets()
+    {
+        switch (offsetMode)
+        {
+            case BubbleOffsetMode.Uniform:
+                return new Vector4(offset, offset, offset, offset);
+            case BubbleOffsetMode.XY:
+                return new Vector4(offsetX, offsetX, offsetY, offsetY);
+            case BubbleOffsetMode.PerEdge:
+                return new Vector4(offsetLeft, offsetRight, offsetTop, offsetBottom);
+            default:
+                return Vector4.zero;
+        }
+    }
     
     [Tooltip("Cut out the area where the next layer will be (creates a frame effect)")]
     public bool cutoutNextLayer = false;

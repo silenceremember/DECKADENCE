@@ -26,6 +26,20 @@ public class MultiBubbleRenderer : MonoBehaviour, IMeshModifier
     [Tooltip("Raised = emboss effect, Recessed = deboss effect")]
     public bool borderShadowRaised = true;
     
+    [Range(0f, 1f)]
+    [Tooltip("Progress towards active state (0 = normal colors, 1 = active colors)")]
+    [SerializeField] private float _activeProgress = 0f;
+    
+    /// <summary>
+    /// Progress towards active state. 0 = normal colors, 1 = active colors.
+    /// Interpolates fillColor/activeColor for each layer.
+    /// </summary>
+    public float ActiveProgress
+    {
+        get => _activeProgress;
+        set => _activeProgress = Mathf.Clamp01(value);
+    }
+    
     private Graphic _graphic;
     private Canvas _canvas;
     private Material _materialInstance;
@@ -247,10 +261,13 @@ public class MultiBubbleRenderer : MonoBehaviour, IMeshModifier
         int[] ids = LayerPropertyIDs[index];
         
         _materialInstance.SetFloat(ids[PROP_ENABLED], layer.enabled ? 1f : 0f);
-        _materialInstance.SetFloat(ids[PROP_OFFSET], layer.offset);
+        _materialInstance.SetVector(ids[PROP_OFFSET], layer.GetEdgeOffsets()); // Vector4(left, right, top, bottom)
         _materialInstance.SetFloat(ids[PROP_CUTOUT], layer.cutoutNextLayer ? 1f : 0f);
         _materialInstance.SetFloat(ids[PROP_CUTOUT_PADDING], layer.cutoutPadding);
-        _materialInstance.SetColor(ids[PROP_FILL_COLOR], layer.fillColor);
+        
+        // Interpolate between fillColor and activeColor based on activeProgress
+        Color currentFillColor = Color.Lerp(layer.fillColor, layer.activeColor, _activeProgress);
+        _materialInstance.SetColor(ids[PROP_FILL_COLOR], currentFillColor);
         _materialInstance.SetFloat(ids[PROP_SHOW_ARROW], layer.showArrow ? 1f : 0f);
         _materialInstance.SetFloat(ids[PROP_ARROW_SIZE], layer.arrowSize);
         _materialInstance.SetFloat(ids[PROP_ARROW_WIDTH], layer.arrowWidth);

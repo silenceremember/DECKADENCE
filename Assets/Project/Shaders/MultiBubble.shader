@@ -118,7 +118,7 @@ Shader "DECKADENCE/UI/MultiBubble"
                 
                 // Layer 0
                 float _L0_Enabled;
-                float _L0_Offset;
+                float4 _L0_Offset; // (left, right, top, bottom)
                 float _L0_Cutout;
                 float _L0_CutoutPadding;
                 float4 _L0_FillColor;
@@ -144,7 +144,7 @@ Shader "DECKADENCE/UI/MultiBubble"
                 
                 // Layer 1
                 float _L1_Enabled;
-                float _L1_Offset;
+                float4 _L1_Offset; // (left, right, top, bottom)
                 float _L1_Cutout;
                 float _L1_CutoutPadding;
                 float4 _L1_FillColor;
@@ -170,7 +170,7 @@ Shader "DECKADENCE/UI/MultiBubble"
                 
                 // Layer 2
                 float _L2_Enabled;
-                float _L2_Offset;
+                float4 _L2_Offset; // (left, right, top, bottom)
                 float _L2_Cutout;
                 float _L2_CutoutPadding;
                 float4 _L2_FillColor;
@@ -196,7 +196,7 @@ Shader "DECKADENCE/UI/MultiBubble"
                 
                 // Layer 3
                 float _L3_Enabled;
-                float _L3_Offset;
+                float4 _L3_Offset; // (left, right, top, bottom)
                 float _L3_Cutout;
                 float _L3_CutoutPadding;
                 float4 _L3_FillColor;
@@ -484,7 +484,7 @@ Shader "DECKADENCE/UI/MultiBubble"
             struct LayerData
             {
                 float enabled;
-                float offset;
+                float4 offset; // (left, right, top, bottom)
                 float cutout;
                 float cutoutPadding;
                 float4 fillColor;
@@ -819,10 +819,11 @@ Shader "DECKADENCE/UI/MultiBubble"
                 
                 if (layer.enabled < 0.5) discard;
                 
-                // Calculate layer size with offset
-                float offsetCanvas = layer.offset / canvasScale;
-                float2 layerSize = rectSize + float2(offsetCanvas * 2.0, offsetCanvas * 2.0);
-                float2 layerLocalPos = localPos + float2(offsetCanvas, offsetCanvas);
+                // Calculate layer size with per-edge offset
+                // offset = (left, right, top, bottom)
+                float4 offsetCanvas = layer.offset / canvasScale;
+                float2 layerSize = rectSize + float2(offsetCanvas.x + offsetCanvas.y, offsetCanvas.z + offsetCanvas.w);
+                float2 layerLocalPos = localPos + float2(offsetCanvas.x, offsetCanvas.w);
                 
                 // Animation seed
                 float steppedTime = floor(_Time.y * _AnimSpeed);
@@ -836,10 +837,13 @@ Shader "DECKADENCE/UI/MultiBubble"
                 if (layer.cutout > 0.5 && layerIdx < int(_LayerCount) - 1)
                 {
                     LayerData nextLayer = GetLayerData(layerIdx + 1);
-                    float nextOffsetCanvas = nextLayer.offset / canvasScale;
+                    float4 nextOffsetCanvas = nextLayer.offset / canvasScale;
                     float cutoutPaddingCanvas = layer.cutoutPadding / canvasScale;
-                    float2 cutoutSize = rectSize + float2((nextOffsetCanvas - cutoutPaddingCanvas) * 2.0, (nextOffsetCanvas - cutoutPaddingCanvas) * 2.0);
-                    float2 cutoutLocalPos = localPos + float2(nextOffsetCanvas - cutoutPaddingCanvas, nextOffsetCanvas - cutoutPaddingCanvas);
+                    
+                    // Apply cutout padding to all edges
+                    float4 cutoutOffset = nextOffsetCanvas - cutoutPaddingCanvas;
+                    float2 cutoutSize = rectSize + float2(cutoutOffset.x + cutoutOffset.y, cutoutOffset.z + cutoutOffset.w);
+                    float2 cutoutLocalPos = localPos + float2(cutoutOffset.x, cutoutOffset.w);
                     
                     float nextSeed = _TearSeed + steppedTime * 17.31 + float(layerIdx + 1) * 50000.0;
                     float cutoutVisible = ComputeLayerVisibility(cutoutLocalPos, cutoutSize, nextSeed, canvasScale,

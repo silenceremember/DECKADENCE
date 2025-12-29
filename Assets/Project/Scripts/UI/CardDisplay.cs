@@ -700,20 +700,15 @@ public class CardDisplay : MonoBehaviour
             actionTextBubble.bubbleRenderer.preset != null)
         {
             var preset = actionTextBubble.bubbleRenderer.preset;
+            var renderer = actionTextBubble.bubbleRenderer;
             
             // Text color from preset
             Color targetTextColor = progress >= 1.0f ? preset.textActiveColor : preset.textNormalColor;
             actionText.color = Color.Lerp(actionText.color, targetTextColor, Time.deltaTime * colorLerpSpeed);
             
-            // Bubble color - get from front layer of preset
-            var frontLayer = preset.GetFrontLayer();
-            if (frontLayer != null)
-            {
-                Color targetBubbleColor = progress >= 1.0f ? frontLayer.activeColor : frontLayer.fillColor;
-                Color currentBubbleColor = actionTextBubble.GetBubbleColor();
-                Color newBubbleColor = Color.Lerp(currentBubbleColor, targetBubbleColor, Time.deltaTime * colorLerpSpeed);
-                actionTextBubble.SetBubbleColor(newBubbleColor);
-            }
+            // Set active progress to control all layer colors at once
+            float targetActiveProgress = progress >= 1.0f ? 1f : 0f;
+            renderer.ActiveProgress = Mathf.Lerp(renderer.ActiveProgress, targetActiveProgress, Time.deltaTime * colorLerpSpeed);
         }
         
         // Наклон блока текста в сторону свайпа (фиксированный угол)
