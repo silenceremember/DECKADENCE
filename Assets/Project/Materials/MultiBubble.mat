@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: DialogShadow
-  m_Shader: {fileID: 4800000, guid: 8c18cf733b0352342a17e7669656075f, type: 3}
+  m_Name: MultiBubble
+  m_Shader: {fileID: 4800000, guid: bfaafe332edb16e4aa2f121ac36551d2, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -29,17 +29,12 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _ArrowEdge: 0
-    - _ArrowPosition: 0.5
-    - _ArrowSizePixels: 30
-    - _ArrowWidthPixels: 40
-    - _BottomTear: 0.5
+    - _AnimSpeed: 1
+    - _ArrowPerimeter: 0
     - _CanvasScale: 1
     - _ColorMask: 15
-    - _CornerCutPixels: 20
-    - _LeftTear: 0.5
-    - _PixelSize: 0
-    - _RightTear: 0.5
+    - _CornerCutMaxPixels: 25
+    - _CornerCutMinPixels: 15
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
@@ -48,13 +43,13 @@ Material:
     - _TearDepthMaxPixels: 15
     - _TearDepthMinPixels: 5
     - _TearSeed: 0
+    - _TearSpacingMaxPixels: 80
+    - _TearSpacingMinPixels: 40
     - _TearWidthMaxPixels: 30
     - _TearWidthMinPixels: 10
-    - _TeethCount: 3
-    - _TopTear: 0.5
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _LightDirection: {r: 1, g: -1, b: 0, a: 0}
     - _RectSize: {r: 100, g: 100, b: 0, a: 0}
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

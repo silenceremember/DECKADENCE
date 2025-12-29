@@ -869,7 +869,7 @@ Shader "DECKADENCE/UI/MultiBubble"
                     // Multiply layer fill color with vertex color (from Image.color)
                     float3 color = layer.fillColor.rgb * IN.color.rgb;
                     
-                    // Border
+                    // Border - follows contour including corner cuts
                     if (layer.showBorder > 0.5)
                     {
                         float borderThickness = layer.borderThickness / canvasScale;
@@ -879,9 +879,43 @@ Shader "DECKADENCE/UI/MultiBubble"
                         float distTop = layerSize.y - layerLocalPos.y;
                         float distLeft = layerLocalPos.x;
                         float distRight = layerSize.x - layerLocalPos.x;
-                        float minDist = min(min(distBottom, distTop), min(distLeft, distRight));
+                        float minDistToEdge = min(min(distBottom, distTop), min(distLeft, distRight));
                         
-                        float inBorder = step(borderOffset, minDist) * step(minDist, borderOffset + borderThickness);
+                        // Calculate corner cut sizes (same seed logic as ComputeLayerVisibility)
+                        float cornerCutMin = _CornerCutMinPixels / canvasScale;
+                        float cornerCutMax = _CornerCutMaxPixels / canvasScale;
+                        float blCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 500.0));
+                        float brCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 600.0));
+                        float tlCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 700.0));
+                        float trCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 800.0));
+                        
+                        // Corner zones and distances
+                        float cornerDistBL = distLeft + distBottom;
+                        float inBLCornerZone = step(cornerDistBL, blCut * 2.0);
+                        float blCornerDist = cornerDistBL - blCut;
+                        
+                        float cornerDistBR = distRight + distBottom;
+                        float inBRCornerZone = step(cornerDistBR, brCut * 2.0);
+                        float brCornerDist = cornerDistBR - brCut;
+                        
+                        float cornerDistTL = distLeft + distTop;
+                        float inTLCornerZone = step(cornerDistTL, tlCut * 2.0);
+                        float tlCornerDist = cornerDistTL - tlCut;
+                        
+                        float cornerDistTR = distRight + distTop;
+                        float inTRCornerZone = step(cornerDistTR, trCut * 2.0);
+                        float trCornerDist = cornerDistTR - trCut;
+                        
+                        // Effective distance follows contour
+                        float effectiveDist = minDistToEdge;
+                        
+                        // Blend to corner distance when in corner zones (0.707 = 1/sqrt(2) for diagonal)
+                        if (inBLCornerZone > 0.5) effectiveDist = min(effectiveDist, blCornerDist * 0.707);
+                        if (inBRCornerZone > 0.5) effectiveDist = min(effectiveDist, brCornerDist * 0.707);
+                        if (inTLCornerZone > 0.5) effectiveDist = min(effectiveDist, tlCornerDist * 0.707);
+                        if (inTRCornerZone > 0.5) effectiveDist = min(effectiveDist, trCornerDist * 0.707);
+                        
+                        float inBorder = step(borderOffset, effectiveDist) * step(effectiveDist, borderOffset + borderThickness);
                         color = lerp(color, layer.borderColor.rgb, inBorder * layer.borderColor.a);
                     }
                     
