@@ -7,15 +7,17 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "NewDialogBubblePreset", menuName = "Game/Dialog Bubble Preset")]
 public class DialogBubblePreset : ScriptableObject
 {
-    [Header("Character Info")]
-    [Tooltip("Name of the character or context this preset is for")]
-    public string presetName = "Default";
-    
     [Header("Fill")]
     [Tooltip("Main fill color of the bubble (normal state)")]
     public Color fillColor = new Color(0.15f, 0.12f, 0.1f, 0.95f);
     [Tooltip("Fill color when bubble is in active/selected state")]
     public Color activeColor = new Color(1f, 0.97f, 0.88f, 0.95f);  // Cream
+    
+    [Header("Text Colors")]
+    [Tooltip("Text color in normal state")]
+    public Color textNormalColor = Color.black;
+    [Tooltip("Text color in active/selected state")]
+    public Color textActiveColor = new Color(0.36f, 0.25f, 0.22f);  // #5D4037
     
     [Header("Border")]
     [Tooltip("Show decorative inner border")]
