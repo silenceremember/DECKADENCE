@@ -49,6 +49,12 @@ Shader "DECKADENCE/UI/DialogShadow"
         _BorderOffsetPixels ("Border Offset from Edge (Pixels)", Float) = 8
         _BorderColor ("Border Color", Color) = (0, 1, 0.82, 0.8)
         
+        [Header(Inner Shadow)]
+        [Toggle] _ShowInnerShadow ("Show Inner Shadow", Float) = 0
+        _BorderShadowIntensity ("Border Shadow Intensity", Float) = 15
+        _InnerShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.5)
+        _LightDirection ("Light Direction", Vector) = (1, 1, 0, 0)
+        
         [Header(Stencil)]
         [HideInInspector] _StencilComp ("Stencil Comparison", Float) = 8
         [HideInInspector] _Stencil ("Stencil ID", Float) = 0
@@ -147,6 +153,10 @@ Shader "DECKADENCE/UI/DialogShadow"
                 float _BorderThicknessPixels;
                 float _BorderOffsetPixels;
                 float4 _BorderColor;
+                float _ShowInnerShadow;
+                float _BorderShadowIntensity;
+                float4 _InnerShadowColor;
+                float4 _LightDirection;
             CBUFFER_END
             
             // Hash function for randomness
@@ -715,9 +725,67 @@ Shader "DECKADENCE/UI/DialogShadow"
                 else
                 {
                     half4 color;
-                    // Blend border color if in border zone
                     float3 baseColor = IN.color.rgb;
-                    float3 finalColor = lerp(baseColor, _BorderColor.rgb, inBorder * _BorderColor.a);
+                    float3 finalColor = baseColor;
+                    
+                    // Border shadow - sharp offset copy of border (like main bubble shadow)
+                    float inBorderShadow = 0.0;
+                    if (_ShowInnerShadow > 0.5 && _ShowBorder > 0.5 && insideRect > 0.5 && insideArrow < 0.5)
+                    {
+                        // Shadow offset in canvas units
+                        // _LightDirection contains direction * intensity from C# (already inverted based on raised/recessed)
+                        float2 shadowOffset = _LightDirection.xy / canvasScale;
+                        
+                        // Calculate border at OFFSET position (where shadow would be cast)
+                        float2 shadowLocalPos = localPos - shadowOffset;
+                        
+                        // Recalculate distances from offset position
+                        float shadowDistBottom = shadowLocalPos.y;
+                        float shadowDistTop = rectSize.y - shadowLocalPos.y;
+                        float shadowDistLeft = shadowLocalPos.x;
+                        float shadowDistRight = rectSize.x - shadowLocalPos.x;
+                        
+                        // Check if offset position is inside rect
+                        float shadowInsideRect = step(0.0, shadowLocalPos.x) * step(shadowLocalPos.x, rectSize.x) * 
+                                                  step(0.0, shadowLocalPos.y) * step(shadowLocalPos.y, rectSize.y);
+                        
+                        if (shadowInsideRect > 0.5)
+                        {
+                            float shadowMinDistToEdge = min(min(shadowDistBottom, shadowDistTop), min(shadowDistLeft, shadowDistRight));
+                            
+                            // Corner distances for shadow position
+                            float shadowCornerDistBL = shadowDistLeft + shadowDistBottom;
+                            float shadowCornerDistBR = shadowDistRight + shadowDistBottom;
+                            float shadowCornerDistTL = shadowDistLeft + shadowDistTop;
+                            float shadowCornerDistTR = shadowDistRight + shadowDistTop;
+                            
+                            float shadowEffectiveDist = shadowMinDistToEdge;
+                            
+                            // Check corner zones at shadow position
+                            if (shadowCornerDistBL < blCut * 2.0) shadowEffectiveDist = min(shadowEffectiveDist, (shadowCornerDistBL - blCut) * 0.707);
+                            if (shadowCornerDistBR < brCut * 2.0) shadowEffectiveDist = min(shadowEffectiveDist, (shadowCornerDistBR - brCut) * 0.707);
+                            if (shadowCornerDistTL < tlCut * 2.0) shadowEffectiveDist = min(shadowEffectiveDist, (shadowCornerDistTL - tlCut) * 0.707);
+                            if (shadowCornerDistTR < trCut * 2.0) shadowEffectiveDist = min(shadowEffectiveDist, (shadowCornerDistTR - trCut) * 0.707);
+                            
+                            // Border shadow at offset position (shadow of the border itself)
+                            inBorderShadow = step(borderOffsetCanvas, shadowEffectiveDist) * step(shadowEffectiveDist, borderOffsetCanvas + borderThicknessCanvas);
+                            
+                            // Also add shadow in the border offset gap area (between edge and border)
+                            // This simulates the edge casting shadow onto the border area
+                            float inBorderGap = step(0.0, shadowEffectiveDist) * step(shadowEffectiveDist, borderOffsetCanvas);
+                            inBorderShadow = max(inBorderShadow, inBorderGap);
+                            
+                            // Don't draw shadow where actual border is (border renders on top)
+                            inBorderShadow *= (1.0 - inBorder);
+                        }
+                    }
+                    
+                    // Apply border shadow first (underneath)
+                    finalColor = lerp(finalColor, _InnerShadowColor.rgb, inBorderShadow * _InnerShadowColor.a);
+                    
+                    // Apply border on top
+                    finalColor = lerp(finalColor, _BorderColor.rgb, inBorder * _BorderColor.a);
+                    
                     color.rgb = finalColor;
                     color.a = finalAlpha;
                     return color;

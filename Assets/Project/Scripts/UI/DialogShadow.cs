@@ -35,6 +35,16 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     [Tooltip("Border color")]
     public Color borderColor = new Color(0f, 1f, 0.82f, 0.8f);  // Mint green
     
+    [Header("Inner Shadow")]
+    [Tooltip("Show inner shadow cast from frame edges")]
+    public bool showInnerShadow = false;
+    [Tooltip("Raised = border pushed forward, Recessed = frame above content")]
+    public bool borderShadowRaised = true;
+    [Tooltip("Shadow intensity (same formula as main shadow)")]
+    public float borderShadowIntensity = 15f;
+    [Tooltip("Shadow color")]
+    public Color innerShadowColor = new Color(0f, 0f, 0f, 0.5f);
+    
     [Header("Target (Optional)")]
     [Tooltip("If set, arrow will point towards this transform")]
     public Transform arrowTarget;
@@ -60,6 +70,10 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
     private static readonly int BorderThicknessPixelsID = Shader.PropertyToID("_BorderThicknessPixels");
     private static readonly int BorderOffsetPixelsID = Shader.PropertyToID("_BorderOffsetPixels");
     private static readonly int BorderColorID = Shader.PropertyToID("_BorderColor");
+    private static readonly int ShowInnerShadowID = Shader.PropertyToID("_ShowInnerShadow");
+    private static readonly int BorderShadowIntensityID = Shader.PropertyToID("_BorderShadowIntensity");
+    private static readonly int InnerShadowColorID = Shader.PropertyToID("_InnerShadowColor");
+    private static readonly int LightDirectionID = Shader.PropertyToID("_LightDirection");
     
     void Awake()
     {
@@ -170,6 +184,21 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
         _materialInstance.SetFloat(BorderThicknessPixelsID, borderThicknessPixels);
         _materialInstance.SetFloat(BorderOffsetPixelsID, borderOffsetPixels);
         _materialInstance.SetColor(BorderColorID, borderColor);
+        
+        // Update inner shadow properties
+        _materialInstance.SetFloat(ShowInnerShadowID, showInnerShadow ? 1f : 0f);
+        _materialInstance.SetFloat(BorderShadowIntensityID, borderShadowIntensity);
+        _materialInstance.SetColor(InnerShadowColorID, innerShadowColor);
+        
+        // Pass light direction from ShadowLightSource, scaled by borderShadowIntensity
+        // Uses same formula as main shadow: offset = direction * intensity
+        Vector2 lightDir = CalculateShadowDirection();
+        // Invert for border shadow direction based on raised/recessed mode
+        // Raised = shadow on opposite side of light (like embossed)
+        // Recessed = shadow on same side as light (like inset/frame above)
+        float invert = borderShadowRaised ? -1f : 1f;
+        // Pass direction * borderShadowIntensity (same formula as main shadow)
+        _materialInstance.SetVector(LightDirectionID, new Vector4(lightDir.x * invert * borderShadowIntensity, lightDir.y * invert * borderShadowIntensity, 0, 0));
         
         // Check if arrow changed (need to rebuild mesh for arrow extension)
         bool arrowChanged = Mathf.Abs(arrowPerimeter - _lastArrowPerimeter) > 0.01f ||
@@ -384,6 +413,9 @@ public class DialogShadow : MonoBehaviour, IMeshModifier
             _materialInstance.SetFloat(BorderThicknessPixelsID, borderThicknessPixels);
             _materialInstance.SetFloat(BorderOffsetPixelsID, borderOffsetPixels);
             _materialInstance.SetColor(BorderColorID, borderColor);
+            _materialInstance.SetFloat(ShowInnerShadowID, showInnerShadow ? 1f : 0f);
+            _materialInstance.SetFloat(BorderShadowIntensityID, borderShadowIntensity);
+            _materialInstance.SetColor(InnerShadowColorID, innerShadowColor);
         }
     }
     
