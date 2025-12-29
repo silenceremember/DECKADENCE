@@ -409,11 +409,12 @@ public class MultiBubbleRenderer : MonoBehaviour, IMeshModifier
         // Calculate offsets in local space
         float scaleFactor = _canvas != null ? _canvas.scaleFactor : 1f;
         
-        // Rendering order:
-        // 1. All shadows (back to front layers, secondary then primary per layer)
-        // 2. All fills (back to front layers)
+        // Rendering order (per layer, back to front):
+        // Layer 0: secondary shadow, primary shadow, fill
+        // Layer 1: secondary shadow, primary shadow, fill
+        // etc.
+        // This ensures each layer's shadow is behind its own fill but above previous layer
         
-        // === PHASE 1: SHADOWS ===
         for (int i = 0; i < layerCount; i++)
         {
             var layer = preset.layers[i];
@@ -433,7 +434,7 @@ public class MultiBubbleRenderer : MonoBehaviour, IMeshModifier
                 secondaryOffset = transform.InverseTransformVector(secondaryOffset);
             }
             
-            // Secondary shadow (furthest back)
+            // Secondary shadow (furthest back for this layer)
             if (layer.showSecondShadow)
             {
                 AddQuad(vh, ref vert, left, right, bottom, top,
@@ -449,14 +450,8 @@ public class MultiBubbleRenderer : MonoBehaviour, IMeshModifier
                     primaryOffset, i, 1); // quadType 1 = primary shadow
             AddQuadTriangles(vh, vertexIndex);
             vertexIndex += 4;
-        }
-        
-        // === PHASE 2: FILLS ===
-        for (int i = 0; i < layerCount; i++)
-        {
-            var layer = preset.layers[i];
-            if (!layer.enabled) continue;
             
+            // Fill (on top of shadows for this layer)
             AddQuad(vh, ref vert, left, right, bottom, top,
                     uvLeft, uvRight, uvBottom, uvTop,
                     Vector3.zero, i, 0); // quadType 0 = fill
