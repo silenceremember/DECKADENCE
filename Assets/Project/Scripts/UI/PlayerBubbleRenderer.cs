@@ -162,8 +162,8 @@ public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
         _materialInstance.SetColor(ShadowColorID, preset.shadowColor);
         _materialInstance.SetFloat(ShadowIntensityID, preset.shadowIntensity);
         
-        // Left side interpolation
-        preset.GetLeftState(leftProgress,
+        // Left side interpolation (selfProgress=leftProgress, oppositeProgress=rightProgress)
+        preset.GetLeftState(leftProgress, rightProgress,
             out Color leftFill,
             out Vector2 leftOffset, out Vector2 leftExpand,
             out Vector2 lBL, out Vector2 lTL, out Vector2 lBR, out Vector2 lTR);
@@ -174,8 +174,8 @@ public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
         _materialInstance.SetVector(LeftCornersBLTLID, new Vector4(lBL.x, lBL.y, lTL.x, lTL.y));
         _materialInstance.SetVector(LeftCornersBRTRID, new Vector4(lBR.x, lBR.y, lTR.x, lTR.y));
         
-        // Right side interpolation
-        preset.GetRightState(rightProgress,
+        // Right side interpolation (selfProgress=rightProgress, oppositeProgress=leftProgress)
+        preset.GetRightState(rightProgress, leftProgress,
             out Color rightFill,
             out Vector2 rightOffset, out Vector2 rightExpand,
             out Vector2 rBL, out Vector2 rTL, out Vector2 rBR, out Vector2 rTR);

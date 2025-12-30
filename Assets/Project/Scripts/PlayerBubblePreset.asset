@@ -32,6 +32,13 @@ MonoBehaviour:
   leftCornerTL_Active: {x: -18, y: 8}
   leftCornerBR_Active: {x: 8, y: 0}
   leftCornerTR_Active: {x: -10, y: 0}
+  leftFillInactive: {r: 0.05, g: 0.05, b: 0.08, a: 0.6}
+  leftOffsetInactive: {x: -20, y: 0}
+  leftExpandInactive: {x: -10, y: -4}
+  leftCornerBL_Inactive: {x: -8, y: 4}
+  leftCornerTL_Inactive: {x: -10, y: -4}
+  leftCornerBR_Inactive: {x: -4, y: 0}
+  leftCornerTR_Inactive: {x: 6, y: 0}
   rightFillNormal: {r: 0.92, g: 0.92, b: 0.96, a: 1}
   rightOffsetNormal: {x: 0, y: 0}
   rightExpandNormal: {x: 0, y: 0}
@@ -46,6 +53,13 @@ MonoBehaviour:
   rightCornerTL_Active: {x: -10, y: 0}
   rightCornerBR_Active: {x: 16, y: -6}
   rightCornerTR_Active: {x: 18, y: 8}
+  rightFillInactive: {r: 0.7, g: 0.7, b: 0.75, a: 0.6}
+  rightOffsetInactive: {x: 20, y: 0}
+  rightExpandInactive: {x: -10, y: -4}
+  rightCornerBL_Inactive: {x: -4, y: 0}
+  rightCornerTL_Inactive: {x: 6, y: 0}
+  rightCornerBR_Inactive: {x: 8, y: 4}
+  rightCornerTR_Inactive: {x: 10, y: -4}
   shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   shadowIntensity: 8
   textColorLeft: {r: 1, g: 1, b: 1, a: 1}
