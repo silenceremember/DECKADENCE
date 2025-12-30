@@ -119,6 +119,46 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!21 &48569536
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ImageShadow
+  m_Shader: {fileID: 4800000, guid: c2cb96d0b4b73a74b9329840226db02d, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ColorMask: 15
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &101998755
 GameObject:
   m_ObjectHideFlags: 0
@@ -486,7 +526,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 1429046221}
+  m_Material: {fileID: 1903810415}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -827,7 +867,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 1852997829}
+  m_Material: {fileID: 736471125}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -1107,7 +1147,7 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
---- !u!21 &759563491
+--- !u!21 &718069924
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
@@ -1160,6 +1200,132 @@ Material:
     - _RectSize: {r: 600, g: 171.24, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
+--- !u!21 &719962416
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PlayerBubble
+  m_Shader: {fileID: 4800000, guid: 7daf050361a2de2469914d173da737c1, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BorderThickness: 2
+    - _CanvasScale: 1
+    - _ColorMask: 15
+    - _CornerCut: 15
+    - _ShadowIntensity: 1
+    - _SplitAngle: 15
+    - _SplitBorderThickness: 0
+    - _SplitPosition: 0.5
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _LeftBorderColor: {r: 0.3, g: 0.3, b: 0.4, a: 1}
+    - _LeftCornersBLTL: {r: -6, g: 4, b: -8, a: -3}
+    - _LeftCornersBRTR: {r: 5, g: 0, b: -4, a: 0}
+    - _LeftExpand: {r: 0, g: 0, b: 0, a: 0}
+    - _LeftFillColor: {r: 0.078431375, g: 0.15294118, b: 0.4039216, a: 1}
+    - _LeftOffset: {r: -2, g: 0, b: 0, a: 0}
+    - _RectSize: {r: 600, g: 171.24, b: 0, a: 0}
+    - _RightBorderColor: {r: 0.85, g: 0.85, b: 0.95, a: 1}
+    - _RightCornersBLTL: {r: -5, g: 0, b: 4, a: 0}
+    - _RightCornersBRTR: {r: 6, g: 4, b: 8, a: -3}
+    - _RightExpand: {r: 0, g: 0, b: 0, a: 0}
+    - _RightFillColor: {r: 0.16862746, g: 0.32156864, b: 0.7490196, a: 1}
+    - _RightOffset: {r: 2, g: 0, b: 0, a: 0}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.4}
+    - _ShadowOffset: {r: 3, g: -3, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
+--- !u!21 &736471125
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: CardShadow
+  m_Shader: {fileID: 4800000, guid: 40a9991479fe81b4aa70f69d7d245633, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AlphaCutoff: 0.5
+    - _AnimSpeed: 1
+    - _BottomTear: 0.3
+    - _CanvasScale: 1
+    - _ColorMask: 15
+    - _CornerCutMax: 0.05
+    - _CornerCutMaxPixels: 30
+    - _CornerCutMin: 0
+    - _CornerCutMinPixels: 15
+    - _LeftTear: 0.3
+    - _PixelSize: 256
+    - _PixelSizePixels: 4
+    - _RightTear: 0.3
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _TearDepth: 0.1
+    - _TearDepthMaxPixels: 30
+    - _TearDepthMinPixels: 5
+    - _TearSeed: 0
+    - _TearSpacingMaxPixels: 180
+    - _TearSpacingMinPixels: 60
+    - _TearWidthMaxPixels: 60
+    - _TearWidthMinPixels: 10
+    - _TeethCount: 6
+    - _TeethMaxWidth: 0.1
+    - _TeethMinWidth: 0.02
+    - _TopTear: 0.3
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _RectSize: {r: 720, g: 1000, b: 0, a: 0}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &765449690
 GameObject:
   m_ObjectHideFlags: 0
@@ -1205,6 +1371,101 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!21 &776413342
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Custom_JuicyResourceIcon
+  m_Shader: {fileID: 4800000, guid: 0a95f524eda177f4880fa4a0a43cc726, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _FluidTex:
+        m_Texture: {fileID: 1690450162}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BackgroundAlpha: 1
+    - _BubbleBgContrast: 0.5
+    - _BubbleDensity: 0.1
+    - _BubbleFillContrast: 0.05
+    - _BubbleIntensity: 0
+    - _BubbleIntensityBackground: 0
+    - _BubbleIntensityFill: 0
+    - _BubblePixelation: 64
+    - _BubbleSize: 0.15
+    - _BubbleSpeed: 0.6
+    - _ColorMask: 15
+    - _DecreaseStrength: 0.7
+    - _EffectIntensity: 0
+    - _EffectStrength: 0.5
+    - _FillAmount: 0.5
+    - _FillWaveSpeed: 3
+    - _FillWaveStrength: 0.02
+    - _FluidSmoothness: 0.1
+    - _FluidThreshold: 0.15
+    - _GlowIntensity: 0
+    - _GlowSize: 0.02
+    - _GlowStrength: 0.7
+    - _HighlightIntensity: 0
+    - _IncreaseStrength: 0.2
+    - _LiquidInertia: 0
+    - _LiquidTurbulence: 0
+    - _LiquidViscosity: 1
+    - _MeniscusStrength: 0.04
+    - _PixelDensity: 64
+    - _PulseIntensity: 0
+    - _PulseSpeed: 4
+    - _ShakeIntensity: 0
+    - _ShakeSpeed: 30
+    - _SloshAmount: 0
+    - _SloshSpeed: 8
+    - _SloshTilt: 0
+    - _SplashIntensity: 0
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _TrailingDirection: 1
+    - _TrailingFill: 0.5
+    - _Turbulence: 0
+    - _UseFluidSim: 1
+    - _Vortex: 0
+    - _VortexIntensity: 0
+    m_Colors:
+    - _BackgroundColor: {r: 0.3764706, g: 0.078431375, b: 0.12941177, a: 1}
+    - _BubbleColor: {r: 1, g: 0.55, b: 0.6, a: 0.8}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
+    - _FillColor: {r: 0.7169812, g: 0.15218942, b: 0.20910645, a: 1}
+    - _GlowColor: {r: 1, g: 0.85, b: 0.3, a: 1}
+    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _LiquidVelocity: {r: 0, g: 0, b: 0, a: 0}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+    - _TintOverlay: {r: 1, g: 1, b: 1, a: 0}
+    - _TrailingColor: {r: 0.8, g: 0.2, b: 0.2, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!84 &808602964
 RenderTexture:
   m_ObjectHideFlags: 0
@@ -1463,7 +1724,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 1250173501}
+  m_Material: {fileID: 48569536}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -1554,15 +1815,15 @@ Material:
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!21 &947561974
+--- !u!21 &1033397939
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Custom_JuicyResourceIcon
-  m_Shader: {fileID: 4800000, guid: 0a95f524eda177f4880fa4a0a43cc726, type: 3}
+  m_Name: ImageShadow
+  m_Shader: {fileID: 4800000, guid: c2cb96d0b4b73a74b9329840226db02d, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -1577,76 +1838,21 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
-    - _FluidTex:
-        m_Texture: {fileID: 1514039030}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _BackgroundAlpha: 1
-    - _BubbleBgContrast: 0.5
-    - _BubbleDensity: 0.1
-    - _BubbleFillContrast: 0.05
-    - _BubbleIntensity: 0
-    - _BubbleIntensityBackground: 0
-    - _BubbleIntensityFill: 0
-    - _BubblePixelation: 64
-    - _BubbleSize: 0.15
-    - _BubbleSpeed: 0.6
     - _ColorMask: 15
-    - _DecreaseStrength: 0.7
-    - _EffectIntensity: 0
-    - _EffectStrength: 0.5
-    - _FillAmount: 0.5
-    - _FillWaveSpeed: 3
-    - _FillWaveStrength: 0.02
-    - _FluidSmoothness: 0.1
-    - _FluidThreshold: 0.15
-    - _GlowIntensity: 0
-    - _GlowSize: 0.02
-    - _GlowStrength: 0.7
-    - _HighlightIntensity: 0
-    - _IncreaseStrength: 0.2
-    - _LiquidInertia: 0
-    - _LiquidTurbulence: 0
-    - _LiquidViscosity: 1
-    - _MeniscusStrength: 0.04
-    - _PixelDensity: 64
-    - _PulseIntensity: 0
-    - _PulseSpeed: 4
-    - _ShakeIntensity: 0
-    - _ShakeSpeed: 30
-    - _SloshAmount: 0
-    - _SloshSpeed: 8
-    - _SloshTilt: 0
-    - _SplashIntensity: 0
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
-    - _TrailingDirection: 1
-    - _TrailingFill: 0.5
-    - _Turbulence: 0
-    - _UseFluidSim: 1
-    - _Vortex: 0
-    - _VortexIntensity: 0
     m_Colors:
-    - _BackgroundColor: {r: 0.3773585, g: 0.080099694, b: 0.12818564, a: 1}
-    - _BubbleColor: {r: 1, g: 0.55, b: 0.6, a: 0.8}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
-    - _FillColor: {r: 0.7176471, g: 0.15294118, b: 0.21176471, a: 1}
-    - _GlowColor: {r: 1, g: 0.85, b: 0.3, a: 1}
-    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
-    - _LiquidVelocity: {r: 0, g: 0, b: 0, a: 0}
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-    - _TintOverlay: {r: 1, g: 1, b: 1, a: 0}
-    - _TrailingColor: {r: 0.8, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &1036642013
@@ -1827,46 +2033,6 @@ MonoBehaviour:
   scaleReference: {fileID: 0}
   currentShadowOffset: {x: 0.17677669, y: -0.17677669}
   currentEffectiveIntensity: 0.25
---- !u!21 &1090408872
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: ImageShadow
-  m_Shader: {fileID: 4800000, guid: c2cb96d0b4b73a74b9329840226db02d, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _ColorMask: 15
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &1113803476
 GameObject:
   m_ObjectHideFlags: 0
@@ -1917,7 +2083,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 1938748235}
+  m_Material: {fileID: 1726070253}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -2054,7 +2220,7 @@ Material:
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!21 &1160230549
+--- !u!21 &1225935651
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
@@ -2149,46 +2315,6 @@ Material:
     - _TrailingColor: {r: 0.8, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!21 &1250173501
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: ImageShadow
-  m_Shader: {fileID: 4800000, guid: c2cb96d0b4b73a74b9329840226db02d, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _ColorMask: 15
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!21 &1289700401
 Material:
   serializedVersion: 8
@@ -2279,7 +2405,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 759563491}
+  m_Material: {fileID: 718069924}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -2446,101 +2572,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1330394591}
   m_CullTransparentMesh: 1
---- !u!21 &1429046221
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Custom_JuicyResourceIcon
-  m_Shader: {fileID: 4800000, guid: 0a95f524eda177f4880fa4a0a43cc726, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _FluidTex:
-        m_Texture: {fileID: 808602964}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _BackgroundAlpha: 1
-    - _BubbleBgContrast: 0.5
-    - _BubbleDensity: 0.1
-    - _BubbleFillContrast: 0.05
-    - _BubbleIntensity: 0
-    - _BubbleIntensityBackground: 0
-    - _BubbleIntensityFill: 0
-    - _BubblePixelation: 64
-    - _BubbleSize: 0.15
-    - _BubbleSpeed: 0.6
-    - _ColorMask: 15
-    - _DecreaseStrength: 0.7
-    - _EffectIntensity: 0
-    - _EffectStrength: 0.5
-    - _FillAmount: 0.5
-    - _FillWaveSpeed: 3
-    - _FillWaveStrength: 0.02
-    - _FluidSmoothness: 0.1
-    - _FluidThreshold: 0.15
-    - _GlowIntensity: 0
-    - _GlowSize: 0.02
-    - _GlowStrength: 0.7
-    - _HighlightIntensity: 0
-    - _IncreaseStrength: 0.2
-    - _LiquidInertia: 0
-    - _LiquidTurbulence: 0
-    - _LiquidViscosity: 0.5
-    - _MeniscusStrength: 0.04
-    - _PixelDensity: 64
-    - _PulseIntensity: 0
-    - _PulseSpeed: 4
-    - _ShakeIntensity: 0
-    - _ShakeSpeed: 30
-    - _SloshAmount: 0
-    - _SloshSpeed: 8
-    - _SloshTilt: 0
-    - _SplashIntensity: 0
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    - _TrailingDirection: 1
-    - _TrailingFill: 0.5
-    - _Turbulence: 0
-    - _UseFluidSim: 1
-    - _Vortex: 0
-    - _VortexIntensity: 0.2
-    m_Colors:
-    - _BackgroundColor: {r: 0.09019608, g: 0.17254902, b: 0.44705883, a: 1}
-    - _BubbleColor: {r: 0.5, g: 0.6, b: 0.9, a: 0.8}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
-    - _FillColor: {r: 0.17254902, g: 0.35686275, b: 0.84313726, a: 1}
-    - _GlowColor: {r: 1, g: 0.85, b: 0.3, a: 1}
-    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
-    - _LiquidVelocity: {r: 0, g: 0, b: 0, a: 0}
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-    - _TintOverlay: {r: 1, g: 1, b: 1, a: 0}
-    - _TrailingColor: {r: 0.8, g: 0.2, b: 0.2, a: 1}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!21 &1488671237
 Material:
   serializedVersion: 8
@@ -2775,6 +2806,99 @@ RenderTexture:
   m_Dimension: 2
   m_VolumeDepth: 1
   m_ShadowSamplingMode: 2
+--- !u!1 &1554301149
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1554301150}
+  - component: {fileID: 1554301153}
+  - component: {fileID: 1554301152}
+  - component: {fileID: 1554301151}
+  m_Layer: 5
+  m_Name: Background (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1554301150
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1554301149}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1705840767}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &1554301151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1554301149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 719962416}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1554301152
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1554301149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30588237ced52f0449f544c45c76afbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerBubbleRenderer
+  preset: {fileID: 11400000, guid: f77115c00c886a74a879655801b8132e, type: 2}
+  leftProgress: 0
+  rightProgress: 0
+  splitPositionOverride: 0.5
+  splitAngleOverride: 15
+--- !u!222 &1554301153
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1554301149}
+  m_CullTransparentMesh: 1
 --- !u!1 &1577235545
 GameObject:
   m_ObjectHideFlags: 0
@@ -2825,7 +2949,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 1090408872}
+  m_Material: {fileID: 1033397939}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -2931,6 +3055,101 @@ MonoBehaviour:
   criticalLowThreshold: 20
   criticalHighThreshold: 80
   cardsPerShuffle: 15
+--- !u!21 &1588318680
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Custom_JuicyResourceIcon
+  m_Shader: {fileID: 4800000, guid: 0a95f524eda177f4880fa4a0a43cc726, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _FluidTex:
+        m_Texture: {fileID: 1514039030}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BackgroundAlpha: 1
+    - _BubbleBgContrast: 0.5
+    - _BubbleDensity: 0.1
+    - _BubbleFillContrast: 0.05
+    - _BubbleIntensity: 0
+    - _BubbleIntensityBackground: 0
+    - _BubbleIntensityFill: 0
+    - _BubblePixelation: 64
+    - _BubbleSize: 0.15
+    - _BubbleSpeed: 0.6
+    - _ColorMask: 15
+    - _DecreaseStrength: 0.7
+    - _EffectIntensity: 0
+    - _EffectStrength: 0.5
+    - _FillAmount: 0.5
+    - _FillWaveSpeed: 3
+    - _FillWaveStrength: 0.02
+    - _FluidSmoothness: 0.1
+    - _FluidThreshold: 0.15
+    - _GlowIntensity: 0
+    - _GlowSize: 0.02
+    - _GlowStrength: 0.7
+    - _HighlightIntensity: 0
+    - _IncreaseStrength: 0.2
+    - _LiquidInertia: 0
+    - _LiquidTurbulence: 0
+    - _LiquidViscosity: 1
+    - _MeniscusStrength: 0.04
+    - _PixelDensity: 64
+    - _PulseIntensity: 0
+    - _PulseSpeed: 4
+    - _ShakeIntensity: 0
+    - _ShakeSpeed: 30
+    - _SloshAmount: 0
+    - _SloshSpeed: 8
+    - _SloshTilt: 0
+    - _SplashIntensity: 0
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    - _TrailingDirection: 1
+    - _TrailingFill: 0.5
+    - _Turbulence: 0
+    - _UseFluidSim: 1
+    - _Vortex: 0
+    - _VortexIntensity: 0
+    m_Colors:
+    - _BackgroundColor: {r: 0.3773585, g: 0.080099694, b: 0.12818564, a: 1}
+    - _BubbleColor: {r: 1, g: 0.55, b: 0.6, a: 0.8}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
+    - _FillColor: {r: 0.7176471, g: 0.15294118, b: 0.21176471, a: 1}
+    - _GlowColor: {r: 1, g: 0.85, b: 0.3, a: 1}
+    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _LiquidVelocity: {r: 0, g: 0, b: 0, a: 0}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+    - _TintOverlay: {r: 1, g: 1, b: 1, a: 0}
+    - _TrailingColor: {r: 0.8, g: 0.2, b: 0.2, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!84 &1690450162
 RenderTexture:
   m_ObjectHideFlags: 0
@@ -2998,6 +3217,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1297457984}
+  - {fileID: 1554301150}
   - {fileID: 1036642014}
   m_Father: {fileID: 231931112}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3027,6 +3247,46 @@ MonoBehaviour:
   _debugVisibleChars: 0
   _debugTargetSize: {x: 0, y: 0}
   _debugCurrentSize: {x: 0, y: 0}
+--- !u!21 &1726070253
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: ImageShadow
+  m_Shader: {fileID: 4800000, guid: c2cb96d0b4b73a74b9329840226db02d, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _ColorMask: 15
+    - _Stencil: 0
+    - _StencilComp: 8
+    - _StencilOp: 0
+    - _StencilReadMask: 255
+    - _StencilWriteMask: 255
+    m_Colors:
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
 --- !u!1 &1771396904
 GameObject:
   m_ObjectHideFlags: 0
@@ -3106,101 +3366,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!21 &1785463681
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: Custom_JuicyResourceIcon
-  m_Shader: {fileID: 4800000, guid: 0a95f524eda177f4880fa4a0a43cc726, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _FluidTex:
-        m_Texture: {fileID: 1690450162}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _BackgroundAlpha: 1
-    - _BubbleBgContrast: 0.5
-    - _BubbleDensity: 0.1
-    - _BubbleFillContrast: 0.05
-    - _BubbleIntensity: 0
-    - _BubbleIntensityBackground: 0
-    - _BubbleIntensityFill: 0
-    - _BubblePixelation: 64
-    - _BubbleSize: 0.15
-    - _BubbleSpeed: 0.6
-    - _ColorMask: 15
-    - _DecreaseStrength: 0.7
-    - _EffectIntensity: 0
-    - _EffectStrength: 0.5
-    - _FillAmount: 0.5
-    - _FillWaveSpeed: 3
-    - _FillWaveStrength: 0.02
-    - _FluidSmoothness: 0.1
-    - _FluidThreshold: 0.15
-    - _GlowIntensity: 0
-    - _GlowSize: 0.02
-    - _GlowStrength: 0.7
-    - _HighlightIntensity: 0
-    - _IncreaseStrength: 0.2
-    - _LiquidInertia: 0
-    - _LiquidTurbulence: 0
-    - _LiquidViscosity: 1
-    - _MeniscusStrength: 0.04
-    - _PixelDensity: 64
-    - _PulseIntensity: 0
-    - _PulseSpeed: 4
-    - _ShakeIntensity: 0
-    - _ShakeSpeed: 30
-    - _SloshAmount: 0
-    - _SloshSpeed: 8
-    - _SloshTilt: 0
-    - _SplashIntensity: 0
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    - _TrailingDirection: 1
-    - _TrailingFill: 0.5
-    - _Turbulence: 0
-    - _UseFluidSim: 1
-    - _Vortex: 0
-    - _VortexIntensity: 0
-    m_Colors:
-    - _BackgroundColor: {r: 0.3764706, g: 0.078431375, b: 0.12941177, a: 1}
-    - _BubbleColor: {r: 1, g: 0.55, b: 0.6, a: 0.8}
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
-    - _FillColor: {r: 0.7169812, g: 0.15218942, b: 0.20910645, a: 1}
-    - _GlowColor: {r: 1, g: 0.85, b: 0.3, a: 1}
-    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
-    - _LiquidVelocity: {r: 0, g: 0, b: 0, a: 0}
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-    - _TintOverlay: {r: 1, g: 1, b: 1, a: 0}
-    - _TrailingColor: {r: 0.8, g: 0.2, b: 0.2, a: 1}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &1799412875
 GameObject:
   m_ObjectHideFlags: 0
@@ -3304,15 +3469,15 @@ Material:
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
---- !u!21 &1852997829
+--- !u!21 &1903810415
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: CardShadow
-  m_Shader: {fileID: 4800000, guid: 40a9991479fe81b4aa70f69d7d245633, type: 3}
+  m_Name: Custom_JuicyResourceIcon
+  m_Shader: {fileID: 4800000, guid: 0a95f524eda177f4880fa4a0a43cc726, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -3327,46 +3492,76 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _FluidTex:
+        m_Texture: {fileID: 808602964}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - _AlphaCutoff: 0.5
-    - _AnimSpeed: 1
-    - _BottomTear: 0.3
-    - _CanvasScale: 1
+    - _BackgroundAlpha: 1
+    - _BubbleBgContrast: 0.5
+    - _BubbleDensity: 0.1
+    - _BubbleFillContrast: 0.05
+    - _BubbleIntensity: 0
+    - _BubbleIntensityBackground: 0
+    - _BubbleIntensityFill: 0
+    - _BubblePixelation: 64
+    - _BubbleSize: 0.15
+    - _BubbleSpeed: 0.6
     - _ColorMask: 15
-    - _CornerCutMax: 0.05
-    - _CornerCutMaxPixels: 30
-    - _CornerCutMin: 0
-    - _CornerCutMinPixels: 15
-    - _LeftTear: 0.3
-    - _PixelSize: 256
-    - _PixelSizePixels: 4
-    - _RightTear: 0.3
+    - _DecreaseStrength: 0.7
+    - _EffectIntensity: 0
+    - _EffectStrength: 0.5
+    - _FillAmount: 0.5
+    - _FillWaveSpeed: 3
+    - _FillWaveStrength: 0.02
+    - _FluidSmoothness: 0.1
+    - _FluidThreshold: 0.15
+    - _GlowIntensity: 0
+    - _GlowSize: 0.02
+    - _GlowStrength: 0.7
+    - _HighlightIntensity: 0
+    - _IncreaseStrength: 0.2
+    - _LiquidInertia: 0
+    - _LiquidTurbulence: 0
+    - _LiquidViscosity: 0.5
+    - _MeniscusStrength: 0.04
+    - _PixelDensity: 64
+    - _PulseIntensity: 0
+    - _PulseSpeed: 4
+    - _ShakeIntensity: 0
+    - _ShakeSpeed: 30
+    - _SloshAmount: 0
+    - _SloshSpeed: 8
+    - _SloshTilt: 0
+    - _SplashIntensity: 0
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
-    - _TearDepth: 0.1
-    - _TearDepthMaxPixels: 30
-    - _TearDepthMinPixels: 5
-    - _TearSeed: 0
-    - _TearSpacingMaxPixels: 180
-    - _TearSpacingMinPixels: 60
-    - _TearWidthMaxPixels: 60
-    - _TearWidthMinPixels: 10
-    - _TeethCount: 6
-    - _TeethMaxWidth: 0.1
-    - _TeethMinWidth: 0.02
-    - _TopTear: 0.3
+    - _TrailingDirection: 1
+    - _TrailingFill: 0.5
+    - _Turbulence: 0
+    - _UseFluidSim: 1
+    - _Vortex: 0
+    - _VortexIntensity: 0.2
     m_Colors:
+    - _BackgroundColor: {r: 0.09019608, g: 0.17254902, b: 0.44705883, a: 1}
+    - _BubbleColor: {r: 0.5, g: 0.6, b: 0.9, a: 0.8}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _RectSize: {r: 720, g: 1000, b: 0, a: 0}
+    - _EmptyColor: {r: 0.29999998, g: 0.29999998, b: 0.29999998, a: 1}
+    - _FillColor: {r: 0.17254902, g: 0.35686275, b: 0.84313726, a: 1}
+    - _GlowColor: {r: 1, g: 0.85, b: 0.3, a: 1}
+    - _HighlightColor: {r: 1, g: 1, b: 1, a: 1}
+    - _LiquidVelocity: {r: 0, g: 0, b: 0, a: 0}
     - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+    - _TintOverlay: {r: 1, g: 1, b: 1, a: 0}
+    - _TrailingColor: {r: 0.8, g: 0.2, b: 0.2, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!1 &1918162386
@@ -3434,7 +3629,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 947561974}
+  m_Material: {fileID: 1588318680}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -3482,46 +3677,6 @@ MonoBehaviour:
   liquidTurbulence: 0
   bubbleIntensity: 0
   splashIntensity: 0
---- !u!21 &1938748235
-Material:
-  serializedVersion: 8
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: ImageShadow
-  m_Shader: {fileID: 4800000, guid: c2cb96d0b4b73a74b9329840226db02d, type: 3}
-  m_Parent: {fileID: 0}
-  m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
-  m_InvalidKeywords: []
-  m_LightmapFlags: 4
-  m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: -1
-  stringTagMap: {}
-  disabledShaderPasses: []
-  m_LockedProperties: 
-  m_SavedProperties:
-    serializedVersion: 3
-    m_TexEnvs:
-    - _MainTex:
-        m_Texture: {fileID: 0}
-        m_Scale: {x: 1, y: 1}
-        m_Offset: {x: 0, y: 0}
-    m_Ints: []
-    m_Floats:
-    - _ColorMask: 15
-    - _Stencil: 0
-    - _StencilComp: 8
-    - _StencilOp: 0
-    - _StencilReadMask: 255
-    - _StencilWriteMask: 255
-    m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
-  m_BuildTextureStacks: []
-  m_AllowLocking: 1
 --- !u!1 &2063988427
 GameObject:
   m_ObjectHideFlags: 0
@@ -3587,7 +3742,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 1785463681}
+  m_Material: {fileID: 776413342}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -3700,7 +3855,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 1160230549}
+  m_Material: {fileID: 1225935651}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}

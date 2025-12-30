@@ -18,28 +18,28 @@ MonoBehaviour:
   splitPositionLeftActive: 1.1
   splitAngleRightActive: 8
   splitPositionRightActive: -0.1
-  leftFillNormal: {r: 0.07, g: 0.07, b: 0.1, a: 1}
+  leftFillNormal: {r: 0.078431375, g: 0.15294118, b: 0.4039216, a: 1}
   leftOffsetNormal: {x: -2, y: 0}
   leftExpandNormal: {x: 0, y: 0}
   leftCornerBL_Normal: {x: -6, y: 4}
   leftCornerTL_Normal: {x: -8, y: -3}
   leftCornerBR_Normal: {x: 5, y: 0}
   leftCornerTR_Normal: {x: -4, y: 0}
-  leftFillActive: {r: 0.1, g: 0.1, b: 0.14, a: 1}
+  leftFillActive: {r: 0.078431375, g: 0.15294118, b: 0.41176474, a: 1}
   leftOffsetActive: {x: -12, y: 8}
   leftExpandActive: {x: 8, y: 6}
   leftCornerBL_Active: {x: -18, y: 10}
   leftCornerTL_Active: {x: -22, y: -8}
   leftCornerBR_Active: {x: 20, y: 0}
   leftCornerTR_Active: {x: -14, y: 0}
-  rightFillNormal: {r: 0.94, g: 0.94, b: 0.97, a: 1}
+  rightFillNormal: {r: 0.16862746, g: 0.32156864, b: 0.7490196, a: 1}
   rightOffsetNormal: {x: 2, y: 0}
   rightExpandNormal: {x: 0, y: 0}
   rightCornerBL_Normal: {x: -5, y: 0}
   rightCornerTL_Normal: {x: 4, y: 0}
   rightCornerBR_Normal: {x: 6, y: 4}
   rightCornerTR_Normal: {x: 8, y: -3}
-  rightFillActive: {r: 1, g: 1, b: 1, a: 1}
+  rightFillActive: {r: 0.14901961, g: 0.31764707, b: 0.76470596, a: 1}
   rightOffsetActive: {x: 12, y: 8}
   rightExpandActive: {x: 8, y: 6}
   rightCornerBL_Active: {x: -20, y: 0}
@@ -47,7 +47,7 @@ MonoBehaviour:
   rightCornerBR_Active: {x: 18, y: 10}
   rightCornerTR_Active: {x: 22, y: -8}
   shadowColor: {r: 0, g: 0, b: 0, a: 0.4}
-  shadowIntensity: 6
+  shadowIntensity: 1
   textColorLeft: {r: 0.96, g: 0.96, b: 0.96, a: 1}
   textColorRight: {r: 0.06, g: 0.06, b: 0.09, a: 1}
   transitionDuration: 0.15
