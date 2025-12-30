@@ -238,7 +238,7 @@ public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
         float scaleFactor = _canvas != null ? _canvas.scaleFactor : 1f;
         
         float shadowIntensity = preset != null ? preset.shadowIntensity : 5f;
-        float expand = shadowIntensity + 100f; // Buffer for corners and offsets
+        float expand = shadowIntensity + 200f; // Buffer for corners and offsets
         
         float left = rect.xMin - expand;
         float right = rect.xMax + expand;
