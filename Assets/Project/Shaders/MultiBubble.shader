@@ -608,6 +608,60 @@ Shader "DECKADENCE/UI/MultiBubble"
             }
             
             // ==========================================
+            // COMPUTE BORDER MASK
+            // ==========================================
+            
+            // Returns 1.0 if the position is inside the border zone, 0.0 otherwise
+            float ComputeBorderMask(float2 localPos, float2 layerSize, float seed, float canvasScale,
+                                    float borderThickness, float borderOffset)
+            {
+                float borderThicknessCanvas = borderThickness / canvasScale;
+                float borderOffsetCanvas = borderOffset / canvasScale;
+                
+                float distBottom = localPos.y;
+                float distTop = layerSize.y - localPos.y;
+                float distLeft = localPos.x;
+                float distRight = layerSize.x - localPos.x;
+                float minDistToEdge = min(min(distBottom, distTop), min(distLeft, distRight));
+                
+                // Calculate corner cut sizes
+                float cornerCutMin = _CornerCutMinPixels / canvasScale;
+                float cornerCutMax = _CornerCutMaxPixels / canvasScale;
+                float blCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 500.0));
+                float brCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 600.0));
+                float tlCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 700.0));
+                float trCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 800.0));
+                
+                // Corner zones and distances
+                float cornerDistBL = distLeft + distBottom;
+                float inBLCornerZone = step(cornerDistBL, blCut * 2.0);
+                float blCornerDist = cornerDistBL - blCut;
+                
+                float cornerDistBR = distRight + distBottom;
+                float inBRCornerZone = step(cornerDistBR, brCut * 2.0);
+                float brCornerDist = cornerDistBR - brCut;
+                
+                float cornerDistTL = distLeft + distTop;
+                float inTLCornerZone = step(cornerDistTL, tlCut * 2.0);
+                float tlCornerDist = cornerDistTL - tlCut;
+                
+                float cornerDistTR = distRight + distTop;
+                float inTRCornerZone = step(cornerDistTR, trCut * 2.0);
+                float trCornerDist = cornerDistTR - trCut;
+                
+                // Effective distance follows contour
+                float effectiveDist = minDistToEdge;
+                
+                // Blend to corner distance when in corner zones (0.707 = 1/sqrt(2) for diagonal)
+                if (inBLCornerZone > 0.5) effectiveDist = min(effectiveDist, blCornerDist * 0.707);
+                if (inBRCornerZone > 0.5) effectiveDist = min(effectiveDist, brCornerDist * 0.707);
+                if (inTLCornerZone > 0.5) effectiveDist = min(effectiveDist, tlCornerDist * 0.707);
+                if (inTRCornerZone > 0.5) effectiveDist = min(effectiveDist, trCornerDist * 0.707);
+                
+                return step(borderOffsetCanvas, effectiveDist) * step(effectiveDist, borderOffsetCanvas + borderThicknessCanvas);
+            }
+            
+            // ==========================================
             // COMPUTE LAYER VISIBILITY
             // ==========================================
             
@@ -821,22 +875,41 @@ Shader "DECKADENCE/UI/MultiBubble"
                 // Render based on quad type
                 if (quadType == 2) // Secondary shadow
                 {
+                    // Calculate border mask to determine alpha source
+                    float inBorder = 0.0;
+                    if (layer.showBorder > 0.5)
+                    {
+                        inBorder = ComputeBorderMask(layerLocalPos, layerSize, seed, canvasScale,
+                                                      layer.borderThickness, layer.borderOffset);
+                    }
+                    float alphaSource = lerp(layer.fillColor.a, layer.borderColor.a, inBorder);
+                    
                     half4 result;
                     result.rgb = layer.secondShadowColor.rgb;
-                    result.a = visible * layer.secondShadowColor.a * IN.color.a;
+                    result.a = visible * layer.secondShadowColor.a * alphaSource * IN.color.a;
                     return result;
                 }
                 else if (quadType == 1) // Primary shadow
                 {
+                    // Calculate border mask to determine alpha source
+                    float inBorder = 0.0;
+                    if (layer.showBorder > 0.5)
+                    {
+                        inBorder = ComputeBorderMask(layerLocalPos, layerSize, seed, canvasScale,
+                                                      layer.borderThickness, layer.borderOffset);
+                    }
+                    float alphaSource = lerp(layer.fillColor.a, layer.borderColor.a, inBorder);
+                    
                     half4 result;
                     result.rgb = layer.shadowColor.rgb;
-                    result.a = visible * layer.shadowColor.a * IN.color.a;
+                    result.a = visible * layer.shadowColor.a * alphaSource * IN.color.a;
                     return result;
                 }
                 else // Fill (quadType == 0)
                 {
                     // Multiply layer fill color with vertex color (from Image.color)
                     float3 color = layer.fillColor.rgb * IN.color.rgb;
+                    float inBorder = 0.0;
                     
                     // Border - follows contour including corner cuts
                     if (layer.showBorder > 0.5)
@@ -884,7 +957,7 @@ Shader "DECKADENCE/UI/MultiBubble"
                         if (inTLCornerZone > 0.5) effectiveDist = min(effectiveDist, tlCornerDist * 0.707);
                         if (inTRCornerZone > 0.5) effectiveDist = min(effectiveDist, trCornerDist * 0.707);
                         
-                        float inBorder = step(borderOffset, effectiveDist) * step(effectiveDist, borderOffset + borderThickness);
+                        inBorder = step(borderOffset, effectiveDist) * step(effectiveDist, borderOffset + borderThickness);
                         color = lerp(color, layer.borderColor.rgb, inBorder * layer.borderColor.a);
                     }
                     
@@ -900,14 +973,19 @@ Shader "DECKADENCE/UI/MultiBubble"
                         float distRight = layerSize.x - shadowPos.x;
                         float minDist = min(min(distBottom, distTop), min(distLeft, distRight));
                         
-                        float borderOffset = layer.borderOffset / canvasScale;
-                        float inShadow = step(0.0, minDist) * step(minDist, borderOffset);
+                        float borderOffsetVal = layer.borderOffset / canvasScale;
+                        float inShadow = step(0.0, minDist) * step(minDist, borderOffsetVal);
                         color = lerp(color, layer.innerShadowColor.rgb, inShadow * layer.innerShadowColor.a);
                     }
                     
+                    // Calculate alpha: use border alpha when in border, fill alpha otherwise
+                    float fillAlpha = layer.fillColor.a;
+                    float borderAlpha = layer.borderColor.a;
+                    float finalAlpha = lerp(fillAlpha, borderAlpha, inBorder);
+                    
                     half4 result;
                     result.rgb = color;
-                    result.a = visible * layer.fillColor.a * IN.color.a;
+                    result.a = visible * finalAlpha * IN.color.a;
                     return result;
                 }
             }
