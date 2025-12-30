@@ -15,14 +15,14 @@ using TMPro;
 public class ActionTextBubble : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("The bubble background RectTransform (with MultiBubbleRenderer)")]
+    [Tooltip("The bubble background RectTransform (with PlayerBubbleRenderer)")]
     public RectTransform bubbleRect;
     
     [Tooltip("The text component inside the bubble")]
     public TextMeshProUGUI textComponent;
     
-    [Tooltip("Optional: MultiBubbleRenderer for preset-based rendering")]
-    public MultiBubbleRenderer bubbleRenderer;
+    [Tooltip("Optional: PlayerBubbleRenderer for split-bubble rendering")]
+    public PlayerBubbleRenderer playerBubbleRenderer;
     
     [Tooltip("Image component on the bubble for color control")]
     public Image bubbleImage;
@@ -93,10 +93,10 @@ public class ActionTextBubble : MonoBehaviour
             bubbleImage = bubbleRect.GetComponent<Image>();
         }
         
-        // Auto-get MultiBubbleRenderer from bubbleRect if not assigned
-        if (bubbleRenderer == null && bubbleRect != null)
+        // Auto-get PlayerBubbleRenderer from bubbleRect if not assigned
+        if (playerBubbleRenderer == null && bubbleRect != null)
         {
-            bubbleRenderer = bubbleRect.GetComponent<MultiBubbleRenderer>();
+            playerBubbleRenderer = bubbleRect.GetComponent<PlayerBubbleRenderer>();
         }
     }
     
@@ -282,6 +282,52 @@ public class ActionTextBubble : MonoBehaviour
     public Color GetBubbleColor()
     {
         return bubbleImage != null ? bubbleImage.color : Color.white;
+    }
+    
+    // ========================================
+    // PLAYER BUBBLE PROGRESS CONTROL
+    // ========================================
+    
+    /// <summary>
+    /// Set left side progress (0 = normal, 1 = active).
+    /// </summary>
+    public void SetLeftProgress(float progress)
+    {
+        if (playerBubbleRenderer != null)
+        {
+            playerBubbleRenderer.SetLeftProgress(progress);
+        }
+    }
+    
+    /// <summary>
+    /// Set right side progress (0 = normal, 1 = active).
+    /// </summary>
+    public void SetRightProgress(float progress)
+    {
+        if (playerBubbleRenderer != null)
+        {
+            playerBubbleRenderer.SetRightProgress(progress);
+        }
+    }
+    
+    /// <summary>
+    /// Reset both sides to normal state.
+    /// </summary>
+    public void ResetProgress()
+    {
+        if (playerBubbleRenderer != null)
+        {
+            playerBubbleRenderer.leftProgress = 0f;
+            playerBubbleRenderer.rightProgress = 0f;
+        }
+    }
+    
+    /// <summary>
+    /// Get the PlayerBubbleRenderer for direct access.
+    /// </summary>
+    public PlayerBubbleRenderer GetPlayerBubbleRenderer()
+    {
+        return playerBubbleRenderer;
     }
 }
 

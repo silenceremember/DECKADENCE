@@ -695,20 +695,21 @@ public class CardDisplay : MonoBehaviour
         // Плавный переход цвета текста И бабла
         float colorLerpSpeed = actionTextColorTransitionTime > 0 ? 1f / actionTextColorTransitionTime : 100f;
         
-        // Цвет текста и бабла - берём из MultiBubblePreset
-        if (actionTextBubble != null && actionTextBubble.bubbleRenderer != null && 
-            actionTextBubble.bubbleRenderer.preset != null)
+        // Управление PlayerBubbleRenderer progress на основе направления и дистанции свайпа
+        if (actionTextBubble != null)
         {
-            var preset = actionTextBubble.bubbleRenderer.preset;
-            var renderer = actionTextBubble.bubbleRenderer;
-            
-            // Text color from preset
-            Color targetTextColor = progress >= 1.0f ? preset.textActiveColor : preset.textNormalColor;
-            actionText.color = Color.Lerp(actionText.color, targetTextColor, Time.deltaTime * colorLerpSpeed);
-            
-            // Set active progress to control all layer colors at once
-            float targetActiveProgress = progress >= 1.0f ? 1f : 0f;
-            renderer.ActiveProgress = Mathf.Lerp(renderer.ActiveProgress, targetActiveProgress, Time.deltaTime * colorLerpSpeed);
+            var playerRenderer = actionTextBubble.GetPlayerBubbleRenderer();
+            if (playerRenderer != null)
+            {
+                // Плавный progress на основе clampedProgress (0-1) и направления
+                // При свайпе влево - левая сторона активируется
+                // При свайпе вправо - правая сторона активируется
+                float targetLeftProgress = isRight ? 0f : clampedProgress;
+                float targetRightProgress = isRight ? clampedProgress : 0f;
+                
+                playerRenderer.leftProgress = Mathf.Lerp(playerRenderer.leftProgress, targetLeftProgress, Time.deltaTime * colorLerpSpeed);
+                playerRenderer.rightProgress = Mathf.Lerp(playerRenderer.rightProgress, targetRightProgress, Time.deltaTime * colorLerpSpeed);
+            }
         }
         
         // Наклон блока текста в сторону свайпа (фиксированный угол)
