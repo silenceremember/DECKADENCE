@@ -76,6 +76,8 @@ public class CardDisplay : MonoBehaviour
     public float actionTextFadeDistance = 50f;
     [Tooltip("Время перехода между нормальным и выделенным цветом (секунды)")]
     public float actionTextColorTransitionTime = 0.2f;
+    [Tooltip("Смещение текста по X при полном progress (влево/вправо)")]
+    public float actionTextOffsetX = 40f;
 
     [Header("Idle Effect")]
     public bool enableIdleRotation = true;
@@ -764,6 +766,20 @@ public class CardDisplay : MonoBehaviour
                 Vector3.one * targetScale,
                 Time.deltaTime * 10f
             );
+            
+            // Смещение ТОЛЬКО текста на активную сторону bubble (bubble остаётся на месте)
+            // При свайпе влево текст смещается влево, при свайпе вправо - вправо
+            if (actionText != null)
+            {
+                RectTransform textRect = actionText.rectTransform;
+                float targetOffsetX = isRight ? actionTextOffsetX * clampedProgress : -actionTextOffsetX * clampedProgress;
+                Vector2 currentPos = textRect.anchoredPosition;
+                textRect.anchoredPosition = Vector2.Lerp(
+                    currentPos,
+                    new Vector2(targetOffsetX, currentPos.y),
+                    Time.deltaTime * 10f
+                );
+            }
         }
     }
 
