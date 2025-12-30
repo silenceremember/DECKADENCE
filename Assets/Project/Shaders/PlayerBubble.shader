@@ -15,24 +15,23 @@ Shader "DECKADENCE/UI/PlayerBubble"
         
         [Header(Left Side)]
         _LeftFillColor ("Left Fill Color", Color) = (0.2, 0.2, 0.2, 1)
-        _LeftBorderColor ("Left Border Color", Color) = (0.4, 0.4, 0.4, 1)
+        _LeftOffset ("Left Offset (X, Y)", Vector) = (0, 0, 0, 0)
+        _LeftExpand ("Left Expand (width, height)", Vector) = (0, 0, 0, 0)
+        _LeftCornersBLTL ("Left Corners BL/TL", Vector) = (0, 0, 0, 0)
+        _LeftCornersBRTR ("Left Corners BR/TR (slide along split)", Vector) = (0, 0, 0, 0)
         
         [Header(Right Side)]
         _RightFillColor ("Right Fill Color", Color) = (0.8, 0.8, 0.8, 1)
-        _RightBorderColor ("Right Border Color", Color) = (0.6, 0.6, 0.6, 1)
-        
-        [Header(Border)]
-        _BorderThickness ("Border Thickness", Float) = 2
-        _SplitBorderThickness ("Split Line Thickness", Float) = 2
-        
-        [Header(Corner)]
-        _CornerCut ("Corner Cut Size", Float) = 15
+        _RightOffset ("Right Offset (X, Y)", Vector) = (0, 0, 0, 0)
+        _RightExpand ("Right Expand (width, height)", Vector) = (0, 0, 0, 0)
+        _RightCornersBLTL ("Right Corners BL/TL (slide along split)", Vector) = (0, 0, 0, 0)
+        _RightCornersBRTR ("Right Corners BR/TR", Vector) = (0, 0, 0, 0)
         
         [Header(Shadow)]
         _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.5)
         _ShadowIntensity ("Shadow Intensity", Float) = 5
         
-        // Stencil for UI masking
+        // Stencil
         [HideInInspector] _StencilComp ("Stencil Comparison", Float) = 8
         [HideInInspector] _Stencil ("Stencil ID", Float) = 0
         [HideInInspector] _StencilOp ("Stencil Operation", Float) = 0
@@ -82,7 +81,7 @@ Shader "DECKADENCE/UI/PlayerBubble"
             {
                 float4 positionOS : POSITION;
                 float2 uv : TEXCOORD0;
-                float4 uv1 : TEXCOORD1; // x: unused, y: quadType (0=fill, 1=shadow)
+                float4 uv1 : TEXCOORD1;
                 float4 color : COLOR;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
@@ -109,13 +108,16 @@ Shader "DECKADENCE/UI/PlayerBubble"
                 float _SplitPosition;
                 
                 float4 _LeftFillColor;
-                float4 _LeftBorderColor;
-                float4 _RightFillColor;
-                float4 _RightBorderColor;
+                float4 _LeftOffset;
+                float4 _LeftExpand;
+                float4 _LeftCornersBLTL;
+                float4 _LeftCornersBRTR;
                 
-                float _BorderThickness;
-                float _SplitBorderThickness;
-                float _CornerCut;
+                float4 _RightFillColor;
+                float4 _RightOffset;
+                float4 _RightExpand;
+                float4 _RightCornersBLTL;
+                float4 _RightCornersBRTR;
                 
                 float4 _ShadowColor;
                 float _ShadowIntensity;
@@ -125,75 +127,63 @@ Shader "DECKADENCE/UI/PlayerBubble"
             // UTILITY FUNCTIONS
             // ==========================================
             
-            // Signed distance to the split line
-            // Positive = right side, Negative = left side
-            float GetSplitDistance(float2 localPos, float2 rectSize, float angle, float position)
+            float DistToSegment(float2 p, float2 a, float2 b)
             {
-                float2 center = rectSize * 0.5;
-                float2 pos = localPos - center;
+                float2 ab = b - a;
+                float len = length(ab);
+                if (len < 0.001) return length(p - a);
+                float t = saturate(dot(p - a, ab) / (len * len));
+                return length(p - (a + ab * t));
+            }
+            
+            float IsInsideQuad(float2 p, float2 v0, float2 v1, float2 v2, float2 v3)
+            {
+                float2 e0 = v3 - v0; float c0 = e0.x * (p.y - v0.y) - e0.y * (p.x - v0.x);
+                float2 e1 = v2 - v3; float c1 = e1.x * (p.y - v3.y) - e1.y * (p.x - v3.x);
+                float2 e2 = v1 - v2; float c2 = e2.x * (p.y - v2.y) - e2.y * (p.x - v2.x);
+                float2 e3 = v0 - v1; float c3 = e3.x * (p.y - v1.y) - e3.y * (p.x - v1.x);
                 
-                // Offset based on position (0 = all left, 1 = all right)
-                float offset = (position - 0.5) * rectSize.x;
-                
-                // Rotate by angle
+                return step(0, c0) * step(0, c1) * step(0, c2) * step(0, c3);
+            }
+            
+            float GetQuadEdgeDistance(float2 p, float2 v0, float2 v1, float2 v2, float2 v3)
+            {
+                float d0 = DistToSegment(p, v0, v3);
+                float d1 = DistToSegment(p, v3, v2);
+                float d2 = DistToSegment(p, v2, v1);
+                float d3 = DistToSegment(p, v1, v0);
+                return min(min(d0, d1), min(d2, d3));
+            }
+            
+            // Get split line direction (unit vector along the diagonal)
+            float2 GetSplitDirection(float angle)
+            {
                 float rad = radians(angle);
-                float cosA = cos(rad);
-                float sinA = sin(rad);
-                
-                // Normal of split line (perpendicular to line direction)
-                float2 normal = float2(cosA, sinA);
-                
-                return dot(pos, normal) - offset * cosA;
+                // Split line goes "up" with angle tilt
+                // At angle=0, direction is (0,1) - vertical
+                // At angle=45, direction tilts right
+                return normalize(float2(sin(rad), cos(rad)));
             }
             
-            // Check if inside bubble shape (with corner cuts)
-            float IsInsideBubble(float2 localPos, float2 rectSize, float cornerCut)
+            // Get base split point at bottom (y=0)
+            float2 GetSplitBasePoint(float2 baseRect, float position)
             {
-                // Basic rect check
-                float insideRect = step(0.0, localPos.x) * step(localPos.x, rectSize.x) * 
-                                   step(0.0, localPos.y) * step(localPos.y, rectSize.y);
-                
-                if (insideRect < 0.5) return 0.0;
-                
-                // Corner cuts
-                float distBottom = localPos.y;
-                float distTop = rectSize.y - localPos.y;
-                float distLeft = localPos.x;
-                float distRight = rectSize.x - localPos.x;
-                
-                // Check all 4 corners
-                float cornerMask = 1.0;
-                cornerMask *= step(cornerCut, distLeft + distBottom);   // BL
-                cornerMask *= step(cornerCut, distRight + distBottom);  // BR
-                cornerMask *= step(cornerCut, distLeft + distTop);      // TL
-                cornerMask *= step(cornerCut, distRight + distTop);     // TR
-                
-                return cornerMask;
+                return float2(baseRect.x * position, 0);
             }
             
-            // Distance to edge (for border calculation)
-            float GetEdgeDistance(float2 localPos, float2 rectSize, float cornerCut)
+            // Get point on split line at given distance from base
+            float2 GetSplitPointAtDistance(float2 basePoint, float2 splitDir, float distance)
             {
-                float distBottom = localPos.y;
-                float distTop = rectSize.y - localPos.y;
-                float distLeft = localPos.x;
-                float distRight = rectSize.x - localPos.x;
-                
-                float minDist = min(min(distBottom, distTop), min(distLeft, distRight));
-                
-                // Corner distances (diagonal)
-                float blCorner = (distLeft + distBottom - cornerCut) * 0.707;
-                float brCorner = (distRight + distBottom - cornerCut) * 0.707;
-                float tlCorner = (distLeft + distTop - cornerCut) * 0.707;
-                float trCorner = (distRight + distTop - cornerCut) * 0.707;
-                
-                // Use corner distance when in corner zone
-                if (distLeft + distBottom < cornerCut * 2.0) minDist = min(minDist, blCorner);
-                if (distRight + distBottom < cornerCut * 2.0) minDist = min(minDist, brCorner);
-                if (distLeft + distTop < cornerCut * 2.0) minDist = min(minDist, tlCorner);
-                if (distRight + distTop < cornerCut * 2.0) minDist = min(minDist, trCorner);
-                
-                return minDist;
+                return basePoint + splitDir * distance;
+            }
+            
+            // Slide a corner along the split line
+            // slideAmount.x = distance along split direction
+            // slideAmount.y = perpendicular offset (away from split)
+            float2 ApplySplitSlide(float2 basePoint, float2 splitDir, float2 slideAmount)
+            {
+                float2 perpDir = float2(-splitDir.y, splitDir.x); // perpendicular to split
+                return basePoint + splitDir * slideAmount.x + perpDir * slideAmount.y;
             }
             
             // ==========================================
@@ -220,24 +210,65 @@ Shader "DECKADENCE/UI/PlayerBubble"
             
             float4 frag(Varyings input) : SV_Target
             {
-                float2 rectSize = _RectSize.xy;
+                float2 baseRect = _RectSize.xy;
                 float canvasScale = max(_CanvasScale, 0.001);
+                float2 localPos = input.uv * baseRect;
+                // Split geometry
+                float2 splitDir = GetSplitDirection(_SplitAngle);
+                float2 splitBase = GetSplitBasePoint(baseRect, _SplitPosition);
+                float splitLength = baseRect.y / max(cos(radians(_SplitAngle)), 0.001);
                 
-                // Calculate local position from UV (same as MultiBubble)
-                float2 localPos = input.uv * rectSize;
+                // Left side parameters
+                float2 leftOffset = _LeftOffset.xy / canvasScale;
+                float2 leftExpand = _LeftExpand.xy / canvasScale;
+                float2 lCBL = float2(_LeftCornersBLTL.x, _LeftCornersBLTL.y) / canvasScale;
+                float2 lCTL = float2(_LeftCornersBLTL.z, _LeftCornersBLTL.w) / canvasScale;
+                float2 lCBR = float2(_LeftCornersBRTR.x, _LeftCornersBRTR.y) / canvasScale; // slides along split
+                float2 lCTR = float2(_LeftCornersBRTR.z, _LeftCornersBRTR.w) / canvasScale; // slides along split
                 
-                float cornerCut = _CornerCut / canvasScale;
-                float borderThick = _BorderThickness / canvasScale;
-                float splitBorderThick = _SplitBorderThickness / canvasScale;
+                // Right side parameters
+                float2 rightOffset = _RightOffset.xy / canvasScale;
+                float2 rightExpand = _RightExpand.xy / canvasScale;
+                float2 rCBL = float2(_RightCornersBLTL.x, _RightCornersBLTL.y) / canvasScale; // slides along split
+                float2 rCTL = float2(_RightCornersBLTL.z, _RightCornersBLTL.w) / canvasScale; // slides along split
+                float2 rCBR = float2(_RightCornersBRTR.x, _RightCornersBRTR.y) / canvasScale;
+                float2 rCTR = float2(_RightCornersBRTR.z, _RightCornersBRTR.w) / canvasScale;
                 
-                int quadType = int(input.quadType + 0.5); // 0=fill, 1=shadow
+                int quadType = int(input.quadType + 0.5);
                 
-                // Check if inside bubble
-                float visible = IsInsideBubble(localPos, rectSize, cornerCut);
+                // Heights
+                float leftHeight = baseRect.y + leftExpand.y;
+                float rightHeight = baseRect.y + rightExpand.y;
                 
-                if (visible < 0.5) discard;
+                // LEFT quad corners
+                // BL, TL: outer edge (normal XY offset)
+                float2 lBL = float2(-leftExpand.x, 0) + leftOffset + lCBL;
+                float2 lTL = float2(-leftExpand.x, leftHeight) + leftOffset + lCTL;
+                // BR, TR: at split line (slide along split direction)
+                float2 lBR_base = splitBase;
+                float2 lTR_base = GetSplitPointAtDistance(splitBase, splitDir, splitLength + leftExpand.y);
+                float2 lBR = ApplySplitSlide(lBR_base, splitDir, lCBR) + leftOffset;
+                float2 lTR = ApplySplitSlide(lTR_base, splitDir, lCTR) + leftOffset;
                 
-                // ========== SHADOW QUAD ==========
+                // RIGHT quad corners
+                // BL, TL: at split line (slide along split direction)
+                float2 rBL_base = splitBase;
+                float2 rTL_base = GetSplitPointAtDistance(splitBase, splitDir, splitLength + rightExpand.y);
+                float2 rBL = ApplySplitSlide(rBL_base, splitDir, rCBL) + rightOffset;
+                float2 rTL = ApplySplitSlide(rTL_base, splitDir, rCTL) + rightOffset;
+                // BR, TR: outer edge (normal XY offset)
+                float2 rBR = float2(baseRect.x + rightExpand.x, 0) + rightOffset + rCBR;
+                float2 rTR = float2(baseRect.x + rightExpand.x, rightHeight) + rightOffset + rCTR;
+                
+                // Check if inside each quad
+                float inLeft = IsInsideQuad(localPos, lBL, lTL, lTR, lBR);
+                float inRight = IsInsideQuad(localPos, rBL, rTL, rTR, rBR);
+                
+                float inEither = max(inLeft, inRight);
+                
+                if (inEither < 0.5) discard;
+                
+                // ========== SHADOW ==========
                 if (quadType == 1)
                 {
                     float4 result = _ShadowColor;
@@ -245,41 +276,11 @@ Shader "DECKADENCE/UI/PlayerBubble"
                     return result;
                 }
                 
-                // ========== MAIN BUBBLE (quadType == 0) ==========
+                // ========== MAIN BUBBLE ==========
+                float onRight = inRight;
                 
-                // Get split distance
-                float splitDist = GetSplitDistance(localPos, rectSize, _SplitAngle, _SplitPosition);
-                float onRightSide = step(0.0, splitDist);
-                
-                // Edge distance for border
-                float edgeDist = GetEdgeDistance(localPos, rectSize, cornerCut);
-                float inBorder = step(edgeDist, borderThick);
-                
-                // Split line border
-                float inSplitBorder = step(abs(splitDist), splitBorderThick * 0.5);
-                
-                // Choose colors based on side
-                float4 fillColor = lerp(_LeftFillColor, _RightFillColor, onRightSide);
-                float4 borderColor = lerp(_LeftBorderColor, _RightBorderColor, onRightSide);
-                
-                // Final color
-                float4 result = fillColor;
-                
-                // Apply outer border
-                if (inBorder > 0.5)
-                {
-                    result = borderColor;
-                }
-                
-                // Apply split line (blend of both border colors)
-                if (inSplitBorder > 0.5)
-                {
-                    float4 splitColor = lerp(_LeftBorderColor, _RightBorderColor, 0.5);
-                    result = splitColor;
-                }
-                
+                float4 result = onRight > 0.5 ? _RightFillColor : _LeftFillColor;
                 result.a *= input.color.a;
-                
                 return result;
             }
             

@@ -2,56 +2,31 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Renderer for player's split bubble - two-tone diagonal split effect.
-/// Designed for the 54th Card (Player) action choices.
+/// Renderer for player's split bubble - Persona-style two-tone diagonal split.
+/// Uses PlayerBubblePreset for configuration and state interpolation.
 /// </summary>
 [RequireComponent(typeof(Graphic))]
 [ExecuteAlways]
 public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
 {
-    [Header("Split Settings")]
-    [Range(-90f, 90f)]
-    [Tooltip("Angle of the split line in degrees. 0 = vertical, positive = tilted right")]
-    public float splitAngle = 15f;
+    [Header("Preset")]
+    [Tooltip("Configuration preset for colors, offsets, etc.")]
+    public PlayerBubblePreset preset;
+    
+    [Header("State")]
+    [Range(0f, 1f)]
+    [Tooltip("Left side progress: 0 = normal, 1 = active")]
+    public float leftProgress = 0f;
     
     [Range(0f, 1f)]
-    [Tooltip("Position of split. 0 = all left, 0.5 = center, 1 = all right")]
-    public float splitPosition = 0.5f;
+    [Tooltip("Right side progress: 0 = normal, 1 = active")]
+    public float rightProgress = 0f;
     
-    [Header("Left Side Colors")]
-    public Color leftFillColor = new Color(0.15f, 0.15f, 0.2f, 1f);
-    public Color leftActiveColor = new Color(0.1f, 0.1f, 0.15f, 1f);
-    public Color leftBorderColor = new Color(0.3f, 0.3f, 0.4f, 1f);
-    
-    [Header("Right Side Colors")]
-    public Color rightFillColor = new Color(0.85f, 0.85f, 0.9f, 1f);
-    public Color rightActiveColor = new Color(0.95f, 0.95f, 1f, 1f);
-    public Color rightBorderColor = new Color(0.6f, 0.6f, 0.7f, 1f);
-    
-    [Header("Border")]
-    public float borderThickness = 2f;
-    public float splitBorderThickness = 2f;
-    
-    [Header("Corner")]
-    public float cornerCut = 15f;
-    
-    [Header("Shadow")]
-    public Color shadowColor = new Color(0f, 0f, 0f, 0.5f);
-    public float shadowIntensity = 5f;
-    
-    [Header("Runtime")]
-    [Range(0f, 1f)]
-    [Tooltip("Progress towards active state (0 = normal, 1 = active)")]
-    [SerializeField] private float _activeProgress = 0f;
-    
-    /// <summary>
-    /// Progress towards active state. Interpolates fill colors.
-    /// </summary>
-    public float ActiveProgress
-    {
-        get => _activeProgress;
-        set => _activeProgress = Mathf.Clamp01(value);
-    }
+    [Header("Runtime Overrides (optional)")]
+    [Tooltip("Override split position (if preset is null)")]
+    public float splitPositionOverride = 0.5f;
+    [Tooltip("Override split angle (if preset is null)")]
+    public float splitAngleOverride = 15f;
     
     private Graphic _graphic;
     private Canvas _canvas;
@@ -66,11 +41,17 @@ public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
     private static readonly int SplitPositionID = Shader.PropertyToID("_SplitPosition");
     private static readonly int LeftFillColorID = Shader.PropertyToID("_LeftFillColor");
     private static readonly int LeftBorderColorID = Shader.PropertyToID("_LeftBorderColor");
+    private static readonly int LeftOffsetID = Shader.PropertyToID("_LeftOffset");
+    private static readonly int LeftExpandID = Shader.PropertyToID("_LeftExpand");
+    private static readonly int LeftCornersBLTLID = Shader.PropertyToID("_LeftCornersBLTL");
+    private static readonly int LeftCornersBRTRID = Shader.PropertyToID("_LeftCornersBRTR");
     private static readonly int RightFillColorID = Shader.PropertyToID("_RightFillColor");
     private static readonly int RightBorderColorID = Shader.PropertyToID("_RightBorderColor");
+    private static readonly int RightOffsetID = Shader.PropertyToID("_RightOffset");
+    private static readonly int RightExpandID = Shader.PropertyToID("_RightExpand");
+    private static readonly int RightCornersBLTLID = Shader.PropertyToID("_RightCornersBLTL");
+    private static readonly int RightCornersBRTRID = Shader.PropertyToID("_RightCornersBRTR");
     private static readonly int BorderThicknessID = Shader.PropertyToID("_BorderThickness");
-    private static readonly int SplitBorderThicknessID = Shader.PropertyToID("_SplitBorderThickness");
-    private static readonly int CornerCutID = Shader.PropertyToID("_CornerCut");
     private static readonly int ShadowColorID = Shader.PropertyToID("_ShadowColor");
     private static readonly int ShadowIntensityID = Shader.PropertyToID("_ShadowIntensity");
     
@@ -147,31 +128,22 @@ public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
         float scaleFactor = _canvas != null ? _canvas.scaleFactor : 1f;
         Rect rect = _rectTransform.rect;
         
-        // Update shader properties
         _materialInstance.SetVector(RectSizeID, new Vector4(rect.width, rect.height, 0, 0));
         _materialInstance.SetFloat(CanvasScaleID, scaleFactor);
-        _materialInstance.SetFloat(SplitAngleID, splitAngle);
-        _materialInstance.SetFloat(SplitPositionID, splitPosition);
         
-        // Interpolate colors based on activeProgress
-        Color currentLeftFill = Color.Lerp(leftFillColor, leftActiveColor, _activeProgress);
-        Color currentRightFill = Color.Lerp(rightFillColor, rightActiveColor, _activeProgress);
+        if (preset != null)
+        {
+            ApplyPreset();
+        }
+        else
+        {
+            _materialInstance.SetFloat(SplitAngleID, splitAngleOverride);
+            _materialInstance.SetFloat(SplitPositionID, splitPositionOverride);
+        }
         
-        _materialInstance.SetColor(LeftFillColorID, currentLeftFill);
-        _materialInstance.SetColor(LeftBorderColorID, leftBorderColor);
-        _materialInstance.SetColor(RightFillColorID, currentRightFill);
-        _materialInstance.SetColor(RightBorderColorID, rightBorderColor);
-        
-        _materialInstance.SetFloat(BorderThicknessID, borderThickness);
-        _materialInstance.SetFloat(SplitBorderThicknessID, splitBorderThickness);
-        _materialInstance.SetFloat(CornerCutID, cornerCut);
-        
-        _materialInstance.SetColor(ShadowColorID, shadowColor);
-        _materialInstance.SetFloat(ShadowIntensityID, shadowIntensity);
-        
-        // Shadow direction from light source - update mesh if changed
+        // Shadow
         Vector2 shadowDir = CalculateShadowDirection();
-        Vector2 newShadowOffset = shadowDir * shadowIntensity;
+        Vector2 newShadowOffset = shadowDir * (preset != null ? preset.shadowIntensity : 5f);
         
         if (Vector2.Distance(newShadowOffset, _cachedShadowOffset) > 0.1f)
         {
@@ -179,6 +151,40 @@ public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
             if (_graphic != null)
                 _graphic.SetVerticesDirty();
         }
+    }
+    
+    void ApplyPreset()
+    {
+        // Split state based on which side is active
+        preset.GetSplitState(leftProgress, rightProgress, out float splitAngle, out float splitPosition);
+        _materialInstance.SetFloat(SplitAngleID, splitAngle);
+        _materialInstance.SetFloat(SplitPositionID, splitPosition);
+        _materialInstance.SetColor(ShadowColorID, preset.shadowColor);
+        _materialInstance.SetFloat(ShadowIntensityID, preset.shadowIntensity);
+        
+        // Left side interpolation
+        preset.GetLeftState(leftProgress,
+            out Color leftFill,
+            out Vector2 leftOffset, out Vector2 leftExpand,
+            out Vector2 lBL, out Vector2 lTL, out Vector2 lBR, out Vector2 lTR);
+        
+        _materialInstance.SetColor(LeftFillColorID, leftFill);
+        _materialInstance.SetVector(LeftOffsetID, new Vector4(leftOffset.x, leftOffset.y, 0, 0));
+        _materialInstance.SetVector(LeftExpandID, new Vector4(leftExpand.x, leftExpand.y, 0, 0));
+        _materialInstance.SetVector(LeftCornersBLTLID, new Vector4(lBL.x, lBL.y, lTL.x, lTL.y));
+        _materialInstance.SetVector(LeftCornersBRTRID, new Vector4(lBR.x, lBR.y, lTR.x, lTR.y));
+        
+        // Right side interpolation
+        preset.GetRightState(rightProgress,
+            out Color rightFill,
+            out Vector2 rightOffset, out Vector2 rightExpand,
+            out Vector2 rBL, out Vector2 rTL, out Vector2 rBR, out Vector2 rTR);
+        
+        _materialInstance.SetColor(RightFillColorID, rightFill);
+        _materialInstance.SetVector(RightOffsetID, new Vector4(rightOffset.x, rightOffset.y, 0, 0));
+        _materialInstance.SetVector(RightExpandID, new Vector4(rightExpand.x, rightExpand.y, 0, 0));
+        _materialInstance.SetVector(RightCornersBLTLID, new Vector4(rBL.x, rBL.y, rTL.x, rTL.y));
+        _materialInstance.SetVector(RightCornersBRTRID, new Vector4(rBR.x, rBR.y, rTR.x, rTR.y));
     }
     
     Vector2 CalculateShadowDirection()
@@ -231,15 +237,14 @@ public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
         Rect rect = _rectTransform.rect;
         float scaleFactor = _canvas != null ? _canvas.scaleFactor : 1f;
         
-        // Expand for shadow (like MultiBubble)
-        float expand = shadowIntensity + cornerCut;
+        float shadowIntensity = preset != null ? preset.shadowIntensity : 5f;
+        float expand = shadowIntensity + 100f; // Buffer for corners and offsets
         
         float left = rect.xMin - expand;
         float right = rect.xMax + expand;
         float bottom = rect.yMin - expand;
         float top = rect.yMax + expand;
         
-        // UV mapping: 0-1 maps to rect.width/height, negative/positive expansion 
         float uvLeft = -expand / rect.width;
         float uvRight = 1f + expand / rect.width;
         float uvBottom = -expand / rect.height;
@@ -251,12 +256,11 @@ public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
         UIVertex vert = UIVertex.simpleVert;
         vert.color = color32;
         
-        // Calculate shadow offset in local space
         Vector3 shadowOffset = new Vector3(_cachedShadowOffset.x, _cachedShadowOffset.y, 0) / scaleFactor;
         shadowOffset = transform.InverseTransformVector(shadowOffset);
         
-        // Quad 0: Shadow (offset position, quadType = 1 in uv1.y)
-        vert.uv1 = new Vector2(0, 1); // quadType 1 = shadow
+        // Quad 0: Shadow
+        vert.uv1 = new Vector2(0, 1);
         
         vert.position = new Vector3(left, bottom, 0) + shadowOffset;
         vert.uv0 = new Vector2(uvLeft, uvBottom);
@@ -277,8 +281,8 @@ public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
         vh.AddTriangle(0, 1, 2);
         vh.AddTriangle(2, 3, 0);
         
-        // Quad 1: Main bubble (no offset, quadType = 0 in uv1.y)
-        vert.uv1 = new Vector2(0, 0); // quadType 0 = fill
+        // Quad 1: Main bubble
+        vert.uv1 = new Vector2(0, 0);
         
         vert.position = new Vector3(left, bottom, 0);
         vert.uv0 = new Vector2(uvLeft, uvBottom);
@@ -306,20 +310,33 @@ public class PlayerBubbleRenderer : MonoBehaviour, IMeshModifier
             _graphic.SetVerticesDirty();
     }
     
+    // ========================================
+    // PUBLIC API
+    // ========================================
+    
     /// <summary>
-    /// Set split position with animation support.
-    /// Use with DOTween: renderer.DOSplitPosition(target, duration)
+    /// Set left side active progress (0-1).
     /// </summary>
-    public void SetSplitPosition(float position)
+    public void SetLeftProgress(float t) => leftProgress = Mathf.Clamp01(t);
+    
+    /// <summary>
+    /// Set right side active progress (0-1).
+    /// </summary>
+    public void SetRightProgress(float t) => rightProgress = Mathf.Clamp01(t);
+    
+    /// <summary>
+    /// Get text color for left side at current progress.
+    /// </summary>
+    public Color GetLeftTextColor()
     {
-        splitPosition = Mathf.Clamp01(position);
+        return preset != null ? preset.textColorLeft : Color.white;
     }
     
     /// <summary>
-    /// Set split angle with animation support.
+    /// Get text color for right side at current progress.
     /// </summary>
-    public void SetSplitAngle(float angle)
+    public Color GetRightTextColor()
     {
-        splitAngle = Mathf.Clamp(angle, -90f, 90f);
+        return preset != null ? preset.textColorRight : Color.black;
     }
 }
