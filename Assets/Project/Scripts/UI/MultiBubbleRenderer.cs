@@ -73,8 +73,7 @@ public class MultiBubbleRenderer : MonoBehaviour, IMeshModifier
     // Property indices
     private const int PROP_ENABLED = 0;
     private const int PROP_OFFSET = 1;
-    private const int PROP_CUTOUT = 2;
-    private const int PROP_CUTOUT_PADDING = 3;
+
     private const int PROP_FILL_COLOR = 4;
     private const int PROP_SHOW_ARROW = 5;
     private const int PROP_ARROW_SIZE = 6;
@@ -107,8 +106,7 @@ public class MultiBubbleRenderer : MonoBehaviour, IMeshModifier
             string p = prefixes[i];
             ids[i][PROP_ENABLED] = Shader.PropertyToID(p + "Enabled");
             ids[i][PROP_OFFSET] = Shader.PropertyToID(p + "Offset");
-            ids[i][PROP_CUTOUT] = Shader.PropertyToID(p + "Cutout");
-            ids[i][PROP_CUTOUT_PADDING] = Shader.PropertyToID(p + "CutoutPadding");
+
             ids[i][PROP_FILL_COLOR] = Shader.PropertyToID(p + "FillColor");
             ids[i][PROP_SHOW_ARROW] = Shader.PropertyToID(p + "ShowArrow");
             ids[i][PROP_ARROW_SIZE] = Shader.PropertyToID(p + "ArrowSize");
@@ -262,8 +260,7 @@ public class MultiBubbleRenderer : MonoBehaviour, IMeshModifier
         
         _materialInstance.SetFloat(ids[PROP_ENABLED], layer.enabled ? 1f : 0f);
         _materialInstance.SetVector(ids[PROP_OFFSET], layer.GetEdgeOffsets()); // Vector4(left, right, top, bottom)
-        _materialInstance.SetFloat(ids[PROP_CUTOUT], layer.cutoutNextLayer ? 1f : 0f);
-        _materialInstance.SetFloat(ids[PROP_CUTOUT_PADDING], layer.cutoutPadding);
+
         
         // Interpolate between fillColor and activeColor based on activeProgress
         Color currentFillColor = Color.Lerp(layer.fillColor, layer.activeColor, _activeProgress);

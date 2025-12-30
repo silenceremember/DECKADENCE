@@ -64,11 +64,7 @@ public class BubbleLayerConfig
         }
     }
     
-    [Tooltip("Cut out the area where the next layer will be (creates a frame effect)")]
-    public bool cutoutNextLayer = false;
-    
-    [Tooltip("Extra padding for the cutout in pixels")]
-    public float cutoutPadding = 0f;
+
     
     [Header("Fill")]
     [Tooltip("Fill color of this layer")]
@@ -162,7 +158,7 @@ public class BubbleLayerConfig
         {
             enabled = true,
             offset = 0f,
-            cutoutNextLayer = false,
+
             fillColor = new Color(0.15f, 0.12f, 0.1f, 0.95f),
             showArrow = true,
             arrowSize = 30f,
@@ -180,7 +176,7 @@ public class BubbleLayerConfig
     }
     
     /// <summary>
-    /// Create a frame layer configuration (outer layer with cutout).
+    /// Create a frame layer configuration (outer layer).
     /// </summary>
     public static BubbleLayerConfig CreateFrame(float offset = 20f)
     {
@@ -188,8 +184,7 @@ public class BubbleLayerConfig
         {
             enabled = true,
             offset = offset,
-            cutoutNextLayer = true,
-            cutoutPadding = 0f,
+
             fillColor = new Color(0.2f, 0.18f, 0.15f, 0.95f),
             showArrow = false,
             showBorder = false,

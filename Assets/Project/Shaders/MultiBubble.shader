@@ -119,8 +119,6 @@ Shader "DECKADENCE/UI/MultiBubble"
                 // Layer 0
                 float _L0_Enabled;
                 float4 _L0_Offset; // (left, right, top, bottom)
-                float _L0_Cutout;
-                float _L0_CutoutPadding;
                 float4 _L0_FillColor;
                 float _L0_ShowArrow;
                 float _L0_ArrowSize;
@@ -145,8 +143,6 @@ Shader "DECKADENCE/UI/MultiBubble"
                 // Layer 1
                 float _L1_Enabled;
                 float4 _L1_Offset; // (left, right, top, bottom)
-                float _L1_Cutout;
-                float _L1_CutoutPadding;
                 float4 _L1_FillColor;
                 float _L1_ShowArrow;
                 float _L1_ArrowSize;
@@ -171,8 +167,6 @@ Shader "DECKADENCE/UI/MultiBubble"
                 // Layer 2
                 float _L2_Enabled;
                 float4 _L2_Offset; // (left, right, top, bottom)
-                float _L2_Cutout;
-                float _L2_CutoutPadding;
                 float4 _L2_FillColor;
                 float _L2_ShowArrow;
                 float _L2_ArrowSize;
@@ -197,8 +191,6 @@ Shader "DECKADENCE/UI/MultiBubble"
                 // Layer 3
                 float _L3_Enabled;
                 float4 _L3_Offset; // (left, right, top, bottom)
-                float _L3_Cutout;
-                float _L3_CutoutPadding;
                 float4 _L3_FillColor;
                 float _L3_ShowArrow;
                 float _L3_ArrowSize;
@@ -485,8 +477,6 @@ Shader "DECKADENCE/UI/MultiBubble"
             {
                 float enabled;
                 float4 offset; // (left, right, top, bottom)
-                float cutout;
-                float cutoutPadding;
                 float4 fillColor;
                 float showArrow;
                 float arrowSize;
@@ -517,8 +507,6 @@ Shader "DECKADENCE/UI/MultiBubble"
                 {
                     data.enabled = _L0_Enabled;
                     data.offset = _L0_Offset;
-                    data.cutout = _L0_Cutout;
-                    data.cutoutPadding = _L0_CutoutPadding;
                     data.fillColor = _L0_FillColor;
                     data.showArrow = _L0_ShowArrow;
                     data.arrowSize = _L0_ArrowSize;
@@ -544,8 +532,6 @@ Shader "DECKADENCE/UI/MultiBubble"
                 {
                     data.enabled = _L1_Enabled;
                     data.offset = _L1_Offset;
-                    data.cutout = _L1_Cutout;
-                    data.cutoutPadding = _L1_CutoutPadding;
                     data.fillColor = _L1_FillColor;
                     data.showArrow = _L1_ShowArrow;
                     data.arrowSize = _L1_ArrowSize;
@@ -571,8 +557,6 @@ Shader "DECKADENCE/UI/MultiBubble"
                 {
                     data.enabled = _L2_Enabled;
                     data.offset = _L2_Offset;
-                    data.cutout = _L2_Cutout;
-                    data.cutoutPadding = _L2_CutoutPadding;
                     data.fillColor = _L2_FillColor;
                     data.showArrow = _L2_ShowArrow;
                     data.arrowSize = _L2_ArrowSize;
@@ -598,8 +582,6 @@ Shader "DECKADENCE/UI/MultiBubble"
                 {
                     data.enabled = _L3_Enabled;
                     data.offset = _L3_Offset;
-                    data.cutout = _L3_Cutout;
-                    data.cutoutPadding = _L3_CutoutPadding;
                     data.fillColor = _L3_FillColor;
                     data.showArrow = _L3_ShowArrow;
                     data.arrowSize = _L3_ArrowSize;
@@ -833,23 +815,6 @@ Shader "DECKADENCE/UI/MultiBubble"
                 float visible = ComputeLayerVisibility(layerLocalPos, layerSize, seed, canvasScale,
                                                         layer.tears, layer.showArrow, layer.arrowSize, layer.arrowWidth);
                 
-                // Apply cutout if enabled (cut out the next layer's area)
-                if (layer.cutout > 0.5 && layerIdx < int(_LayerCount) - 1)
-                {
-                    LayerData nextLayer = GetLayerData(layerIdx + 1);
-                    float4 nextOffsetCanvas = nextLayer.offset / canvasScale;
-                    float cutoutPaddingCanvas = layer.cutoutPadding / canvasScale;
-                    
-                    // Apply cutout padding to all edges
-                    float4 cutoutOffset = nextOffsetCanvas - cutoutPaddingCanvas;
-                    float2 cutoutSize = rectSize + float2(cutoutOffset.x + cutoutOffset.y, cutoutOffset.z + cutoutOffset.w);
-                    float2 cutoutLocalPos = localPos + float2(cutoutOffset.x, cutoutOffset.w);
-                    
-                    float nextSeed = _TearSeed + steppedTime * 17.31 + float(layerIdx + 1) * 50000.0;
-                    float cutoutVisible = ComputeLayerVisibility(cutoutLocalPos, cutoutSize, nextSeed, canvasScale,
-                                                                  nextLayer.tears, nextLayer.showArrow, nextLayer.arrowSize, nextLayer.arrowWidth);
-                    visible *= (1.0 - cutoutVisible);
-                }
                 
                 if (visible < 0.01) discard;
                 
