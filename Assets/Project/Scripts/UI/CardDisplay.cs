@@ -709,6 +709,23 @@ public class CardDisplay : MonoBehaviour
                 
                 playerRenderer.leftProgress = Mathf.Lerp(playerRenderer.leftProgress, targetLeftProgress, Time.deltaTime * colorLerpSpeed);
                 playerRenderer.rightProgress = Mathf.Lerp(playerRenderer.rightProgress, targetRightProgress, Time.deltaTime * colorLerpSpeed);
+                
+                // Цвет текста меняется когда выбор готов (progress >= 1)
+                if (playerRenderer.preset != null)
+                {
+                    Color targetTextColor = actionText.color;
+                    if (progress >= 1.0f)
+                    {
+                        // Готовы к выбору - применяем цвет из preset
+                        targetTextColor = isRight ? playerRenderer.preset.textColorRight : playerRenderer.preset.textColorLeft;
+                    }
+                    else
+                    {
+                        // Не готовы - белый по умолчанию
+                        targetTextColor = Color.white;
+                    }
+                    actionText.color = Color.Lerp(actionText.color, targetTextColor, Time.deltaTime * colorLerpSpeed);
+                }
             }
         }
         
