@@ -14,41 +14,80 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MultiBubblePreset
   layers:
   - enabled: 1
+    offsetMode: 0
     offset: 0
-    cutoutNextLayer: 1
-    cutoutPadding: 0
-    fillColor: {r: 0.2924528, g: 0.2924528, b: 0.2924528, a: 1}
-    showArrow: 1
+    offsetX: 0
+    offsetY: 0
+    offsetLeft: 0
+    offsetRight: 0
+    offsetTop: 0
+    offsetBottom: 0
+    fillColor: {r: 0.1509434, g: 0.1509434, b: 0.1509434, a: 1}
+    activeColor: {r: 0.3679245, g: 0.2724724, b: 0.2724724, a: 1}
+    showArrow: 0
     arrowSize: 30
     arrowWidth: 40
     showBorder: 1
     borderColor: {r: 1, g: 1, b: 1, a: 1}
-    borderThickness: 0
+    borderThickness: 6.5
     borderOffset: 0
     borderStyle: 0
     dashLength: 0
     dashGap: 0
     shadowColor: {r: 0, g: 0, b: 0, a: 0.5019608}
-    shadowIntensity: 1
+    shadowIntensity: 0.3
     showSecondShadow: 0
     secondShadowColor: {r: 0, g: 0, b: 0, a: 1}
     secondShadowIntensity: 0
     showInnerShadow: 0
     innerShadowIntensity: 0
-    innerShadowColor: {r: 0, g: 0, b: 0, a: 0}
-    topTear: 1
-    bottomTear: 1
-    leftTear: 1
-    rightTear: 1
-  textNormalColor: {r: 0, g: 0, b: 0, a: 1}
-  textActiveColor: {r: 0.36, g: 0.25, b: 0.22, a: 1}
+    innerShadowColor: {r: 0, g: 0, b: 0, a: 0.5019608}
+    topTear: 0.5
+    bottomTear: 0.5
+    leftTear: 0.5
+    rightTear: 0.5
+  - enabled: 1
+    offsetMode: 0
+    offset: -20
+    offsetX: 0
+    offsetY: 0
+    offsetLeft: 0
+    offsetRight: 0
+    offsetTop: 0
+    offsetBottom: 0
+    fillColor: {r: 0.4528302, g: 0.4528302, b: 0.4528302, a: 1}
+    activeColor: {r: 0.745283, g: 0.745283, b: 0.745283, a: 1}
+    showArrow: 0
+    arrowSize: 30
+    arrowWidth: 40
+    showBorder: 1
+    borderColor: {r: 1, g: 1, b: 1, a: 1}
+    borderThickness: 6.5
+    borderOffset: 0
+    borderStyle: 0
+    dashLength: 0
+    dashGap: 0
+    shadowColor: {r: 0, g: 0, b: 0, a: 0.5019608}
+    shadowIntensity: 0.2
+    showSecondShadow: 0
+    secondShadowColor: {r: 0, g: 0, b: 0, a: 1}
+    secondShadowIntensity: 0
+    showInnerShadow: 0
+    innerShadowIntensity: 0
+    innerShadowColor: {r: 0, g: 0, b: 0, a: 0.5019608}
+    topTear: 0
+    bottomTear: 0
+    leftTear: 0
+    rightTear: 0
+  textNormalColor: {r: 1, g: 1, b: 1, a: 1}
+  textActiveColor: {r: 1, g: 0.976174, b: 0, a: 1}
   cornerCutMin: 15
   cornerCutMax: 25
   tearDepthMin: 5
   tearDepthMax: 15
   tearWidthMin: 10
   tearWidthMax: 30
-  tearSpacingMin: 40
-  tearSpacingMax: 80
+  tearSpacingMin: 80
+  tearSpacingMax: 180
   animationFPS: 1
   tearSeed: 0
