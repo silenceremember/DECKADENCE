@@ -17,80 +17,80 @@ public class PlayerBubblePreset : ScriptableObject
     // SPLIT SETTINGS
     // ========================================
     [Header("Split - Normal")]
-    public float splitAngleNormal = 15f;
+    public float splitAngleNormal = 0f;
     public float splitPositionNormal = 0.5f;
     
     [Header("Split - Left Active")]
     public float splitAngleLeftActive = 22f;
-    public float splitPositionLeftActive = 1.1f;
+    public float splitPositionLeftActive = 0.85f;
     
     [Header("Split - Right Active")]
-    public float splitAngleRightActive = 8f;
-    public float splitPositionRightActive = -0.1f;
+    public float splitAngleRightActive = -22f;
+    public float splitPositionRightActive = 0.15f;
     
     // ========================================
     // LEFT SIDE - DARK
     // ========================================
     [Header("Left - Normal")]
-    public Color leftFillNormal = new Color(0.07f, 0.07f, 0.10f, 1f);
-    public Vector2 leftOffsetNormal = new Vector2(-2f, 0f);
+    public Color leftFillNormal = new Color(0.08f, 0.08f, 0.12f, 1f);
+    public Vector2 leftOffsetNormal = Vector2.zero;
     public Vector2 leftExpandNormal = Vector2.zero;
     
     [Header("Left Corners - Normal")]
-    public Vector2 leftCornerBL_Normal = new Vector2(-6f, 4f);
-    public Vector2 leftCornerTL_Normal = new Vector2(-8f, -3f);
-    public Vector2 leftCornerBR_Normal = new Vector2(5f, 0f);
-    public Vector2 leftCornerTR_Normal = new Vector2(-4f, 0f);
+    public Vector2 leftCornerBL_Normal = Vector2.zero;
+    public Vector2 leftCornerTL_Normal = Vector2.zero;
+    public Vector2 leftCornerBR_Normal = Vector2.zero;
+    public Vector2 leftCornerTR_Normal = Vector2.zero;
     
     [Header("Left - Active")]
-    public Color leftFillActive = new Color(0.10f, 0.10f, 0.14f, 1f);
-    public Vector2 leftOffsetActive = new Vector2(-12f, 8f);
-    public Vector2 leftExpandActive = new Vector2(8f, 6f);
+    public Color leftFillActive = new Color(0.10f, 0.10f, 0.16f, 1f);
+    public Vector2 leftOffsetActive = new Vector2(-8f, 4f);
+    public Vector2 leftExpandActive = new Vector2(12f, 8f);
     
     [Header("Left Corners - Active")]
-    public Vector2 leftCornerBL_Active = new Vector2(-18f, 10f);
-    public Vector2 leftCornerTL_Active = new Vector2(-22f, -8f);
-    public Vector2 leftCornerBR_Active = new Vector2(20f, 0f);
-    public Vector2 leftCornerTR_Active = new Vector2(-14f, 0f);
+    public Vector2 leftCornerBL_Active = new Vector2(-16f, -6f);
+    public Vector2 leftCornerTL_Active = new Vector2(-18f, 8f);
+    public Vector2 leftCornerBR_Active = new Vector2(-8f, 0f);
+    public Vector2 leftCornerTR_Active = new Vector2(10f, 0f);
     
     // ========================================
     // RIGHT SIDE - LIGHT
     // ========================================
     [Header("Right - Normal")]
-    public Color rightFillNormal = new Color(0.94f, 0.94f, 0.97f, 1f);
-    public Vector2 rightOffsetNormal = new Vector2(2f, 0f);
+    public Color rightFillNormal = new Color(0.92f, 0.92f, 0.96f, 1f);
+    public Vector2 rightOffsetNormal = Vector2.zero;
     public Vector2 rightExpandNormal = Vector2.zero;
     
     [Header("Right Corners - Normal")]
-    public Vector2 rightCornerBL_Normal = new Vector2(-5f, 0f);
-    public Vector2 rightCornerTL_Normal = new Vector2(4f, 0f);
-    public Vector2 rightCornerBR_Normal = new Vector2(6f, 4f);
-    public Vector2 rightCornerTR_Normal = new Vector2(8f, -3f);
+    public Vector2 rightCornerBL_Normal = Vector2.zero;
+    public Vector2 rightCornerTL_Normal = Vector2.zero;
+    public Vector2 rightCornerBR_Normal = Vector2.zero;
+    public Vector2 rightCornerTR_Normal = Vector2.zero;
     
     [Header("Right - Active")]
     public Color rightFillActive = new Color(1f, 1f, 1f, 1f);
-    public Vector2 rightOffsetActive = new Vector2(12f, 8f);
-    public Vector2 rightExpandActive = new Vector2(8f, 6f);
+    public Vector2 rightOffsetActive = new Vector2(8f, 4f);
+    public Vector2 rightExpandActive = new Vector2(12f, 8f);
     
     [Header("Right Corners - Active")]
-    public Vector2 rightCornerBL_Active = new Vector2(-20f, 0f);
-    public Vector2 rightCornerTL_Active = new Vector2(14f, 0f);
-    public Vector2 rightCornerBR_Active = new Vector2(18f, 10f);
-    public Vector2 rightCornerTR_Active = new Vector2(22f, -8f);
+    public Vector2 rightCornerBL_Active = new Vector2(8f, 0f);
+    public Vector2 rightCornerTL_Active = new Vector2(-10f, 0f);
+    public Vector2 rightCornerBR_Active = new Vector2(16f, -6f);
+    public Vector2 rightCornerTR_Active = new Vector2(18f, 8f);
     
     // ========================================
     // COMMON
     // ========================================
     [Header("Shadow")]
-    public Color shadowColor = new Color(0f, 0f, 0f, 0.4f);
-    public float shadowIntensity = 6f;
+    public Color shadowColor = new Color(0f, 0f, 0f, 0.5f);
+    public float shadowIntensity = 8f;
     
     [Header("Text")]
-    public Color textColorLeft = new Color(0.96f, 0.96f, 0.96f, 1f);
+    public Color textColorLeft = Color.white;
     public Color textColorRight = new Color(0.06f, 0.06f, 0.09f, 1f);
     
     [Header("Animation")]
-    public float transitionDuration = 0.15f;
+    public float transitionDuration = 0.12f;
     
     // ========================================
     // METHODS
