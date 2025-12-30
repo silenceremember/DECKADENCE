@@ -155,8 +155,8 @@ public class PlayerBubblePreset : ScriptableObject
         Vector2 baseBR = leftCornerBR_Normal;
         Vector2 baseTR = leftCornerTR_Normal;
         
-        // If self is active, interpolate toward Active
-        if (selfProgress > 0)
+        // If self is MORE active (or equally active), interpolate toward Active
+        if (selfProgress >= oppositeProgress && selfProgress > 0)
         {
             fill = Color.Lerp(baseFill, leftFillActive, selfProgress);
             offset = Vector2.Lerp(baseOffset, leftOffsetActive, selfProgress);
@@ -166,8 +166,8 @@ public class PlayerBubblePreset : ScriptableObject
             cBR = Vector2.Lerp(baseBR, leftCornerBR_Active, selfProgress);
             cTR = Vector2.Lerp(baseTR, leftCornerTR_Active, selfProgress);
         }
-        // If opposite (right) is active, interpolate toward Inactive
-        else if (oppositeProgress > 0)
+        // If opposite (right) is MORE active, interpolate toward Inactive
+        else if (oppositeProgress > selfProgress)
         {
             fill = Color.Lerp(baseFill, leftFillInactive, oppositeProgress);
             offset = Vector2.Lerp(baseOffset, leftOffsetInactive, oppositeProgress);
@@ -207,8 +207,8 @@ public class PlayerBubblePreset : ScriptableObject
         Vector2 baseBR = rightCornerBR_Normal;
         Vector2 baseTR = rightCornerTR_Normal;
         
-        // If self is active, interpolate toward Active
-        if (selfProgress > 0)
+        // If self is MORE active (or equally active), interpolate toward Active
+        if (selfProgress >= oppositeProgress && selfProgress > 0)
         {
             fill = Color.Lerp(baseFill, rightFillActive, selfProgress);
             offset = Vector2.Lerp(baseOffset, rightOffsetActive, selfProgress);
@@ -218,8 +218,8 @@ public class PlayerBubblePreset : ScriptableObject
             cBR = Vector2.Lerp(baseBR, rightCornerBR_Active, selfProgress);
             cTR = Vector2.Lerp(baseTR, rightCornerTR_Active, selfProgress);
         }
-        // If opposite (left) is active, interpolate toward Inactive
-        else if (oppositeProgress > 0)
+        // If opposite (left) is MORE active, interpolate toward Inactive
+        else if (oppositeProgress > selfProgress)
         {
             fill = Color.Lerp(baseFill, rightFillInactive, oppositeProgress);
             offset = Vector2.Lerp(baseOffset, rightOffsetInactive, oppositeProgress);

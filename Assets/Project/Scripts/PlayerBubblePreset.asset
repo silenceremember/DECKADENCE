@@ -32,7 +32,7 @@ MonoBehaviour:
   leftCornerTL_Active: {x: -18, y: 8}
   leftCornerBR_Active: {x: 8, y: 0}
   leftCornerTR_Active: {x: -10, y: 0}
-  leftFillInactive: {r: 0.059, g: 0.059, b: 0.102, a: 1}
+  leftFillInactive: {r: 0, g: 0, b: 1, a: 1}
   leftOffsetInactive: {x: -20, y: 0}
   leftExpandInactive: {x: -10, y: -4}
   leftCornerBL_Inactive: {x: -8, y: 4}
@@ -53,7 +53,7 @@ MonoBehaviour:
   rightCornerTL_Active: {x: -10, y: 0}
   rightCornerBR_Active: {x: 16, y: -6}
   rightCornerTR_Active: {x: 18, y: 8}
-  rightFillInactive: {r: 0.094, g: 0.059, b: 0.102, a: 1}
+  rightFillInactive: {r: 0.818182, g: 0, b: 1, a: 1}
   rightOffsetInactive: {x: 20, y: 0}
   rightExpandInactive: {x: -10, y: -4}
   rightCornerBL_Inactive: {x: -4, y: 0}
