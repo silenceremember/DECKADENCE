@@ -961,20 +961,76 @@ Shader "DECKADENCE/UI/MultiBubble"
                         color = lerp(color, layer.borderColor.rgb, inBorder * layer.borderColor.a);
                     }
                     
-                    // Inner shadow
-                    if (layer.showInnerShadow > 0.5)
+                    // Inner shadow - shadow cast FROM border ONTO fill
+                    // This creates a deboss/emboss effect on the inner edge of the border
+                    if (layer.showInnerShadow > 0.5 && layer.showBorder > 0.5)
                     {
-                        float2 shadowOffset = _LightDirection.xy / canvasScale * layer.innerShadowIntensity;
-                        float2 shadowPos = layerLocalPos - shadowOffset;
+                        float borderThicknessCanvas = layer.borderThickness / canvasScale;
+                        float borderOffsetCanvas = layer.borderOffset / canvasScale;
                         
-                        float distBottom = shadowPos.y;
-                        float distTop = layerSize.y - shadowPos.y;
-                        float distLeft = shadowPos.x;
-                        float distRight = layerSize.x - shadowPos.x;
-                        float minDist = min(min(distBottom, distTop), min(distLeft, distRight));
+                        // The inner edge of the border is at: borderOffset + borderThickness
+                        float innerBorderEdge = borderOffsetCanvas + borderThicknessCanvas;
                         
-                        float borderOffsetVal = layer.borderOffset / canvasScale;
-                        float inShadow = step(0.0, minDist) * step(minDist, borderOffsetVal);
+                        // Shadow offset based on light direction
+                        float2 shadowDir = _LightDirection.xy / canvasScale * layer.innerShadowIntensity;
+                        float2 shadowPos = layerLocalPos - shadowDir;
+                        
+                        // Calculate corner-aware distance at shadow sample position
+                        float sDistBottom = shadowPos.y;
+                        float sDistTop = layerSize.y - shadowPos.y;
+                        float sDistLeft = shadowPos.x;
+                        float sDistRight = layerSize.x - shadowPos.x;
+                        float sMinDist = min(min(sDistBottom, sDistTop), min(sDistLeft, sDistRight));
+                        
+                        // Corner adjustments for shadow position
+                        float sCornerBL = sDistLeft + sDistBottom;
+                        float sCornerBR = sDistRight + sDistBottom;
+                        float sCornerTL = sDistLeft + sDistTop;
+                        float sCornerTR = sDistRight + sDistTop;
+                        
+                        // Reuse corner cuts from border calculation (already computed in seed)
+                        float cornerCutMin = _CornerCutMinPixels / canvasScale;
+                        float cornerCutMax = _CornerCutMaxPixels / canvasScale;
+                        float blCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 500.0));
+                        float brCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 600.0));
+                        float tlCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 700.0));
+                        float trCut = lerp(cornerCutMin, cornerCutMax, Hash(seed + 800.0));
+                        
+                        // Apply corner zones for shadow
+                        if (step(sCornerBL, blCut * 2.0) > 0.5) sMinDist = min(sMinDist, (sCornerBL - blCut) * 0.707);
+                        if (step(sCornerBR, brCut * 2.0) > 0.5) sMinDist = min(sMinDist, (sCornerBR - brCut) * 0.707);
+                        if (step(sCornerTL, tlCut * 2.0) > 0.5) sMinDist = min(sMinDist, (sCornerTL - tlCut) * 0.707);
+                        if (step(sCornerTR, trCut * 2.0) > 0.5) sMinDist = min(sMinDist, (sCornerTR - trCut) * 0.707);
+                        
+                        // Current position's corner-aware distance
+                        float cDistBottom = layerLocalPos.y;
+                        float cDistTop = layerSize.y - layerLocalPos.y;
+                        float cDistLeft = layerLocalPos.x;
+                        float cDistRight = layerSize.x - layerLocalPos.x;
+                        float cMinDist = min(min(cDistBottom, cDistTop), min(cDistLeft, cDistRight));
+                        
+                        float cCornerBL = cDistLeft + cDistBottom;
+                        float cCornerBR = cDistRight + cDistBottom;
+                        float cCornerTL = cDistLeft + cDistTop;
+                        float cCornerTR = cDistRight + cDistTop;
+                        
+                        if (step(cCornerBL, blCut * 2.0) > 0.5) cMinDist = min(cMinDist, (cCornerBL - blCut) * 0.707);
+                        if (step(cCornerBR, brCut * 2.0) > 0.5) cMinDist = min(cMinDist, (cCornerBR - brCut) * 0.707);
+                        if (step(cCornerTL, tlCut * 2.0) > 0.5) cMinDist = min(cMinDist, (cCornerTL - tlCut) * 0.707);
+                        if (step(cCornerTR, trCut * 2.0) > 0.5) cMinDist = min(cMinDist, (cCornerTR - trCut) * 0.707);
+                        
+                        // Shadow appears where:
+                        // 1. Current position is inside the border (past innerBorderEdge)
+                        // 2. Shadow sample position would be in or before the border
+                        float insideBorder = step(innerBorderEdge, cMinDist);
+                        float shadowInBorder = step(sMinDist, innerBorderEdge);
+                        
+                        // Solid shadow (no gradient falloff, matching outer shadows)
+                        float inShadow = insideBorder * shadowInBorder;
+                        
+                        // Only show where fill has alpha (not in border zone)
+                        inShadow *= (1.0 - inBorder) * layer.fillColor.a;
+                        
                         color = lerp(color, layer.innerShadowColor.rgb, inShadow * layer.innerShadowColor.a);
                     }
                     
