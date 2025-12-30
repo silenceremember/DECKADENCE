@@ -136,14 +136,100 @@ Shader "DECKADENCE/UI/PlayerBubble"
                 return length(p - (a + ab * t));
             }
             
+            // Cross product of 2D vectors (returns z component)
+            float Cross2D(float2 a, float2 b)
+            {
+                return a.x * b.y - a.y * b.x;
+            }
+            
+            // Get signed area of triangle
+            float TriangleArea(float2 v0, float2 v1, float2 v2)
+            {
+                return Cross2D(v1 - v0, v2 - v0);
+            }
+            
+            // Check if point is inside triangle (works for any winding)
+            float IsInsideTriangle(float2 p, float2 v0, float2 v1, float2 v2, float expectedSign)
+            {
+                // Calculate signed area
+                float area = TriangleArea(v0, v1, v2);
+                
+                // Check if this triangle has the expected winding
+                // If area sign doesn't match expected, this is an inverted triangle - skip
+                if (area * expectedSign < 0.01) return 0;
+                
+                // Point-in-triangle test
+                float c0 = Cross2D(v1 - v0, p - v0);
+                float c1 = Cross2D(v2 - v1, p - v1);
+                float c2 = Cross2D(v0 - v2, p - v2);
+                
+                // If expected is positive, all c should be positive
+                // If expected is negative, all c should be negative
+                if (expectedSign > 0)
+                    return step(0, c0) * step(0, c1) * step(0, c2);
+                else
+                    return step(c0, 0) * step(c1, 0) * step(c2, 0);
+            }
+            
+            // Check if point is inside quad
+            // Handles degenerate quads by determining correct winding from overall quad
+            // AND subtracting inverted triangle areas
             float IsInsideQuad(float2 p, float2 v0, float2 v1, float2 v2, float2 v3)
             {
-                float2 e0 = v3 - v0; float c0 = e0.x * (p.y - v0.y) - e0.y * (p.x - v0.x);
-                float2 e1 = v2 - v3; float c1 = e1.x * (p.y - v3.y) - e1.y * (p.x - v3.x);
-                float2 e2 = v1 - v2; float c2 = e2.x * (p.y - v2.y) - e2.y * (p.x - v2.x);
-                float2 e3 = v0 - v1; float c3 = e3.x * (p.y - v1.y) - e3.y * (p.x - v1.x);
+                // Calculate total signed area of quad using shoelace formula
+                // This gives us the "expected" winding of the original quad
+                float quadArea = Cross2D(v0, v1) + Cross2D(v1, v2) + Cross2D(v2, v3) + Cross2D(v3, v0);
+                float expectedSign = sign(quadArea);
                 
-                return step(0, c0) * step(0, c1) * step(0, c2) * step(0, c3);
+                // If quad has zero area, it's completely degenerate
+                if (abs(quadArea) < 0.01) return 0;
+                
+                // Split quad into two triangles
+                float area1 = TriangleArea(v0, v1, v2);
+                float area2 = TriangleArea(v0, v2, v3);
+                
+                // Check which triangles are valid (same sign as expected) and which are inverted
+                float tri1Valid = (area1 * expectedSign > 0.01) ? 1.0 : 0.0;
+                float tri2Valid = (area2 * expectedSign > 0.01) ? 1.0 : 0.0;
+                float tri1Inverted = (area1 * expectedSign < -0.01) ? 1.0 : 0.0;
+                float tri2Inverted = (area2 * expectedSign < -0.01) ? 1.0 : 0.0;
+                
+                // Point-in-triangle tests for both
+                float c1_0 = Cross2D(v1 - v0, p - v0);
+                float c1_1 = Cross2D(v2 - v1, p - v1);
+                float c1_2 = Cross2D(v0 - v2, p - v2);
+                
+                float c2_0 = Cross2D(v2 - v0, p - v0);
+                float c2_1 = Cross2D(v3 - v2, p - v2);
+                float c2_2 = Cross2D(v0 - v3, p - v3);
+                
+                // Test with EXPECTED winding (for valid triangles)
+                float inTri1, inTri2;
+                if (expectedSign > 0) {
+                    inTri1 = step(0, c1_0) * step(0, c1_1) * step(0, c1_2);
+                    inTri2 = step(0, c2_0) * step(0, c2_1) * step(0, c2_2);
+                } else {
+                    inTri1 = step(c1_0, 0) * step(c1_1, 0) * step(c1_2, 0);
+                    inTri2 = step(c2_0, 0) * step(c2_1, 0) * step(c2_2, 0);
+                }
+                
+                // Test with OPPOSITE winding (for inverted triangles)
+                float inTri1Inv, inTri2Inv;
+                if (expectedSign > 0) {
+                    // Inverted triangles have negative winding, so test with opposite
+                    inTri1Inv = step(c1_0, 0) * step(c1_1, 0) * step(c1_2, 0);
+                    inTri2Inv = step(c2_0, 0) * step(c2_1, 0) * step(c2_2, 0);
+                } else {
+                    inTri1Inv = step(0, c1_0) * step(0, c1_1) * step(0, c1_2);
+                    inTri2Inv = step(0, c2_0) * step(0, c2_1) * step(0, c2_2);
+                }
+                
+                // Result = (inside valid triangles) AND NOT (inside inverted triangles)
+                float inValidArea = max(inTri1 * tri1Valid, inTri2 * tri2Valid);
+                float inInvertedArea = max(inTri1Inv * tri1Inverted, inTri2Inv * tri2Inverted);
+                
+                // Subtract inverted area from valid area
+                return inValidArea * (1.0 - inInvertedArea);
             }
             
             float GetQuadEdgeDistance(float2 p, float2 v0, float2 v1, float2 v2, float2 v3)
