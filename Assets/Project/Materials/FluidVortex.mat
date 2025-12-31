@@ -35,6 +35,7 @@ Material:
     - _Bands: 5
     - _BattleZone: 0.1
     - _Brightness: 0.5
+    - _CellScale: 3
     - _ChromaticAberration: 0.005
     - _Complexity: 10
     - _Contrast: 0.5
@@ -43,18 +44,23 @@ Material:
     - _Distortion: 0
     - _DitherStrength: 0
     - _EdgeGlow: 0.3
-    - _EdgeSharpness: 10
+    - _EdgeSharpness: 300
     - _EdgeSoftness: 0
     - _Evolution: 1
     - _FlowComplexity: 4.68
     - _FlowIterations: 5
-    - _FlowScale: 10
+    - _FlowScale: 0.94
+    - _FluidStrength: 1
     - _FractalIterations: 2
     - _GradientPower: 0
     - _GrainStrength: 0.014
-    - _Hardness: 1
+    - _Hardness: 9.4
     - _HighThreshold: 0.66
     - _InnerSpiral: 0.39
+    - _IslandLayers: 4
+    - _IslandSize: 0.7
+    - _IslandThreshold: 0.683
+    - _LayerSpread: 0.2
     - _LightFlashIntensity: 0
     - _LightFlashSpeed: 1
     - _Lighting: 0.4
@@ -66,8 +72,10 @@ Material:
     - _PixelDensity: 600
     - _PixelFilter: 700
     - _PixelSize: 200
-    - _Pixels: 400
+    - _Pixels: 1000
     - _Radius: 2
+    - _RaggedAmount: 1
+    - _RaggedScale: 12
     - _RidgeSharpness: 2
     - _Scale: 4
     - _ScanlineStrength: 0
@@ -82,7 +90,7 @@ Material:
     - _SpiralStrength: 2
     - _StarDensity: 0.9
     - _Steps: 5
-    - _SwirlStrength: 1
+    - _SwirlStrength: 7
     - _Threshold1: 0.43
     - _Threshold2: 0.69
     - _Twist: 25
@@ -93,16 +101,17 @@ Material:
     - _WarpStrength: 1.2
     - _Zoom: 4.21
     m_Colors:
-    - _Color1: {r: 0, g: 0, b: 0, a: 1}
-    - _Color2: {r: 0.4263412, g: 0, b: 0.6320754, a: 1}
-    - _Color3: {r: 0, g: 0.38969317, b: 0.8396226, a: 1}
+    - _Color1: {r: 0.08998451, g: 0, b: 0.34117648, a: 1}
+    - _Color2: {r: 0.24652793, g: 0.01183696, b: 0.3584906, a: 1}
+    - _Color3: {r: 0.37602678, g: 0, b: 0.7264151, a: 1}
     - _Color4: {r: 0, g: 1, b: 0.9248905, a: 1}
     - _Color5: {r: 0.7735849, g: 0.7735849, b: 0.7735849, a: 1}
     - _ColorBase: {r: 0.101960786, g: 0, b: 0, a: 1}
     - _ColorDeep: {r: 0.17702028, g: 0.17702028, b: 0.24528301, a: 1}
     - _ColorHigh: {r: 0.24416953, g: 0.5849056, b: 0.22347811, a: 1}
     - _ColorMid: {r: 0.3764706, g: 0, b: 0.0627451, a: 1}
-    - _FilterColor: {r: 0, g: 0, b: 0, a: 0.5882353}
+    - _ColorVoid: {r: 0.13518992, g: 0, b: 0.3207547, a: 1}
+    - _FilterColor: {r: 0, g: 0, b: 0, a: 0.70980394}
     - _MainColor: {r: 0.735849, g: 0.735849, b: 0.735849, a: 1}
     - _SecondColor: {r: 0.4433962, g: 0.4433962, b: 0.4433962, a: 1}
   m_BuildTextureStacks: []
