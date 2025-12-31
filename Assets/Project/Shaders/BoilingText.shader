@@ -14,6 +14,9 @@ Shader "DECKADENCE/UI/BoilingText"
         
         [Header(Shadow)]
         [HideInInspector] _ShadowColor ("Shadow Color", Color) = (0, 0, 0, 0.5)
+        
+        [Header(Backdrop)]
+        [HideInInspector] _BackdropColor ("Backdrop Color", Color) = (0.2, 0.2, 0.2, 0.8)
 
         // Standard UI Stencil Properties
         _StencilComp ("Stencil Comparison", Float) = 8
@@ -61,7 +64,7 @@ Shader "DECKADENCE/UI/BoilingText"
                 float4 vertex   : POSITION;
                 float4 color    : COLOR;
                 float2 texcoord : TEXCOORD0;
-                float2 texcoord1 : TEXCOORD1; // UV1: x=1 means shadow vertex
+                float2 texcoord1 : TEXCOORD1; // UV1: x=layer type, y=backdrop shadow flag
             };
 
             struct v2f
@@ -70,7 +73,7 @@ Shader "DECKADENCE/UI/BoilingText"
                 fixed4 color    : COLOR;
                 float2 texcoord : TEXCOORD0;
                 float4 worldPosition : TEXCOORD1;
-                float isShadow : TEXCOORD2;
+                float2 layerFlags : TEXCOORD2; // x=layer type, y=backdrop shadow flag
             };
 
             sampler2D _MainTex;
@@ -79,6 +82,7 @@ Shader "DECKADENCE/UI/BoilingText"
             float _DistortStrength;
             float _Speed;
             float4 _ShadowColor;
+            float4 _BackdropColor;
 
             v2f vert(appdata_t v)
             {
@@ -88,35 +92,65 @@ Shader "DECKADENCE/UI/BoilingText"
                 OUT.vertex = UnityObjectToClipPos(v.vertex);
                 OUT.texcoord = v.texcoord;
                 OUT.color = v.color;
-                OUT.isShadow = v.texcoord1.x;
+                OUT.layerFlags = v.texcoord1; // Pass both x and y
                 
                 return OUT;
             }
 
             fixed4 frag(v2f IN) : SV_Target
             {
-                float time = _Time.y * _Speed;
-                
-                float2 distort;
-                distort.x = sin(IN.texcoord.y * 15.0 + time);
-                distort.y = cos(IN.texcoord.x * 12.0 + time * 1.5);
-                
-                float2 distortedUV = IN.texcoord + (distort * _DistortStrength);
-                float2 pixelUV = floor(distortedUV * _Pixels) / _Pixels;
-
-                float d_text = tex2D(_MainTex, pixelUV).a;
-                float mask = step(0.5, d_text);
-                
                 float4 finalColor;
+                float layerType = IN.layerFlags.x;
+                float isBackdropShadow = IN.layerFlags.y;
                 
-                if (IN.isShadow > 0.5)
+                // Backdrop layer (UV1.x = 2) - solid colored quad, per-vertex color
+                if (layerType > 1.5)
                 {
-                    // Shadow vertex
-                    finalColor = float4(_ShadowColor.rgb, _ShadowColor.a * mask * IN.color.a);
+                    // Use vertex color directly (color variation is baked into vertices)
+                    finalColor = IN.color;
                 }
+                // Shadow layer (UV1.x = 1)
+                else if (layerType > 0.5)
+                {
+                    // Check if this is backdrop shadow (UV1.y > 0.5) or letter shadow
+                    if (isBackdropShadow > 0.5)
+                    {
+                        // Backdrop shadow - solid fill
+                        finalColor = float4(_ShadowColor.rgb, _ShadowColor.a * IN.color.a);
+                    }
+                    else
+                    {
+                        // Letter shadow - needs texture mask
+                        float time = _Time.y * _Speed;
+                        
+                        float2 distort;
+                        distort.x = sin(IN.texcoord.y * 15.0 + time);
+                        distort.y = cos(IN.texcoord.x * 12.0 + time * 1.5);
+                        
+                        float2 distortedUV = IN.texcoord + (distort * _DistortStrength);
+                        float2 pixelUV = floor(distortedUV * _Pixels) / _Pixels;
+
+                        float d_text = tex2D(_MainTex, pixelUV).a;
+                        float mask = step(0.5, d_text);
+                        
+                        finalColor = float4(_ShadowColor.rgb, _ShadowColor.a * mask * IN.color.a);
+                    }
+                }
+                // Main text (UV1.x = 0)
                 else
                 {
-                    // Main text vertex
+                    float time = _Time.y * _Speed;
+                    
+                    float2 distort;
+                    distort.x = sin(IN.texcoord.y * 15.0 + time);
+                    distort.y = cos(IN.texcoord.x * 12.0 + time * 1.5);
+                    
+                    float2 distortedUV = IN.texcoord + (distort * _DistortStrength);
+                    float2 pixelUV = floor(distortedUV * _Pixels) / _Pixels;
+
+                    float d_text = tex2D(_MainTex, pixelUV).a;
+                    float mask = step(0.5, d_text);
+                    
                     finalColor = IN.color * mask;
                 }
 

@@ -18,49 +18,49 @@ MonoBehaviour:
   splitPositionLeftActive: 0.85
   splitAngleRightActive: -22
   splitPositionRightActive: 0.15
-  leftFillNormal: {r: 0.102, g: 0.102, b: 0.18, a: 1}
+  leftFillNormal: {r: 1, g: 1, b: 1, a: 1}
   leftOffsetNormal: {x: 0, y: 0}
   leftExpandNormal: {x: 0, y: 0}
   leftCornerBL_Normal: {x: 0, y: 0}
   leftCornerTL_Normal: {x: 0, y: 0}
   leftCornerBR_Normal: {x: 0, y: 0}
   leftCornerTR_Normal: {x: 0, y: 0}
-  leftFillActive: {r: 0.149, g: 0.149, b: 0.267, a: 1}
+  leftFillActive: {r: 1, g: 1, b: 1, a: 1}
   leftOffsetActive: {x: -8, y: 4}
   leftExpandActive: {x: 12, y: 8}
   leftCornerBL_Active: {x: -16, y: -6}
   leftCornerTL_Active: {x: -18, y: 8}
   leftCornerBR_Active: {x: 8, y: 0}
   leftCornerTR_Active: {x: -10, y: 0}
-  leftFillInactive: {r: 0, g: 0, b: 1, a: 1}
+  leftFillInactive: {r: 1, g: 1, b: 1, a: 1}
   leftOffsetInactive: {x: -20, y: 0}
-  leftExpandInactive: {x: -10, y: -4}
+  leftExpandInactive: {x: -10, y: 30}
   leftCornerBL_Inactive: {x: -8, y: 4}
-  leftCornerTL_Inactive: {x: -10, y: -4}
+  leftCornerTL_Inactive: {x: -65, y: -4}
   leftCornerBR_Inactive: {x: -4, y: 0}
   leftCornerTR_Inactive: {x: 6, y: 0}
-  rightFillNormal: {r: 0.165, g: 0.102, b: 0.18, a: 1}
+  rightFillNormal: {r: 1, g: 1, b: 1, a: 1}
   rightOffsetNormal: {x: 0, y: 0}
   rightExpandNormal: {x: 0, y: 0}
   rightCornerBL_Normal: {x: 0, y: 0}
   rightCornerTL_Normal: {x: 0, y: 0}
   rightCornerBR_Normal: {x: 0, y: 0}
   rightCornerTR_Normal: {x: 0, y: 0}
-  rightFillActive: {r: 0.239, g: 0.149, b: 0.267, a: 1}
+  rightFillActive: {r: 1, g: 1, b: 1, a: 1}
   rightOffsetActive: {x: 8, y: 4}
   rightExpandActive: {x: 12, y: 8}
   rightCornerBL_Active: {x: 8, y: 0}
   rightCornerTL_Active: {x: -10, y: 0}
   rightCornerBR_Active: {x: 16, y: -6}
   rightCornerTR_Active: {x: 18, y: 8}
-  rightFillInactive: {r: 0.818182, g: 0, b: 1, a: 1}
+  rightFillInactive: {r: 1, g: 1, b: 1, a: 1}
   rightOffsetInactive: {x: 20, y: 0}
-  rightExpandInactive: {x: -10, y: -4}
+  rightExpandInactive: {x: -10, y: 30}
   rightCornerBL_Inactive: {x: -4, y: 0}
   rightCornerTL_Inactive: {x: 6, y: 0}
   rightCornerBR_Inactive: {x: 8, y: 4}
-  rightCornerTR_Inactive: {x: 10, y: -4}
-  shadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+  rightCornerTR_Inactive: {x: 65, y: -4}
+  shadowColor: {r: 0, g: 0, b: 0, a: 1}
   shadowIntensity: 1
   textColorLeft: {r: 1, g: 1, b: 1, a: 1}
   textColorRight: {r: 1, g: 1, b: 1, a: 1}
